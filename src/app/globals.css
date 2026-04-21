@@ -1,26 +1,476 @@
+/* Google Fonts Import */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* =====================================================
+   CardSocial - Design System
+   Premium dark-mode SaaS theme
+   ===================================================== */
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  /* Brand Colors */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+  
+  /* Dark Surface Colors */
+  --color-surface-50: #f8fafc;
+  --color-surface-100: #f1f5f9;
+  --color-surface-800: #1e293b;
+  --color-surface-850: #172033;
+  --color-surface-900: #0f172a;
+  --color-surface-950: #020617;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+/* =====================================================
+   Base Styles
+   ===================================================== */
+   
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*::-webkit-scrollbar {
+  width: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #020617;
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =====================================================
+   Glassmorphism Components
+   ===================================================== */
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.08);
+}
+
+.glass-card-solid {
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 16px;
+}
+
+.glass-nav {
+  background: rgba(2, 6, 23, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.glass-sidebar {
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.glass-input {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 12px;
+  color: #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.glass-input::placeholder {
+  color: rgba(148, 163, 184, 0.6);
+}
+
+/* =====================================================
+   Buttons
+   ===================================================== */
+
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-primary:hover::before {
+  opacity: 1;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary > * {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-secondary {
+  background: rgba(99, 102, 241, 0.1);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  border-radius: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost:hover {
+  background: rgba(99, 102, 241, 0.08);
+  color: #e2e8f0;
+}
+
+/* =====================================================
+   Gradient Text
+   ===================================================== */
+
+.gradient-text {
+  background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 50%, #c084fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-brand {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* =====================================================
+   Animated Background
+   ===================================================== */
+
+.animated-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.animated-bg::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+              radial-gradient(circle at 40% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 50%);
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(2%, -2%) rotate(1deg); }
+  66% { transform: translate(-1%, 1%) rotate(-1deg); }
+}
+
+/* =====================================================
+   Digital Card Styles
+   ===================================================== */
+
+.digital-card {
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 50%, #1e1b4b 100%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1.586; /* Credit card ratio */
+}
+
+.digital-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.1) 0%,
+    transparent 40%,
+    transparent 60%,
+    rgba(139, 92, 246, 0.1) 100%
+  );
+  pointer-events: none;
+}
+
+.digital-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.05) 0%, transparent 60%);
+  pointer-events: none;
+  animation: cardShimmer 8s ease-in-out infinite;
+}
+
+@keyframes cardShimmer {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(5%, 5%); }
+}
+
+/* =====================================================
+   Table Styles
+   ===================================================== */
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.data-table th {
+  background: rgba(99, 102, 241, 0.06);
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.data-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.05);
+  font-size: 0.875rem;
+  transition: background 0.15s ease;
+}
+
+.data-table tr:hover td {
+  background: rgba(99, 102, 241, 0.04);
+}
+
+/* =====================================================
+   Animations
+   ===================================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.2); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Stagger children animations */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+
+/* =====================================================
+   Status Badge
+   ===================================================== */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  border: 1px solid;
+}
+
+.status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* =====================================================
+   Mobile Responsive
+   ===================================================== */
+
+@media (max-width: 768px) {
+  .glass-card, .glass-card-solid {
+    border-radius: 12px;
+  }
+  
+  .digital-card {
+    border-radius: 16px;
+  }
+}
+
+/* =====================================================
+   Loading Skeleton
+   ===================================================== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(99, 102, 241, 0.05) 25%,
+    rgba(99, 102, 241, 0.1) 50%,
+    rgba(99, 102, 241, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* =====================================================
+   Toast / Notification
+   ===================================================== */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
