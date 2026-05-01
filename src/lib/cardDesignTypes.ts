@@ -41,7 +41,7 @@ export interface TextElement {
 
 export interface ImageElement {
   id: string;
-  type: 'logo' | 'decoration' | 'photo' | 'icon';
+  type: 'logo' | 'decoration' | 'photo' | 'icon' | 'signature';
   src: string;
   x: number;
   y: number;
