@@ -73,7 +73,7 @@ export default function CardsPage() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           let mapped = data.map((c: any) => {
             // Find design
-            const design = designs?.find(d => d.id === c.metadata?.design_id);
+            const design = designs?.find((d: any) => d.id === c.metadata?.design_id);
             return {
               ...c,
               beneficiary: c.beneficiaries,
