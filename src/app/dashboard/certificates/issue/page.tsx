@@ -80,7 +80,7 @@ export default function IssueCertificatePage() {
       setDesigns(results);
       
       // Auto-select first design or one containing 'certificado'
-      const defaultDesign = results.find(d => d.name.toLowerCase().includes('certificado')) || results[0];
+      const defaultDesign = results.find((d: any) => d.name.toLowerCase().includes('certificado')) || results[0];
       if (defaultDesign) {
         setSelectedDesignId(defaultDesign.id);
       }
@@ -319,7 +319,7 @@ export default function IssueCertificatePage() {
           <div className="glass-card p-6 sticky top-6">
             <h2 className="text-lg font-semibold text-white mb-6">Resumen</h2>
             <div className="space-y-4 mb-8">
-              <div className="flex justify-between text-sm"><span className="text-slate-500">Modelo:</span><span className="text-brand-400 font-bold text-right max-w-[180px] break-words leading-tight">{designs.find(d => d.id === selectedDesignId)?.name || 'No elegido'}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-slate-500">Modelo:</span><span className="text-brand-400 font-bold text-right max-w-[180px] break-words leading-tight">{designs.find((d: any) => d.id === selectedDesignId)?.name || 'No elegido'}</span></div>
               <div className="flex justify-between text-sm"><span className="text-slate-500">Tipo:</span><span className="text-white font-bold capitalize">{formData.type.replace('_', ' ')}</span></div>
               <div className="flex justify-between text-sm"><span className="text-slate-500">Costo:</span><span className="text-emerald-400 font-black">${formData.cost.toLocaleString('es-CL')}</span></div>
             </div>
@@ -369,7 +369,7 @@ export default function IssueCertificatePage() {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-slate-500">Modelo:</span>
-              <span className="text-brand-400 font-bold">{designs.find(d => d.id === selectedDesignId)?.name}</span>
+              <span className="text-brand-400 font-bold">{designs.find((d: any) => d.id === selectedDesignId)?.name}</span>
             </div>
             <div className="border-t border-white/10 pt-3 mt-3">
               <div className="flex justify-between text-base">

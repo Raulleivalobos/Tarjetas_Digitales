@@ -150,7 +150,7 @@ export default function DesignsPage() {
     try {
       const { error } = await supabase.from('card_designs').delete().eq('id', id);
       if (!error) {
-        setDesigns(designs.filter((d) => d.id !== id));
+        setDesigns(designs.filter((d: any) => d.id !== id));
       }
     } catch (e) {
       console.error('Error deleting design', e);
