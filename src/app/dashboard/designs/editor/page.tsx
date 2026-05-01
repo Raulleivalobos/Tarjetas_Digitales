@@ -111,6 +111,7 @@ function createDefaultDesign(orgId: string, name: string): CardDesign {
             height: 10,
             rotation: 0,
             opacity: 1,
+            borderRadius: 0,
             isAttribute: true,
             attributeKey: 'Logo Institución'
           }
