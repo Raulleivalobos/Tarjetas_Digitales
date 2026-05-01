@@ -17,15 +17,21 @@ import {
   X,
   ChevronRight,
   Building2,
+  Palette,
+  ClipboardList,
+  FileText,
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Panel', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Diseños', href: '/dashboard/designs', icon: Palette },
   { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
   { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
+  { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
   { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
+  { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
   { name: 'Validar QR', href: '/dashboard/scanner', icon: QrCode },
-  { name: 'Carga Masiva', href: '/dashboard/bulk-upload', icon: Upload },
+  { name: 'Emitir', href: '/dashboard/issue', icon: Upload },
   { name: 'Configuración', href: '/dashboard/settings', icon: Settings },
 ];
 
@@ -82,13 +88,17 @@ export default function DashboardLayout({
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between p-6 border-b border-brand-500/10">
-            <Link href="/dashboard" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
-                <CreditCard className="w-5 h-5 text-white" />
+            <Link href="/dashboard" className="flex items-center gap-4 group">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center overflow-hidden group-hover:border-brand-500/40 transition-all">
+                <img 
+                  src="/images/skardkey-icon.png" 
+                  alt="SkardKey" 
+                  className="w-full h-full object-contain scale-[1.5] drop-shadow-[0_0_8px_rgba(99,102,241,0.4)]" 
+                />
               </div>
               <div>
-                <h1 className="text-lg font-bold gradient-text">CardSocial</h1>
-                <p className="text-xs text-slate-500">Tarjetas Digitales</p>
+                <h1 className="text-xl font-black tracking-tighter gradient-text leading-none text-white">SkardKey</h1>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 mt-1 font-bold">Admin Console</p>
               </div>
             </Link>
             <button
@@ -103,8 +113,12 @@ export default function DashboardLayout({
           {organization && (
             <div className="mx-4 mt-4 p-3 rounded-xl bg-brand-500/5 border border-brand-500/10">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-brand-600/20 flex items-center justify-center">
-                  <Building2 className="w-4 h-4 text-brand-400" />
+                <div className="w-9 h-9 rounded-lg bg-brand-600/20 flex items-center justify-center overflow-hidden">
+                  {organization.logo_url ? (
+                    <img src={organization.logo_url} alt={organization.name} className="w-full h-full object-contain" />
+                  ) : (
+                    <Building2 className="w-4 h-4 text-brand-400" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-200 truncate">
@@ -181,11 +195,9 @@ export default function DashboardLayout({
           >
             <Menu className="w-6 h-6" />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center">
-              <CreditCard className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold gradient-text">CardSocial</span>
+          <div className="flex items-center gap-3">
+            <img src="/images/skardkey-icon.png" alt="SkardKey" className="w-10 h-10 object-contain" />
+            <span className="font-bold gradient-text tracking-tight">SkardKey</span>
           </div>
           <div className="w-10" /> {/* Spacer for centering */}
         </header>

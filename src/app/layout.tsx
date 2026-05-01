@@ -3,9 +3,9 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CardSocial | Tarjetas Digitales Inteligentes",
+  title: "SkardKey | Identidad Digital & Beneficios",
   description:
-    "Plataforma SaaS para la gestión de tarjetas de identificación digitales inteligentes para organizaciones sociales. Sindicatos, consejos vecinales, departamentos de asistencia social y fondos de compensación.",
+    "Plataforma SaaS para la gestión de identidad digital y beneficios para organizaciones sociales. Sindicatos, consejos vecinales, departamentos de asistencia social y fondos de compensación.",
   keywords: [
     "tarjetas digitales",
     "identificación",
@@ -39,6 +39,7 @@ export default function RootLayout({
         <AuthProvider>
           <div className="animated-bg" />
           {children}
+          <div id="modal-root" />
         </AuthProvider>
       </body>
     </html>

@@ -8,9 +8,25 @@ export interface Organization {
   slug: string;
   logo_url: string | null;
   description: string | null;
-  settings: Record<string, unknown>;
   primary_color: string;
   secondary_color: string;
+  rut: string | null;
+  address: string | null;
+  villa: string | null;
+  commune: string | null;
+  region: string | null;
+  settings: {
+    certificate_prices?: {
+      active: number;
+      inactive: number;
+      resident: number;
+    };
+    signatures?: {
+      president: { name: string; title: string; enabled: boolean };
+      secretary: { name: string; title: string; enabled: boolean };
+    };
+    reasons?: string[];
+  };
   created_at: string;
   updated_at: string;
 }
@@ -46,7 +62,7 @@ export interface DigitalCard {
   org_id: string;
   card_number: string;
   qr_code: string;
-  status: 'active' | 'expired' | 'blocked' | 'revoked';
+  status: 'active' | 'expired' | 'blocked' | 'revoked' | 'draft';
   issued_at: string;
   expires_at: string | null;
   metadata: Record<string, unknown>;
@@ -64,6 +80,8 @@ export interface Benefit {
   end_date: string | null;
   status: 'active' | 'inactive' | 'exhausted';
   settings: Record<string, unknown>;
+  extended_end_date: string | null;
+  extension_reason: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -183,4 +201,71 @@ export interface BulkUploadResult {
     field: string;
     message: string;
   }>;
+}
+
+// =====================================================
+// Meeting / Attendance Types
+// =====================================================
+
+export interface Meeting {
+  id: string;
+  org_id: string;
+  name: string;
+  description: string | null;
+  meeting_date: string;
+  status: 'active' | 'closed' | 'cancelled';
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MeetingAttendance {
+  id: string;
+  meeting_id: string;
+  beneficiary_id: string;
+  card_id: string | null;
+  org_id: string;
+  registered_by: string | null;
+  registered_at: string;
+  // Joined data
+  beneficiary?: Beneficiary;
+}
+
+// =====================================================
+// Certificate Types
+// =====================================================
+
+export type CertificateType = 'socio_activo' | 'socio_inactivo' | 'residente';
+export type CertificateStatus = 'active' | 'expired' | 'revoked';
+
+export interface Certificate {
+  id: string;
+  org_id: string;
+  beneficiary_id: string | null;
+  folio: number;
+  type: CertificateType;
+  status: CertificateStatus;
+  reason: string;
+  cost: number;
+  resident_data?: {
+    full_name: string;
+    rut: string;
+    address: string;
+    villa: string;
+  };
+  issued_at: string;
+  expires_at: string;
+  metadata: Record<string, any>;
+}
+
+export interface CertificateFormData {
+  beneficiary_id?: string;
+  type: CertificateType;
+  reason: string;
+  resident_data?: {
+    full_name: string;
+    rut: string;
+    address: string;
+    villa: string;
+  };
 }

@@ -1,0 +1,421 @@
+'use client';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase/client';
+import { 
+  FileText, 
+  Plus, 
+  Search, 
+  Filter, 
+  Download, 
+  MoreVertical, 
+  Eye, 
+  CheckCircle2, 
+  AlertCircle,
+  Clock,
+  TrendingUp,
+  DollarSign,
+  UserPlus,
+  Calendar,
+  FileDown
+} from 'lucide-react';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { formatDateTime } from '@/lib/utils';
+import { PageSkeleton } from '@/components/ui/LoadingSkeleton';
+import Link from 'next/link';
+import { Certificate, CertificateType } from '@/lib/types';
+import { exportReportToPDF } from '@/lib/pdfGenerator';
+
+export default function CertificatesPage() {
+  const { organization, authLoading } = useAuth();
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [showReport, setShowReport] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
+
+  const fetchCertificates = useCallback(async () => {
+    if (!organization) return;
+    setLoading(true);
+
+    try {
+      let query = supabase
+        .from('certificates')
+        .select('*, beneficiaries(full_name, rut)')
+        .eq('org_id', organization.id)
+        .order('issued_at', { ascending: false });
+
+      if (typeFilter !== 'all') {
+        query = query.eq('type', typeFilter);
+      }
+
+      const { data, error } = await query;
+
+      if (!error && data) {
+        setCertificates(data);
+      }
+    } catch (err) {
+      console.error('Error fetching certificates:', err);
+    } finally {
+      setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization, typeFilter]);
+
+  const handleGenerateReport = async () => {
+    setGeneratingReport(true);
+    try {
+      const reportData = certificates.map(c => ({
+        folio: c.folio?.toString().padStart(6, '0') || '-',
+        receptor: c.beneficiaries?.full_name || 'Desconocido',
+        rut: c.beneficiaries?.rut || '-',
+        tipo: c.type.replace('_', ' ').toUpperCase(),
+        estado: c.status === 'active' ? 'ACTIVO' : 'ANULADO',
+        costo: `$${c.cost.toLocaleString('es-CL')}`,
+        fecha: new Date(c.issued_at).toLocaleDateString('es-CL')
+      }));
+
+      await exportReportToPDF({
+        filename: `Reporte_Certificados_${new Date().getTime()}`,
+        title: 'Reporte de Certificados Emitidos',
+        subtitle: 'Desglose detallado de emisiones',
+        orgName: organization?.name,
+        dateRange: dateRange.start || dateRange.end ? dateRange : undefined,
+        summary: [
+          { label: 'Total Emitidos', value: certificates.length.toString() },
+          { label: 'Recaudación', value: `$${certificates.reduce((acc, curr) => acc + curr.cost, 0).toLocaleString('es-CL')}` },
+          { label: 'Vigentes', value: certificates.filter(c => c.status === 'active').length.toString() }
+        ],
+        columns: [
+          { header: 'Folio', key: 'folio', width: 10 },
+          { header: 'Receptor', key: 'receptor', width: 30 },
+          { header: 'RUT', key: 'rut', width: 15 },
+          { header: 'Tipo', key: 'tipo', width: 15 },
+          { header: 'Estado', key: 'estado', width: 10 },
+          { header: 'Fecha', key: 'fecha', width: 10 },
+          { header: 'Costo', key: 'costo', width: 10, align: 'right' }
+        ],
+        data: reportData
+      });
+    } catch (error) {
+      console.error('Error generando reporte:', error);
+    } finally {
+      setGeneratingReport(false);
+      setShowReport(false);
+    }
+  };
+
+  useEffect(() => {
+    if (organization) {
+      fetchCertificates();
+    } else if (!authLoading) {
+      setLoading(false);
+    }
+  }, [organization, authLoading, fetchCertificates]);
+
+  const filteredCertificates = certificates.filter(c => {
+    const searchLower = search.toLowerCase();
+    const name = c.resident_data?.full_name || (c as any).beneficiaries?.full_name || '';
+    const rut = c.resident_data?.rut || (c as any).beneficiaries?.rut || '';
+    return name.toLowerCase().includes(searchLower) || rut.includes(searchLower) || c.folio.toString().includes(searchLower);
+  });
+
+  if (loading) return <PageSkeleton />;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">Certificados de Residencia</h1>
+          <p className="text-slate-400 mt-1 text-sm">Gestiona y emite certificados oficiales para socios y residentes.</p>
+        </div>
+        <Link 
+          href="/dashboard/certificates/issue" 
+          className="btn-primary px-5 py-2.5 flex items-center justify-center gap-2 text-sm font-bold"
+        >
+          <Plus className="w-4 h-4" />
+          Emitir Certificado
+        </Link>
+        <button 
+          onClick={() => setShowReport(true)}
+          className="btn-ghost px-5 py-2.5 flex items-center justify-center gap-2 text-sm font-bold border border-white/10"
+        >
+          <FileDown className="w-4 h-4" />
+          Generar Reporte
+        </button>
+      </div>
+
+      {/* Stats Quick View */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="glass-card p-4 border-l-4 border-blue-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Total Emitidos</p>
+              <p className="text-xl font-bold text-white">{certificates.length}</p>
+            </div>
+          </div>
+        </div>
+        <div className="glass-card p-4 border-l-4 border-emerald-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Socios Activos</p>
+              <p className="text-xl font-bold text-white">
+                {certificates.filter(c => c.type === 'socio_activo').length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="glass-card p-4 border-l-4 border-amber-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Socios Inactivos</p>
+              <p className="text-xl font-bold text-white">
+                {certificates.filter(c => c.type === 'socio_inactivo').length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="glass-card p-4 border-l-4 border-purple-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+              <UserPlus className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Residentes</p>
+              <p className="text-xl font-bold text-white">
+                {certificates.filter(c => c.type === 'residente').length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="glass-card p-4 border-l-4 border-green-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Vigentes</p>
+              <p className="text-xl font-bold text-white">
+                {certificates.filter(c => c.status === 'active').length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="glass-card p-4 border-l-4 border-yellow-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-400">
+              <DollarSign className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Recaudación</p>
+              <p className="text-xl font-bold text-white">
+                ${certificates.reduce((acc, curr) => acc + curr.cost, 0).toLocaleString('es-CL')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-card overflow-hidden">
+        <div className="p-4 md:p-6 border-b border-white/5 flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-900/30">
+          <div className="relative w-full md:w-96">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, RUT o folio..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="glass-input w-full pl-10 pr-4 py-2 text-sm"
+            />
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <Filter className="w-4 h-4 text-slate-500" />
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="glass-input text-sm px-3 py-2 outline-none"
+            >
+              <option value="all">Todos los tipos</option>
+              <option value="socio_activo">Socio Activo</option>
+              <option value="socio_inactivo">Socio Inactivo</option>
+              <option value="residente">Residente</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="bg-white/[0.02] border-b border-white/5 text-slate-400">
+                <th className="px-6 py-4 font-medium">Folio</th>
+                <th className="px-6 py-4 font-medium">Beneficiario / Residente</th>
+                <th className="px-6 py-4 font-medium">Tipo</th>
+                <th className="px-6 py-4 font-medium">Fecha Emisión</th>
+                <th className="px-6 py-4 font-medium">Costo</th>
+                <th className="px-6 py-4 font-medium">Estado</th>
+                <th className="px-6 py-4 font-medium text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {filteredCertificates.length > 0 ? (
+                filteredCertificates.map((cert) => (
+                  <tr key={cert.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <td className="px-6 py-4">
+                      <span className="font-mono text-brand-400 font-bold">#{cert.folio}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-white font-medium">
+                          {cert.resident_data?.full_name || (cert as any).beneficiaries?.full_name || 'Desconocido'}
+                        </p>
+                        <p className="text-slate-500 text-xs font-mono">
+                          {cert.resident_data?.rut || (cert as any).beneficiaries?.rut || 'N/A'}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        cert.type === 'socio_activo' ? 'bg-emerald-500/10 text-emerald-400' :
+                        cert.type === 'socio_inactivo' ? 'bg-amber-500/10 text-amber-400' :
+                        'bg-blue-500/10 text-blue-400'
+                      }`}>
+                        {cert.type.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-slate-300">
+                      {formatDateTime(cert.issued_at)}
+                    </td>
+                    <td className="px-6 py-4 font-bold text-white">
+                      ${cert.cost.toLocaleString('es-CL')}
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge status={cert.status} size="sm" />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link 
+                          href={`/dashboard/certificates/${cert.id}`}
+                          className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" 
+                          title="Ver Certificado"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        <Link 
+                          href={`/dashboard/certificates/${cert.id}`}
+                          className="p-2 text-slate-400 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg transition-colors" 
+                          title="Descargar PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-10" />
+                    <p>No se encontraron certificados.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Report Modal */}
+      {showReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="glass-card w-full max-w-lg p-6 space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <FileDown className="w-5 h-5 text-brand-400" />
+                Reporte de Recaudación
+              </h2>
+              <button onClick={() => setShowReport(false)} className="text-slate-500 hover:text-white">
+                <Plus className="w-5 h-5 rotate-45" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Fecha Desde</label>
+                  <input 
+                    type="date" 
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                    className="glass-input w-full px-3 py-2 text-sm" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Fecha Hasta</label>
+                  <input 
+                    type="date" 
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                    className="glass-input w-full px-3 py-2 text-sm" 
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-brand-500/10 border border-brand-500/20 space-y-3">
+                <p className="text-xs text-brand-300 font-bold uppercase tracking-widest">Resumen Preliminar</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Certificados Emitidos:</span>
+                  <span className="text-white font-bold">{certificates.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Total Recaudado:</span>
+                  <span className="text-emerald-400 font-black">${certificates.reduce((acc, curr) => acc + curr.cost, 0).toLocaleString('es-CL')}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
+                <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                <p className="text-[10px] text-blue-300/80 leading-tight">
+                  Este reporte generará un documento PDF con el desglose de certificados por tipo, folio y fecha, listo para la firma de Tesorería y Presidencia.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button 
+                onClick={() => setShowReport(false)}
+                className="flex-1 btn-ghost py-2.5 text-sm font-bold border border-white/5"
+              >
+                Cancelar
+              </button>
+              <button 
+                disabled={generatingReport}
+                className="flex-1 btn-primary py-2.5 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                onClick={handleGenerateReport}
+              >
+                {generatingReport ? (
+                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Generando...</>
+                ) : (
+                  <><Download className="w-4 h-4" /> Descargar Reporte</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

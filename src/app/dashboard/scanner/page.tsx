@@ -9,6 +9,8 @@ import { QRValidationResult, BenefitAssignment } from '@/lib/types';
 import { DigitalCardView } from '@/components/cards/DigitalCardView';
 import { formatDate } from '@/lib/utils';
 import Image from 'next/image';
+import { SuccessStamp } from '@/components/ui/SuccessStamp';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ScannerPage() {
   const { user, organization } = useAuth();
@@ -16,38 +18,27 @@ export default function ScannerPage() {
   const [validationResult, setValidationResult] = useState<QRValidationResult | null>(null);
   const [validating, setValidating] = useState(false);
   const [processingBenefit, setProcessingBenefit] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isGlitching, setIsGlitching] = useState(false);
   const supabase = createClient();
 
-  useEffect(() => {
-    let scanner: Html5QrcodeScanner | null = null;
-
-    if (scanning) {
-      scanner = new Html5QrcodeScanner(
-        'reader',
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        /* verbose= */ false
-      );
-
-      scanner.render(handleScanSuccess, handleScanError);
-    }
-
-    return () => {
-      if (scanner) {
-        scanner.clear().catch(console.error);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scanning]);
-
-  const handleScanSuccess = async (decodedText: string) => {
-    // Expected format: orgSlug-cardId
-    if (!scanning) return;
-    setScanning(false); // Stop scanner once we get a read
-    await validateQRCode(decodedText);
-  };
-
-  const handleScanError = () => {
-    // Ignore routine errors
+  const logValidation = async (
+    action: string,
+    result: string,
+    details: string,
+    cardId: string | null,
+    beneficiaryId: string | null
+  ) => {
+    if (!organization || !user) return;
+    await supabase.from('validation_logs').insert({
+      org_id: organization.id,
+      validated_by: user.id,
+      action,
+      result,
+      card_id: cardId,
+      beneficiary_id: beneficiaryId,
+      metadata: { details },
+    });
   };
 
   const validateQRCode = async (qrData: string) => {
@@ -90,10 +81,10 @@ export default function ScannerPage() {
           .eq('status', 'pending');
 
         if (assignments) {
-          availableBenefits = assignments.map((a: any) => ({
+          availableBenefits = assignments.map((a) => ({
             ...a,
             benefit: a.benefits,
-          }));
+          })) as BenefitAssignment[];
         }
       }
 
@@ -122,24 +113,41 @@ export default function ScannerPage() {
     }
   };
 
-  const logValidation = async (
-    action: string,
-    result: string,
-    details: string,
-    cardId: string | null,
-    beneficiaryId: string | null
-  ) => {
-    if (!organization || !user) return;
-    await supabase.from('validation_logs').insert({
-      org_id: organization.id,
-      validated_by: user.id,
-      action,
-      result,
-      card_id: cardId,
-      beneficiary_id: beneficiaryId,
-      metadata: { details },
-    });
+  const handleScanSuccess = async (decodedText: string) => {
+    // Expected format: orgSlug-cardId
+    if (!scanning) return;
+    setIsGlitching(true);
+    setTimeout(() => setIsGlitching(false), 500);
+    setScanning(false); // Stop scanner once we get a read
+    await validateQRCode(decodedText);
   };
+
+  const handleScanError = () => {
+    // Ignore routine errors
+  };
+
+  useEffect(() => {
+    let scanner: Html5QrcodeScanner | null = null;
+
+    if (scanning) {
+      scanner = new Html5QrcodeScanner(
+        'reader',
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        /* verbose= */ false
+      );
+
+      scanner.render(handleScanSuccess, handleScanError);
+    }
+
+    return () => {
+      if (scanner) {
+        scanner.clear().catch(console.error);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanning]);
+
+
 
   const handleUseBenefit = async (assignmentId: string) => {
     if (!organization || !user || !validationResult?.card) return;
@@ -165,6 +173,10 @@ export default function ScannerPage() {
           availableBenefits: prev.availableBenefits?.filter(b => b.id !== assignmentId),
         };
       });
+
+      // Delight: Show success stamp
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
     }
     
     setProcessingBenefit(null);
@@ -198,20 +210,47 @@ export default function ScannerPage() {
       )}
 
       {scanning && (
-        <div className="glass-card p-6 relative overflow-hidden">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-white font-medium flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              Cámara activa
-            </h3>
+        <div className={`glass-card p-6 relative overflow-hidden animate-scale-in ${isGlitching ? 'animate-indigo-glitch' : ''}`}>
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col">
+              <h3 className="text-white font-bold text-sm uppercase tracking-[0.2em] font-mono flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                Módulo de Captura
+              </h3>
+              <span className="text-[10px] text-slate-500 font-mono tracking-widest mt-0.5 uppercase">
+                {isGlitching ? 'TARGET_LOCKED' : 'ESTADO: BUSCANDO CÓDIGO QR'}
+              </span>
+            </div>
             <button
               onClick={() => setScanning(false)}
-              className="btn-secondary px-4 py-1.5 text-xs"
+              className="btn-secondary px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest font-mono"
             >
               Cancelar
             </button>
           </div>
-          <div id="reader" className="rounded-xl overflow-hidden bg-black aspect-square max-w-sm mx-auto border-2 border-brand-500/30"></div>
+          
+          <div className="relative max-w-sm mx-auto aspect-square group">
+            {/* Corner Markers */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-brand-400 z-20 -mt-1 -ml-1 rounded-tl-sm transition-all duration-300 group-hover:scale-110" />
+            <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-brand-400 z-20 -mt-1 -mr-1 rounded-tr-sm transition-all duration-300 group-hover:scale-110" />
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-brand-400 z-20 -mb-1 -ml-1 rounded-bl-sm transition-all duration-300 group-hover:scale-110" />
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-brand-400 z-20 -mb-1 -mr-1 rounded-br-sm transition-all duration-300 group-hover:scale-110" />
+            
+            {/* Scanning Line Animation */}
+            <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+              <div className="w-full h-1 bg-brand-400 shadow-[0_0_15px_#6366f1] opacity-50 absolute top-0 animate-[scanline_2s_linear_infinite]" />
+            </div>
+
+            <div id="reader" className="rounded-xl overflow-hidden bg-black/40 w-full h-full border border-brand-500/20 backdrop-blur-sm shadow-[inset_0_0_40px_rgba(0,0,0,0.5)]"></div>
+          </div>
+
+          <div className="mt-6 flex items-center justify-center gap-4 text-slate-500 font-mono text-[9px] tracking-[0.3em]">
+            <span>ISO-2022</span>
+            <span className="w-1 h-1 bg-slate-800 rounded-full" />
+            <span>ENCRYPTED</span>
+            <span className="w-1 h-1 bg-slate-800 rounded-full" />
+            <span>RT-VAL</span>
+          </div>
         </div>
       )}
 
@@ -223,43 +262,59 @@ export default function ScannerPage() {
       )}
 
       {validationResult && !validating && (
-        <div className="space-y-6">
-          <div className={`p-4 rounded-xl border flex items-center gap-4 ${
+        <div className="space-y-6 animate-scale-in">
+          <div className={`p-6 rounded-2xl border-2 shadow-2xl flex items-center gap-6 relative overflow-hidden ${
             validationResult.valid 
-              ? 'bg-emerald-500/10 border-emerald-500/20' 
-              : 'bg-red-500/10 border-red-500/20'
+              ? 'bg-emerald-500/10 border-emerald-500/30 shadow-emerald-500/5' 
+              : 'bg-red-500/10 border-red-500/30 shadow-red-500/5'
           }`}>
+            {/* Tech Background Shimmer */}
+            <div className={`absolute inset-0 opacity-10 animate-tech-shimmer ${validationResult.valid ? 'bg-emerald-400' : 'bg-red-400'}`} />
+
             {validationResult.valid ? (
-              <CheckCircle className="w-8 h-8 text-emerald-400" />
+              <div className="w-14 h-14 bg-emerald-500/20 rounded-full flex items-center justify-center flex-shrink-0 animate-success-pop">
+                <CheckCircle className="w-10 h-10 text-emerald-400" />
+              </div>
             ) : (
-              <AlertCircle className="w-8 h-8 text-red-400" />
+              <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0 animate-success-pop">
+                <AlertCircle className="w-10 h-10 text-red-400" />
+              </div>
             )}
-            <div>
-              <h2 className={`font-bold text-lg ${validationResult.valid ? 'text-emerald-400' : 'text-red-400'}`}>
-                {validationResult.valid ? 'Identidad Validada' : 'Validación Fallida'}
+            <div className="relative z-10">
+              <h2 className={`font-mono font-bold text-xl uppercase tracking-[0.2em] ${validationResult.valid ? 'text-emerald-400' : 'text-red-400'}`}>
+                {validationResult.valid ? 'IDENTIDAD VALIDADA' : 'ERROR DE ACCESO'}
               </h2>
-              <p className={validationResult.valid ? 'text-emerald-500/70' : 'text-red-500/70'}>
-                {validationResult.error || 'La tarjeta es válida y está activa'}
+              <p className={`font-mono text-[10px] font-bold mt-1 uppercase tracking-widest ${validationResult.valid ? 'text-emerald-500/70' : 'text-red-500/70'}`}>
+                {validationResult.error || 'AUTENTICACIÓN EXITOSA • ACCESO CONCEDIDO'}
               </p>
             </div>
           </div>
 
-          {validationResult.beneficiary && validationResult.card && validationResult.organization && (
-            <div className="glass-card p-6">
-              <h3 className="text-white font-semibold mb-4">Datos del Beneficiario</h3>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-xl bg-surface-900 overflow-hidden border border-brand-500/20">
+            <div className="glass-card-solid border-brand-500/20 p-8 shadow-2xl relative overflow-hidden">
+               {/* Watermark/Texture */}
+              <div className="absolute top-4 right-4 opacity-5 pointer-events-none">
+                <QrCode className="w-24 h-24 text-white" />
+              </div>
+
+              <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] font-mono mb-6 border-b border-white/5 pb-2">
+                REGISTRO DEL BENEFICIARIO
+              </h3>
+              <div className="flex items-center gap-6 mb-8">
+                <div className="w-20 h-20 rounded-2xl bg-surface-900 overflow-hidden border-2 border-brand-500/30 shadow-[0_0_20px_rgba(99,102,241,0.2)]">
                    {validationResult.beneficiary.photo_url ? (
-                      <Image src={validationResult.beneficiary.photo_url} alt="" width={64} height={64} className="w-full h-full object-cover" />
+                      <Image src={validationResult.beneficiary.photo_url} alt="" width={80} height={80} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <User className="w-8 h-8 text-slate-600" />
+                        <User className="w-10 h-10 text-slate-600" />
                       </div>
                     )}
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-white">{validationResult.beneficiary.full_name}</p>
-                  <p className="text-slate-400 font-mono text-sm">{validationResult.beneficiary.rut}</p>
+                  <p className="text-2xl font-black text-white tracking-tight leading-tight">{validationResult.beneficiary.full_name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] font-bold text-brand-400 font-mono">ID:</span>
+                    <p className="text-slate-400 font-mono text-sm tracking-widest">{validationResult.beneficiary.rut}</p>
+                  </div>
                 </div>
               </div>
               <DigitalCardView 
@@ -319,6 +374,8 @@ export default function ScannerPage() {
           </div>
         </div>
       )}
+      {/* Global Delight Components */}
+      <SuccessStamp isVisible={showSuccess} message="BENEFICIO ENTREGADO" />
     </div>
   );
 }

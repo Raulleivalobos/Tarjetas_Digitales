@@ -16,6 +16,8 @@ import {
   Activity,
   Clock,
   ArrowUpRight,
+  Zap,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -51,6 +53,16 @@ interface DashboardData {
     rut: string;
     status: string;
     created_at: string;
+  }>;
+  recentCertificates: Array<{
+    id: string;
+    folio: number;
+    type: string;
+    status: string;
+    created_at: string;
+    cost: number;
+    resident_data?: any;
+    beneficiaries?: { full_name: string };
   }>;
 }
 
@@ -93,6 +105,7 @@ export default function DashboardPage() {
           { count: benefitsPending },
           { data: recentActivity },
           { data: recentBeneficiaries },
+          { data: recentCertificates },
         ] = await Promise.all([
           supabase.from('beneficiaries').select('*', { count: 'exact', head: true }).eq('org_id', organization.id),
           supabase.from('beneficiaries').select('*', { count: 'exact', head: true }).eq('org_id', organization.id).eq('status', 'active'),
@@ -102,6 +115,7 @@ export default function DashboardPage() {
           supabase.from('benefit_assignments').select('*', { count: 'exact', head: true }).eq('org_id', organization.id).eq('status', 'pending'),
           supabase.from('validation_logs').select('*').eq('org_id', organization.id).order('created_at', { ascending: false }).limit(10),
           supabase.from('beneficiaries').select('id, full_name, rut, status, created_at').eq('org_id', organization.id).order('created_at', { ascending: false }).limit(5),
+          supabase.from('certificates').select('*, beneficiaries(full_name)').eq('org_id', organization.id).order('issued_at', { ascending: false }).limit(3),
         ]);
 
         setData({
@@ -113,6 +127,7 @@ export default function DashboardPage() {
           benefitsPending: benefitsPending || 0,
           recentActivity: recentActivity || [],
           recentBeneficiaries: recentBeneficiaries || [],
+          recentCertificates: recentCertificates || [],
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -125,6 +140,7 @@ export default function DashboardPage() {
           benefitsPending: 0,
           recentActivity: [],
           recentBeneficiaries: [],
+          recentCertificates: [],
         });
       } finally {
         setLoading(false);
@@ -140,19 +156,82 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-white">
+          <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase">
             Panel de Control
           </h1>
-          <p className="text-slate-400 mt-1">
-            Resumen de tu organización{organization ? `: ${organization.name}` : ''}
-          </p>
+          <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-emerald-400 font-mono tracking-widest uppercase">Sistema Online</span>
+            </div>
+            <p className="text-slate-500 text-xs font-mono uppercase tracking-widest">
+              Org: {organization?.name || 'Cargando...'}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <Clock className="w-4 h-4" />
-          <span>Actualizado ahora</span>
+        <div className="flex flex-col items-end gap-1 text-[10px] text-slate-500 font-mono tracking-widest uppercase">
+          <div className="flex items-center gap-2">
+            <Clock className="w-3 h-3 text-brand-400" />
+            <span>Última Sincronización: 12:45:02</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Activity className="w-3 h-3 text-brand-400" />
+            <span>ID_SESIÓN: CS-X92-2024</span>
+          </div>
         </div>
+
+      {/* Quick Actions Panel - P1 Efficiency Fix */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
+        <Link href="/dashboard/beneficiaries" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-brand-500/10 hover:border-brand-500/30 group transition-all relative overflow-hidden">
+          <div className="w-12 h-12 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+            <Users className="w-6 h-6" />
+          </div>
+          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Registrar Socio</span>
+          <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity">
+            <ArrowUpRight className="w-3 h-3" />
+          </div>
+        </Link>
+        
+        <Link href="/dashboard/scanner" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-emerald-500/10 hover:border-emerald-500/30 group transition-all relative overflow-hidden">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+            <Zap className="w-6 h-6" />
+          </div>
+          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Escanear QR</span>
+           <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity">
+            <ArrowUpRight className="w-3 h-3" />
+          </div>
+        </Link>
+        
+        <Link href="/dashboard/cards" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-purple-500/10 hover:border-purple-500/30 group transition-all relative overflow-hidden">
+          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+            <CreditCard className="w-6 h-6" />
+          </div>
+          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Emitir Credencial</span>
+           <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity">
+            <ArrowUpRight className="w-3 h-3" />
+          </div>
+        </Link>
+        
+        <Link href="/dashboard/attendance" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-amber-500/10 hover:border-amber-500/30 group transition-all relative overflow-hidden">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+            <Activity className="w-6 h-6" />
+          </div>
+          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Validar Asistencia</span>
+           <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity">
+            <ArrowUpRight className="w-3 h-3" />
+          </div>
+        </Link>
+        
+        <Link href="/dashboard/certificates/issue" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-blue-500/10 hover:border-blue-500/30 group transition-all relative overflow-hidden">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+            <FileText className="w-6 h-6" />
+          </div>
+          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Emitir Certificado</span>
+           <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity">
+            <ArrowUpRight className="w-3 h-3" />
+          </div>
+        </Link>
       </div>
 
       {/* Stats Grid */}
@@ -188,18 +267,18 @@ export default function DashboardPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Area Chart */}
-        <div className="lg:col-span-2 glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="lg:col-span-2 glass-card p-8 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-lg font-semibold text-white">Crecimiento</h3>
-              <p className="text-sm text-slate-400">Beneficiarios y beneficios por mes</p>
+              <h3 className="text-xl font-black text-white tracking-tighter uppercase">Tendencia de Datos</h3>
+              <p className="text-[10px] text-slate-400 font-mono uppercase tracking-widest mt-1">Crecimiento Mensual: Beneficiarios & Entregas</p>
             </div>
-            <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-medium">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold font-mono tracking-widest uppercase">
               <TrendingUp className="w-3 h-3" />
-              +24%
+              VAL_UP: 24%
             </div>
           </div>
-          <div className="h-64">
+          <div className="h-72 min-h-[288px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -212,29 +291,48 @@ export default function DashboardPage() {
                     <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.06)" />
-                <XAxis dataKey="name" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.06)" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="#475569" 
+                  fontSize={10} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tick={{ fill: '#64748b', fontStyle: 'normal', fontWeight: 'bold' }} 
+                />
+                <YAxis 
+                  stroke="#475569" 
+                  fontSize={10} 
+                  tickLine={false} 
+                  axisLine={false}
+                  tick={{ fill: '#64748b', fontStyle: 'normal', fontWeight: 'bold' }}
+                />
                 <Tooltip
                   contentStyle={{
-                    background: 'rgba(15,23,42,0.95)',
-                    border: '1px solid rgba(99,102,241,0.2)',
-                    borderRadius: '12px',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    background: 'rgba(2, 6, 23, 0.95)',
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
                     color: '#e2e8f0',
+                    fontSize: '11px',
+                    fontFamily: 'JetBrains Mono, monospace',
                   }}
+                  itemStyle={{ padding: '2px 0' }}
                 />
-                <Area type="monotone" dataKey="beneficiarios" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorBeneficiarios)" />
-                <Area type="monotone" dataKey="beneficios" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorBeneficios)" />
+                <Area type="monotone" dataKey="beneficiarios" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorBeneficiarios)" />
+                <Area type="monotone" dataKey="beneficios" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorBeneficios)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
+          
+          {/* Blueprint decorations */}
+          <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/5 blur-3xl rounded-full -mr-12 -mt-12" />
         </div>
 
         {/* Pie Chart */}
         <div className="glass-card p-6">
-          <h3 className="text-lg font-semibold text-white mb-2">Estado</h3>
-          <p className="text-sm text-slate-400 mb-6">Distribución de beneficiarios</p>
+          <h3 className="text-lg font-bold text-white tracking-tight mb-1">Estado</h3>
+          <p className="text-sm text-slate-300 mb-6">Distribución de beneficiarios</p>
           <div className="h-48 flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -268,9 +366,9 @@ export default function DashboardPage() {
               <div key={item.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ background: item.color }} />
-                  <span className="text-sm text-slate-300">{item.name}</span>
+                  <span className="text-sm text-slate-300 font-medium">{item.name}</span>
                 </div>
-                <span className="text-sm font-semibold text-white">{item.value}%</span>
+                <span className="text-sm font-bold text-white font-mono">{item.value}%</span>
               </div>
             ))}
           </div>
@@ -283,12 +381,12 @@ export default function DashboardPage() {
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-white">Últimos Beneficiarios</h3>
-              <p className="text-sm text-slate-400">Registrados recientemente</p>
+              <h3 className="text-lg font-bold text-white tracking-tight">Últimos Beneficiarios</h3>
+              <p className="text-sm text-slate-300">Registrados recientemente</p>
             </div>
             <Link
               href="/dashboard/beneficiaries"
-              className="flex items-center gap-1 text-sm text-brand-400 hover:text-brand-300 transition-colors"
+              className="flex items-center gap-1 text-sm text-brand-400 hover:text-brand-300 transition-colors font-bold uppercase tracking-tighter"
             >
               Ver todos
               <ArrowUpRight className="w-4 h-4" />
@@ -307,8 +405,8 @@ export default function DashboardPage() {
                       {person.full_name.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white">{person.full_name}</p>
-                      <p className="text-xs text-slate-500">{person.rut}</p>
+                      <p className="text-sm font-bold text-white">{person.full_name}</p>
+                      <p className="text-xs text-slate-400 font-mono tracking-tight">{person.rut}</p>
                     </div>
                   </div>
                   <StatusBadge status={person.status} size="sm" />
@@ -327,33 +425,38 @@ export default function DashboardPage() {
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-white">Actividad Reciente</h3>
-              <p className="text-sm text-slate-400">Últimas validaciones</p>
+              <h3 className="text-lg font-bold text-white tracking-tight">Actividad Reciente</h3>
+              <p className="text-sm text-slate-300">Últimas validaciones</p>
             </div>
             <Activity className="w-5 h-5 text-brand-400" />
           </div>
 
           {data?.recentActivity && data.recentActivity.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {data.recentActivity.map((log) => (
                 <div
                   key={log.id}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/[0.02] transition-colors"
+                  className="flex items-center gap-4 p-4 glass-card-solid border-white/5 hover:border-brand-500/20 transition-all group"
                 >
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
                       log.result === 'success'
                         ? 'bg-emerald-500/10 text-emerald-400'
                         : 'bg-red-500/10 text-red-400'
                     }`}
                   >
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">
-                      {log.action === 'mark_used' ? 'Beneficio marcado como usado' : `Validación QR`}
+                    <div className="flex items-center gap-2 mb-0.5">
+                       <span className="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest">
+                        {log.action === 'mark_used' ? 'BENEFIT_REDEEM' : 'SCAN_VALIDATION'}
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-white truncate uppercase tracking-tight">
+                      {log.action === 'mark_used' ? 'Beneficio Procesado' : `Validación de Identidad`}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-[10px] text-slate-500 font-mono tracking-widest mt-0.5">
                       {formatDateTime(log.created_at)}
                     </p>
                   </div>
@@ -362,12 +465,66 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-500">
-              <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Sin actividad reciente</p>
-              <p className="text-xs mt-1 text-slate-600">
-                Las validaciones de QR aparecerán aquí
-              </p>
+            <div className="text-center py-12 text-slate-600 bg-surface-900/30 rounded-2xl border border-white/5">
+              <Activity className="w-10 h-10 mx-auto mb-3 opacity-20" />
+              <p className="text-xs font-mono uppercase tracking-[0.2em]">Cero Registros Encontrados</p>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Certificates - New Section */}
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-white tracking-tight">Últimos Certificados</h3>
+              <p className="text-sm text-slate-300">Emisiones recientes (Top 3)</p>
+            </div>
+            <Link
+              href="/dashboard/certificates"
+              className="flex items-center gap-1 text-sm text-brand-400 hover:text-brand-300 transition-colors font-bold uppercase tracking-tighter"
+            >
+              Ver todos
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {data?.recentCertificates && data.recentCertificates.length > 0 ? (
+            <div className="space-y-4">
+              {data.recentCertificates.map((cert) => (
+                <div
+                  key={cert.id}
+                  className="flex items-center justify-between p-4 glass-card-solid border-white/5 hover:border-blue-500/20 transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold text-xs font-mono">
+                      #{cert.folio}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">
+                        {cert.resident_data?.full_name || cert.beneficiaries?.full_name || 'Desconocido'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] uppercase font-bold text-slate-500">
+                          {cert.type.replace('_', ' ')}
+                        </span>
+                        <span className="text-[10px] text-slate-600 font-mono">•</span>
+                        <span className="text-[10px] text-slate-600 font-mono">
+                          {formatDateTime(cert.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-emerald-400">${cert.cost?.toLocaleString('es-CL')}</p>
+                    <StatusBadge status={cert.status} size="sm" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-slate-500">
+              <FileText className="w-10 h-10 mx-auto mb-2 opacity-10" />
+              <p className="text-xs font-mono uppercase tracking-widest">No hay certificados recientes</p>
             </div>
           )}
         </div>

@@ -50,8 +50,10 @@ export function generateCardNumber(): string {
 
 // Generate QR code data
 export function generateQRData(cardId: string, orgSlug: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  return `${baseUrl}/validate/${orgSlug}/${cardId}`;
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/validate/${orgSlug}/${cardId}`;
+  }
+  return `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/validate/${orgSlug}/${cardId}`;
 }
 
 // Format date
@@ -85,6 +87,7 @@ export function getStatusColor(status: string): string {
     expired: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     revoked: 'bg-red-500/10 text-red-400 border-red-500/20',
     pending: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    draft: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
     used: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     cancelled: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
     exhausted: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
@@ -101,6 +104,7 @@ export function getStatusLabel(status: string): string {
     expired: 'Caducado',
     revoked: 'Revocado',
     pending: 'Pendiente',
+    draft: 'Borrador',
     used: 'Usado',
     cancelled: 'Cancelado',
     exhausted: 'Agotado',

@@ -54,30 +54,49 @@ export function StatsCard({
   const colors = colorMap[color];
 
   return (
-    <div className={cn('glass-card p-6 group', className)}>
-      <div className="flex items-start justify-between">
+    <div className={cn('glass-card p-6 group relative overflow-hidden transition-all duration-300 hover:border-brand-500/40 hover:shadow-[0_0_20px_rgba(99,102,241,0.1)]', className)}>
+      {/* Blueprint Corner Markers */}
+      <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-brand-500/20 group-hover:border-brand-500/40 transition-colors" />
+      <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-brand-500/20 group-hover:border-brand-500/40 transition-colors" />
+      <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-brand-500/20 group-hover:border-brand-500/40 transition-colors" />
+      <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-brand-500/20 group-hover:border-brand-500/40 transition-colors" />
+
+      <div className="flex items-start justify-between relative z-10">
         <div className="flex-1">
-          <p className="text-sm text-slate-400 font-medium mb-1">{title}</p>
-          <p className="text-3xl font-bold text-white tracking-tight">{value}</p>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded border border-white/5 uppercase tracking-widest">
+              ID-{title.substring(0, 2).toUpperCase() || 'MTR'}
+            </span>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] font-mono">{title}</p>
+          </div>
+          <p className="text-4xl font-black text-white tracking-tighter font-mono leading-none">{value}</p>
           {trend && (
-            <div className="flex items-center gap-1.5 mt-2">
-              <span
-                className={`text-xs font-semibold ${
-                  trend.positive ? 'text-emerald-400' : 'text-rose-400'
-                }`}
-              >
-                {trend.positive ? '+' : ''}{trend.value}%
-              </span>
-              <span className="text-xs text-slate-500">vs mes anterior</span>
+            <div className="flex items-center gap-1.5 mt-4">
+              <div className={cn(
+                "px-2 py-0.5 rounded text-[10px] font-bold font-mono border",
+                trend.positive 
+                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' 
+                  : 'text-rose-400 bg-rose-500/10 border-rose-500/20'
+              )}>
+                {trend.positive ? '↑' : '↓'} {trend.value}%
+              </div>
+              <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">PERIOD_OVER_PERIOD</span>
             </div>
           )}
         </div>
         <div
-          className={`w-12 h-12 rounded-xl ${colors.iconBg} flex items-center justify-center ${colors.iconColor} group-hover:scale-110 transition-transform duration-300`}
+          className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:rotate-[10deg] shadow-lg",
+            colors.iconBg,
+            colors.iconColor
+          )}
         >
           {icon}
         </div>
       </div>
+      
+      {/* Decorative Shimmer */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
     </div>
   );
 }

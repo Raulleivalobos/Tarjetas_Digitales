@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { CreditCard, Mail, Lock, Building2, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
@@ -14,8 +14,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,13 +79,20 @@ export default function LoginPage() {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center px-16 xl:px-24">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-xl shadow-brand-500/20">
-              <CreditCard className="w-7 h-7 text-white" />
+          <div className="flex items-center gap-6 mb-12 group">
+            <div className="relative">
+              <div className="absolute -inset-4 bg-brand-500/30 blur-2xl rounded-full animate-pulse" />
+              <div className="relative w-28 h-28 rounded-[2rem] bg-gradient-to-br from-white/10 to-transparent border border-white/20 flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(99,102,241,0.2)]">
+                <img 
+                  src="/images/skardkey-icon.png" 
+                  alt="SkardKey" 
+                  className="w-full h-full object-contain scale-[1.8] drop-shadow-[0_0_20px_rgba(99,102,241,0.8)]" 
+                />
+              </div>
             </div>
             <div>
-              <h1 className="text-3xl font-bold gradient-text">CardSocial</h1>
-              <p className="text-sm text-slate-500">Tarjetas Digitales Inteligentes</p>
+              <h1 className="text-5xl font-black tracking-tighter gradient-text leading-none">SkardKey</h1>
+              <p className="text-sm uppercase tracking-[0.4em] text-brand-400 mt-2 font-bold">Identidad Digital</p>
             </div>
           </div>
 
@@ -115,11 +128,9 @@ export default function LoginPage() {
       {/* Right side - Form */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-8 lg:px-16 relative">
         {/* Mobile logo */}
-        <div className="absolute top-8 left-1/2 -translate-x-1/2 lg:hidden flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center">
-            <CreditCard className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold gradient-text">CardSocial</span>
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 lg:hidden flex items-center gap-3">
+          <img src="/images/skardkey-icon.png" alt="SkardKey" className="w-12 h-12 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+          <span className="text-2xl font-bold tracking-tight gradient-text">SkardKey</span>
         </div>
 
         <div className="w-full max-w-md">

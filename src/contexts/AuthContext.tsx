@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('*, organizations(*)')
         .eq('user_id', userId)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (memberData) {
         setMembership({
@@ -45,8 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: memberData.role,
           created_at: memberData.created_at,
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setOrganization((memberData as any).organizations as Organization);
+        setOrganization((memberData as unknown as { organizations: Organization }).organizations);
       }
     } catch (error) {
       console.error('Error fetching organization:', error);
@@ -54,35 +53,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-
-      if (currentSession?.user) {
-        await fetchOrganization(currentSession.user.id);
-      }
+    // Failsafe timeout to prevent infinite loading
+    const failsafe = setTimeout(() => {
       setLoading(false);
+    }, 5000);
+
+    const getSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error in getSession:', error);
+        }
+        const currentSession = data?.session || null;
+        
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          await fetchOrganization(currentSession.user.id);
+        }
+      } catch (err) {
+        console.error('Unhandled error in getSession:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
+        try {
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
 
-        if (newSession?.user) {
-          await fetchOrganization(newSession.user.id);
-        } else {
-          setOrganization(null);
-          setMembership(null);
+          if (newSession?.user) {
+            await fetchOrganization(newSession.user.id);
+          } else {
+            setOrganization(null);
+            setMembership(null);
+          }
+        } catch (err) {
+          console.error('Error in onAuthStateChange:', err);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(failsafe);
+      subscription.unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -95,26 +117,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error || !data.user) return { error: error as Error | null };
 
-    // Create organization
+    // Create organization using RPC to bypass RLS race conditions safely
     const slug = orgName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
 
-    const { data: orgData, error: orgError } = await supabase
-      .from('organizations')
-      .insert({ name: orgName, slug })
-      .select()
-      .single();
-
-    if (orgError) return { error: orgError as unknown as Error };
-
-    // Add user as owner
-    await supabase.from('org_members').insert({
-      org_id: orgData.id,
-      user_id: data.user.id,
-      role: 'owner',
+    const { error: rpcError } = await supabase.rpc('create_new_organization', {
+      org_name: orgName,
+      org_slug: slug
     });
+
+    if (rpcError) {
+      console.error("RPC Error:", rpcError);
+      return { error: new Error('Error al crear la organización. Asegúrate de ejecutar la función SQL.') };
+    }
+
+    // Actualizar el estado local
+    await refreshOrganization();
 
     return { error: null };
   };

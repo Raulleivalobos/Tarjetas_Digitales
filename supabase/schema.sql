@@ -129,17 +129,26 @@ CREATE TABLE validation_logs (
 -- =====================================================
 -- INDEXES
 -- =====================================================
-CREATE INDEX idx_beneficiaries_org ON beneficiaries(org_id);
-CREATE INDEX idx_beneficiaries_rut ON beneficiaries(rut);
-CREATE INDEX idx_beneficiaries_status ON beneficiaries(status);
-CREATE INDEX idx_digital_cards_qr ON digital_cards(qr_code);
+
+-- Multi-tenant composite indexes (Critical for performance)
+CREATE INDEX idx_beneficiaries_org_rut ON beneficiaries(org_id, rut);
+CREATE INDEX idx_beneficiaries_org_status ON beneficiaries(org_id, status);
+CREATE INDEX idx_digital_cards_org_status ON digital_cards(org_id, status);
 CREATE INDEX idx_digital_cards_beneficiary ON digital_cards(beneficiary_id);
-CREATE INDEX idx_benefits_org ON benefits(org_id);
+CREATE INDEX idx_digital_cards_qr ON digital_cards(qr_code);
+CREATE INDEX idx_digital_cards_number ON digital_cards(card_number);
+
+CREATE INDEX idx_benefits_org_status ON benefits(org_id, status);
+
+CREATE INDEX idx_benefit_assignments_org_status ON benefit_assignments(org_id, status);
 CREATE INDEX idx_benefit_assignments_beneficiary ON benefit_assignments(beneficiary_id);
 CREATE INDEX idx_benefit_assignments_benefit ON benefit_assignments(benefit_id);
-CREATE INDEX idx_validation_logs_org ON validation_logs(org_id);
-CREATE INDEX idx_validation_logs_created ON validation_logs(created_at);
+
+CREATE INDEX idx_validation_logs_org_created ON validation_logs(org_id, created_at DESC);
+CREATE INDEX idx_validation_logs_card ON validation_logs(card_id);
+
 CREATE INDEX idx_org_members_user ON org_members(user_id);
+CREATE INDEX idx_org_members_org ON org_members(org_id);
 
 -- =====================================================
 -- ROW LEVEL SECURITY (RLS)
@@ -161,7 +170,7 @@ RETURNS BOOLEAN AS $$
     SELECT 1 FROM org_members
     WHERE org_id = org_uuid AND user_id = auth.uid()
   );
-$$ LANGUAGE sql SECURITY DEFINER;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
 -- Helper function: Check if user has specific role in organization
 CREATE OR REPLACE FUNCTION has_org_role(org_uuid UUID, required_role TEXT)
@@ -172,7 +181,7 @@ RETURNS BOOLEAN AS $$
       AND user_id = auth.uid()
       AND role = required_role
   );
-$$ LANGUAGE sql SECURITY DEFINER;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
 -- Organizations policies
 CREATE POLICY "Users can view their organizations" ON organizations
@@ -247,15 +256,27 @@ CREATE POLICY "Members can create logs" ON validation_logs
 INSERT INTO storage.buckets (id, name, public) VALUES ('photos', 'photos', true);
 INSERT INTO storage.buckets (id, name, public) VALUES ('logos', 'logos', true);
 
--- Storage policies
-CREATE POLICY "Authenticated users can upload photos" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id IN ('photos', 'logos') AND auth.role() = 'authenticated');
+-- Storage policies (Restricted to organization context)
+-- Note: Assumes files are stored in folders named after org_id: photos/<org_id>/filename.jpg
+CREATE POLICY "Authenticated users can upload files" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id IN ('photos', 'logos') 
+    AND auth.role() = 'authenticated'
+  );
 
-CREATE POLICY "Public can view photos and logos" ON storage.objects
+CREATE POLICY "Public can view files" ON storage.objects
   FOR SELECT USING (bucket_id IN ('photos', 'logos'));
 
-CREATE POLICY "Authenticated users can delete their uploads" ON storage.objects
-  FOR DELETE USING (bucket_id IN ('photos', 'logos') AND auth.role() = 'authenticated');
+CREATE POLICY "Owners and admins can delete files" ON storage.objects
+  FOR DELETE USING (
+    bucket_id IN ('photos', 'logos') 
+    AND auth.role() = 'authenticated'
+    AND (
+      -- Check if user is admin/owner of the organization linked to the file path
+      has_org_role((storage.foldername(name))[1]::uuid, 'owner') OR
+      has_org_role((storage.foldername(name))[1]::uuid, 'admin')
+    )
+  );
 
 -- =====================================================
 -- UPDATED_AT TRIGGER
