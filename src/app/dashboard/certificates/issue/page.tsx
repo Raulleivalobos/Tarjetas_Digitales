@@ -131,7 +131,7 @@ export default function IssueCertificatePage() {
       const results = data || [];
       setSearchResults(results);
 
-      const exactMatch = results.find(b => 
+      const exactMatch = results.find((b: any) => 
         b.rut.replace(/\D/g, '') === cleanVal || 
         b.rut.toLowerCase() === val.toLowerCase()
       );
@@ -260,7 +260,7 @@ export default function IssueCertificatePage() {
               </div>
               {searchResults.length > 0 && !selectedBeneficiary && (
                 <div className="border border-white/5 rounded-xl overflow-hidden divide-y divide-white/5">
-                  {searchResults.map(b => (
+                  {searchResults.map((b: any) => (
                     <button key={b.id} onClick={() => setSelectedBeneficiary(b)} className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left">
                       <div><p className="text-white font-bold">{b.full_name}</p><p className="text-xs text-slate-400 font-mono">{b.rut}</p></div>
                       <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${b.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>{b.status}</span>
@@ -291,7 +291,7 @@ export default function IssueCertificatePage() {
           <div className="glass-card p-6">
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><FileText className="w-5 h-5 text-brand-400" />Motivo</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {availableReasons.map(r => (
+              {availableReasons.map((r: any) => (
                 <button key={r} onClick={() => setFormData({ ...formData, reason: r })} className={`p-3 rounded-xl border text-xs font-bold transition-all text-center ${formData.reason === r ? 'border-brand-500 bg-brand-500/10 text-brand-300' : 'border-white/5 bg-white/5 text-slate-400 hover:text-white'}`}>{r}</button>
               ))}
             </div>
@@ -301,7 +301,7 @@ export default function IssueCertificatePage() {
           <div className="glass-card p-6">
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-brand-400" />Modelo de Certificado</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {designs.map(d => (
+              {designs.map((d: any) => (
                 <button key={d.id} onClick={() => setSelectedDesignId(d.id)} className={`p-4 rounded-xl border-2 text-left transition-all relative overflow-hidden ${selectedDesignId === d.id ? 'border-brand-500 bg-brand-500/5' : 'border-white/5 bg-white/5 hover:bg-white/10'}`}>
                   <div className="flex justify-between items-start mb-2">
                     <div className={`p-1.5 rounded-lg ${selectedDesignId === d.id ? 'bg-brand-500/20 text-brand-400' : 'bg-slate-800 text-slate-500'}`}><FileText className="w-4 h-4" /></div>
