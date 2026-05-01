@@ -84,7 +84,7 @@ export default function SettingsPage() {
     
     if (!error && data) {
       // Mock emails based on user_id for demonstration purposes
-      const enrichedMembers = data.map(m => ({
+      const enrichedMembers = data.map((m: any) => ({
         ...m,
         email: m.user_id === currentUser?.id ? currentUser?.email : `usuario-${m.user_id.substring(0,4)}@ejemplo.com`
       }));
@@ -290,7 +290,7 @@ export default function SettingsPage() {
                       className="glass-input w-full px-4 py-3 text-sm appearance-none cursor-pointer"
                     >
                       <option value="">Seleccionar Región</option>
-                      {CHILE_DATA.map(r => (
+                      {CHILE_DATA.map((r: any) => (
                         <option key={r.name} value={r.name}>{r.name}</option>
                       ))}
                     </select>
@@ -308,7 +308,7 @@ export default function SettingsPage() {
                       className="glass-input w-full px-4 py-3 text-sm appearance-none cursor-pointer disabled:opacity-50"
                     >
                       <option value="">Seleccionar Provincia</option>
-                      {CHILE_DATA.find(r => r.name === formData.region)?.provinces.map(p => (
+                      {CHILE_DATA.find((r: any) => r.name === formData.region)?.provinces.map((p: any) => (
                         <option key={p.name} value={p.name}>{p.name}</option>
                       ))}
                     </select>
