@@ -28,7 +28,7 @@ import { Certificate, CertificateType } from '@/lib/types';
 import { exportReportToPDF } from '@/lib/pdfGenerator';
 
 export default function CertificatesPage() {
-  const { organization, authLoading } = useAuth();
+  const { organization, loading: authLoading } = useAuth();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
