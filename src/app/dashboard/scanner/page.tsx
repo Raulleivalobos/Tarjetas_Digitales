@@ -325,7 +325,6 @@ export default function ScannerPage() {
                 compact
               />
             </div>
-          )}
 
           {validationResult.valid && (
             <div className="glass-card p-6">
