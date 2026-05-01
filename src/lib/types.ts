@@ -256,6 +256,8 @@ export interface Certificate {
   issued_at: string;
   expires_at: string;
   metadata: Record<string, any>;
+  // Joined data
+  beneficiaries?: Beneficiary;
 }
 
 export interface CertificateFormData {
