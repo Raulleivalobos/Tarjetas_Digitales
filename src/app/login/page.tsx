@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { CreditCard, Mail, Lock, Building2, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
@@ -216,6 +217,14 @@ export default function LoginPage() {
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
+              </div>
+              <div className="flex justify-end">
+                <Link 
+                  href="/forgot-password" 
+                  className="text-xs text-slate-500 hover:text-brand-400 transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
               </div>
             </div>
 

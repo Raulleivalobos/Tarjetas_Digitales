@@ -12,6 +12,7 @@ import { CardDesign } from '@/lib/cardDesignTypes';
 import { Modal } from '@/components/ui/Modal';
 import { CanvasPreview } from '@/components/designer/CanvasPreview';
 import { useSearchParams } from 'next/navigation';
+import { sendCertificateNotification } from '@/app/actions/email';
 
 export default function IssuePage() {
   const searchParams = useSearchParams();
@@ -194,6 +195,22 @@ export default function IssuePage() {
         });
 
         if (cardError) throw cardError;
+        
+        // Enviar notificación por email
+        if (manualForm.email) {
+          try {
+            await sendCertificateNotification({
+              to: manualForm.email,
+              name: manualForm.full_name,
+              type: 'TARJETA DIGITAL',
+              folio: cardNumber,
+              rut: formatRut(cleanRut),
+              orgName: organization.name
+            });
+          } catch (emailErr) {
+            console.error('Error enviando notificación de tarjeta:', emailErr);
+          }
+        }
         
         setManualSuccess(true);
         setManualForm({ 

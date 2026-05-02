@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Beneficiary, CertificateType } from '@/lib/types';
+import { sendCertificateNotification } from '@/app/actions/email';
 
 const REASONS = [
   'Certificación de Domicilio',
@@ -189,6 +190,24 @@ export default function IssueCertificatePage() {
 
       const { error: insertError } = await supabase.from('certificates').insert(certData);
       if (insertError) throw insertError;
+
+      // Intentar enviar notificación por email si hay un destinatario
+      const email = selectedBeneficiary?.email;
+      if (email) {
+        try {
+          await sendCertificateNotification({
+            to: email,
+            name: recipientName,
+            type: formData.type.replace('_', ' ').toUpperCase(),
+            folio: folio.toString().padStart(6, '0'),
+            rut: recipientRut,
+            orgName: organization.name
+          });
+        } catch (emailErr) {
+          console.error('Error enviando notificación:', emailErr);
+          // No bloqueamos el flujo principal si el correo falla
+        }
+      }
 
       router.push('/dashboard/certificates');
     } catch (err) {
