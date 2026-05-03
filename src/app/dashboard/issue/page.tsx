@@ -180,7 +180,7 @@ export default function IssuePage() {
         const qrCode = `${organization.slug}-${beneficiaryId}-${Math.random().toString(36).substring(2, 7)}`;
         const expiresAt = manualForm.expiryDate ? new Date(manualForm.expiryDate).toISOString() : null;
 
-        const { error: cardError } = await supabase.from('digital_cards').insert({
+        const { data: newCard, error: cardError } = await supabase.from('digital_cards').insert({
           beneficiary_id: beneficiaryId,
           org_id: organization.id,
           card_number: cardNumber,
@@ -192,7 +192,7 @@ export default function IssuePage() {
             credential_type: manualForm.type,
             language: manualForm.language
           }
-        });
+        }).select('id').single();
 
         if (cardError) throw cardError;
         
@@ -205,7 +205,8 @@ export default function IssuePage() {
               type: 'TARJETA DIGITAL',
               folio: cardNumber,
               rut: formatRut(cleanRut),
-              orgName: organization.name
+              orgName: organization.name,
+              url: `${window.location.origin}/validate/${organization.slug}/${newCard.id}`
             });
           } catch (emailErr) {
             console.error('Error enviando notificación de tarjeta:', emailErr);
@@ -731,9 +732,10 @@ export default function IssuePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Email *</label>
                   <input
                     type="email"
+                    required
                     value={manualForm.email || ''}
                     onChange={e => setManualForm({...manualForm, email: e.target.value})}
                     className="glass-input w-full px-4 py-2"

@@ -57,6 +57,7 @@ export default function IssueCertificatePage() {
       rut: '',
       address: '',
       villa: '',
+      email: '',
     },
     cost: 500,
   });
@@ -149,12 +150,12 @@ export default function IssueCertificatePage() {
       alert('Debes seleccionar un diseño antes de emitir.');
       return;
     }
-    if (formData.type === 'residente' && !formData.resident_data.full_name) {
-      alert('Debes ingresar el nombre del residente.');
+    if (formData.type === 'residente' && (!formData.resident_data.full_name || !formData.resident_data.email)) {
+      alert('Debes ingresar el nombre y el correo del residente.');
       return;
     }
-    if (formData.type !== 'residente' && !selectedBeneficiary) {
-      alert('Debes seleccionar un socio.');
+    if (formData.type !== 'residente' && (!selectedBeneficiary || !selectedBeneficiary.email)) {
+      alert('Debes seleccionar un socio que tenga correo electrónico registrado. Actualiza sus datos en la sección Beneficiarios primero si es necesario.');
       return;
     }
     setShowConfirm(true);
@@ -188,11 +189,11 @@ export default function IssueCertificatePage() {
         }
       };
 
-      const { error: insertError } = await supabase.from('certificates').insert(certData);
+      const { data: newCert, error: insertError } = await supabase.from('certificates').insert(certData).select('id').single();
       if (insertError) throw insertError;
 
       // Intentar enviar notificación por email si hay un destinatario
-      const email = selectedBeneficiary?.email;
+      const email = formData.type === 'residente' ? formData.resident_data.email : selectedBeneficiary?.email;
       if (email) {
         try {
           await sendCertificateNotification({
@@ -201,7 +202,8 @@ export default function IssueCertificatePage() {
             type: formData.type.replace('_', ' ').toUpperCase(),
             folio: folio.toString().padStart(6, '0'),
             rut: recipientRut,
-            orgName: organization.name
+            orgName: organization.name,
+            url: `${window.location.origin}/validate/cert/${newCert.id}`
           });
         } catch (emailErr) {
           console.error('Error enviando notificación:', emailErr);
@@ -298,10 +300,11 @@ export default function IssueCertificatePage() {
             <div className="glass-card p-6 space-y-4 animate-fade-in">
               <h2 className="text-lg font-semibold text-white mb-2 flex items-center gap-2"><UserPlus className="w-5 h-5 text-blue-400" />Datos del Residente</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input type="text" value={formData.resident_data.full_name} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, full_name: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="Nombre Completo" />
+                <input type="text" value={formData.resident_data.full_name} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, full_name: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="Nombre Completo *" />
                 <input type="text" value={formData.resident_data.rut} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, rut: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="RUT" />
+                <input type="email" required value={formData.resident_data.email} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, email: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="Correo Electrónico *" />
                 <input type="text" value={formData.resident_data.address} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, address: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="Dirección" />
-                <input type="text" value={formData.resident_data.villa} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, villa: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="Villa o Parque" />
+                <input type="text" value={formData.resident_data.villa} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, villa: e.target.value }})} className="glass-input w-full px-4 py-2 md:col-span-2" placeholder="Villa o Parque" />
               </div>
             </div>
           )}
