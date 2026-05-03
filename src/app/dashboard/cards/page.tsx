@@ -101,8 +101,7 @@ export default function CardsPage() {
     };
 
     fetchCards();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organization, statusFilter, search]);
+  }, [organization, statusFilter, search, authLoading]);
 
   const toggleSelectAll = () => {
     if (selectedIds.length === cards.length) {
