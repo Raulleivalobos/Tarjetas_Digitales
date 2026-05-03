@@ -406,6 +406,7 @@ function ImageElementBody({ element, scale = 1 }: { element: ImageElement; scale
           draggable={false} 
           referrerPolicy="no-referrer"
           loading="eager"
+          crossOrigin="anonymous"
         />
       ) : (
         <div className="w-full h-full bg-slate-700/50 flex items-center justify-center border border-dashed border-slate-500/50 rounded">

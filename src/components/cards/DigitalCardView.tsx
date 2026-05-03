@@ -151,12 +151,13 @@ export function DigitalCardView({
         <div className="flex items-center gap-3 min-w-0">
           {organization.logo_url ? (
             <div className="relative flex-shrink-0">
-              <Image
+              <img
                 src={organization.logo_url}
                 alt={organization.name}
                 width={compact ? 28 : 48}
                 height={compact ? 28 : 48}
                 className="rounded-lg object-cover border border-white/10 shadow-lg"
+                crossOrigin="anonymous"
               />
             </div>
           ) : (
@@ -185,13 +186,13 @@ export function DigitalCardView({
             className={`${compact ? 'w-12 h-12' : 'w-20 h-20'} rounded-xl overflow-hidden border-2 border-brand-500/20 bg-surface-900 flex-shrink-0 shadow-2xl group-hover:border-brand-500/40 transition-colors`}
           >
             {proxiedPhotoUrl ? (
-              <Image
+              <img
                 src={proxiedPhotoUrl}
                 alt={beneficiary.full_name}
                 width={compact ? 48 : 80}
                 height={compact ? 48 : 80}
-                unoptimized
                 className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-500"
+                crossOrigin="anonymous"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">

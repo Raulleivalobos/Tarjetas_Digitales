@@ -330,7 +330,6 @@ export default function CardsPage() {
                 <th>N° Tarjeta</th>
                 <th>Estado</th>
                 <th>Emitida</th>
-                <th>Expira</th>
                 <th className="text-right">Acción</th>
               </tr>
             </thead>
@@ -352,7 +351,6 @@ export default function CardsPage() {
                   <td className="font-mono text-xs text-slate-400">{c.card_number}</td>
                   <td><StatusBadge status={c.status} size="sm" /></td>
                   <td className="text-xs text-slate-400">{formatDate(c.issued_at)}</td>
-                  <td className="text-xs text-slate-400">{formatDate(c.expires_at)}</td>
                   <td className="text-right flex items-center justify-end gap-2">
                     {c.status === 'draft' && (
                       <button

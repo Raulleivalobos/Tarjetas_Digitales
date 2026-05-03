@@ -110,6 +110,12 @@ export default function IssuePage() {
     setManualError('');
     setManualSuccess(false);
 
+    if (!manualForm.email) {
+      setManualError('El correo electrónico es obligatorio para emitir la tarjeta.');
+      setManualLoading(false);
+      return;
+    }
+
     try {
       const cleanRut = String(manualForm.rut).replace(/[^0-9kK]/g, '');
       if (!validateRut(cleanRut)) {
@@ -903,7 +909,7 @@ export default function IssuePage() {
               <button
                 type="button"
                 onClick={() => setPreviewModalOpen(true)}
-                disabled={manualLoading || !manualForm.full_name || !manualForm.rut || !selectedDesign}
+                disabled={manualLoading || !manualForm.full_name || !manualForm.rut || !manualForm.email || !selectedDesign}
                 className="btn-primary px-8 py-2.5 font-medium"
               >
                 Siguiente
