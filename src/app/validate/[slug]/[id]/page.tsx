@@ -6,7 +6,9 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Shield, CheckCircle, XCircle, Calendar, Contact, Info, Mail, Hash, User, RefreshCw } from 'lucide-react';
 import { formatDate, formatRut } from '@/lib/utils';
-import { CanvasPreview } from '@/components/designer/CanvasPreview';
+import { DigitalCardView } from '@/components/cards/DigitalCardView';
+import { exportElementToPDF } from '@/lib/pdfGenerator';
+import { Download } from 'lucide-react';
 
 export default function ValidationPage() {
   const params = useParams();
@@ -22,6 +24,7 @@ export default function ValidationPage() {
   const [cardData, setCardData] = useState<any>(null);
   const [design, setDesign] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -162,16 +165,39 @@ export default function ValidationPage() {
               <Contact className="w-3 h-3" />
               Credencial del Socio
             </h2>
+            <button
+              onClick={async () => {
+                setExporting(true);
+                await exportElementToPDF('card-canvas-export', {
+                  filename: `credencial-${beneficiary.rut}`,
+                  orientation: 'portrait',
+                  paperSize: 'a5',
+                  scale: 3,
+                  margin: 0
+                });
+                setExporting(false);
+              }}
+              disabled={exporting}
+              className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white flex items-center gap-2 hover:bg-white/10 transition-colors disabled:opacity-50"
+            >
+              {exporting ? (
+                <div className="w-3 h-3 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+              ) : (
+                <Download className="w-3 h-3" />
+              )}
+              Descargar
+            </button>
           </div>
           
-          <div className="glass-card-solid overflow-hidden rounded-[2.5rem] border border-white/5 shadow-2xl bg-slate-900/40">
+          <div id="card-canvas-export" className="glass-card-solid overflow-hidden rounded-[2.5rem] border border-white/5 shadow-2xl bg-slate-900/40">
             {design ? (
               <div className="aspect-[1.6/1] w-full flex items-center justify-center p-4">
-                <CanvasPreview 
-                  design={{...design, additionalInfo: design.additional_info || []}} 
-                  selectedElementId={null} 
-                  readOnly={true}
-                  scale={0.7}
+                <DigitalCardView 
+                  beneficiary={beneficiary}
+                  card={cardData}
+                  organization={organization}
+                  design={design}
+                  compact={true}
                 />
               </div>
             ) : (
