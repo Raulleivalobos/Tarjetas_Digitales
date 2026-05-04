@@ -84,7 +84,23 @@ export function DigitalCardView({
 
     const populatedDesign = {
       ...design,
-      elements: elements.map((el: any) => {
+      elements: elements.filter((el: any) => {
+        if (el.type === 'text') {
+          const contentLower = (el.data.content || '').toLowerCase();
+          const keyLower = (el.data.attributeKey || '').toLowerCase();
+          
+          // Ocultar elementos exclusivos de certificados de residencia en la tarjeta digital
+          if (
+            contentLower.includes('folio:') || keyLower.includes('folio') ||
+            contentLower.includes('precio $') || keyLower.includes('precio') || keyLower.includes('valor') ||
+            contentLower.includes('art. 210') || contentLower.includes('responsabilidad exclusiva') ||
+            contentLower.includes('falsedad constituye delito')
+          ) {
+            return false;
+          }
+        }
+        return true;
+      }).map((el: any) => {
         if (el.type === 'text' && el.data.isAttribute) {
           let val = el.data.content;
           const attrKey = el.data.attributeKey?.trim();
@@ -98,7 +114,13 @@ export function DigitalCardView({
           else if (keyUpper === 'FECHA' || keyUpper === 'FECHA EMISIÓN') val = customVal || formatDate(card.issued_at) || val;
           else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO') val = customVal || (card.status === 'active' ? 'Activo' : card.status) || val;
           else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') val = customVal || beneficiary.email || val;
-          else if (keyUpper && (keyUpper.includes('TARJETA') || keyUpper.includes('Nº') || keyUpper.includes('N°'))) val = card.card_number || val;
+          else if (keyUpper && (keyUpper.includes('TARJETA') || keyUpper.includes('Nº') || keyUpper.includes('N°'))) {
+            val = card.card_number || val;
+            // Forzar un tamaño de fuente pequeño para asegurar que el ID de la tarjeta quepa en una sola línea
+            if (el.data.fontSize > 9) {
+              el.data.fontSize = 9;
+            }
+          }
           else if (customVal !== undefined) val = customVal;
 
           return { ...el, data: { ...el.data, content: val } };
