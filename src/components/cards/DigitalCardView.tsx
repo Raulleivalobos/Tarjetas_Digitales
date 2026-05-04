@@ -152,7 +152,7 @@ export function DigitalCardView({
           {organization.logo_url ? (
             <div className="relative flex-shrink-0">
               <img
-                src={`${organization.logo_url}${organization.logo_url.includes('?') ? '&' : '?'}cb=${Date.now()}`}
+                src={`${organization.logo_url.startsWith('http') ? `https://images.weserv.nl/?url=${encodeURIComponent(organization.logo_url.replace(/^https?:\/\//, ''))}&w=200&fit=cover` : organization.logo_url}&cb=${Date.now()}`}
                 alt={organization.name}
                 width={compact ? 28 : 48}
                 height={compact ? 28 : 48}
