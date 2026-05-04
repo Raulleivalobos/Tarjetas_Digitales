@@ -33,29 +33,26 @@ export default function ValidationPage() {
 
     async function loadData() {
       try {
-        // Carga secuencial para evitar bloqueos
-        const { data: card, error: cardErr } = await supabase
+        // Carga rápida con JOIN en una sola petición
+        const { data: cardRaw, error: cardErr } = await supabase
           .from('digital_cards')
-          .select('*')
+          .select('*, beneficiaries(*), organizations(*)')
           .eq('id', id)
           .single();
 
-        if (cardErr || !card) {
+        if (cardErr || !cardRaw) {
           if (isMounted) setError('Credencial no encontrada');
           return;
         }
 
-        // Beneficiario y Org
-        const [benRes, orgRes] = await Promise.all([
-          supabase.from('beneficiaries').select('*').eq('id', card.beneficiary_id).single(),
-          supabase.from('organizations').select('*').eq('id', card.org_id).single()
-        ]);
+        // Extraer los datos relacionales para mantener la estructura existente
+        const { beneficiaries: benRes, organizations: orgRes, ...card } = cardRaw as any;
 
         if (isMounted) {
           setCardData({
             ...card,
-            beneficiary: benRes.data,
-            organization: orgRes.data
+            beneficiary: benRes,
+            organization: orgRes
           });
         }
 
