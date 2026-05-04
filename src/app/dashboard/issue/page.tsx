@@ -160,7 +160,8 @@ export default function IssuePage() {
             rut: cleanRut,
             email: manualForm.email || null,
             photo_url: finalPhotoUrl,
-            custom_fields: { ...manualForm.customFields }
+            custom_fields: { ...manualForm.customFields },
+            status: manualForm.status === 'inactive' ? 'inactive' : 'active'
           })
           .select()
           .single();
@@ -175,7 +176,7 @@ export default function IssuePage() {
             email: manualForm.email || null,
             photo_url: finalPhotoUrl || undefined,
             custom_fields: { ...manualForm.customFields },
-            status: 'active'
+            status: manualForm.status === 'inactive' ? 'inactive' : 'active'
           })
           .eq('id', beneficiaryId);
           
