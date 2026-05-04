@@ -62,22 +62,23 @@ export async function exportElementToPDF(
   }
 
   try {
-    const html2canvas = (await import('html2canvas')).default;
+    const htmlToImage = await import('html-to-image');
     const { jsPDF } = await import('jspdf');
 
-    const scale = options.scale || 2;
+    const scale = options.scale || 3;
     const margin = options.margin ?? 10;
 
-    const canvas = await html2canvas(element, {
-      scale,
-      useCORS: true,
-      backgroundColor: null,
-      logging: false,
-      allowTaint: false,
-      ignoreElements: (el) => el.classList.contains('no-export'),
+    // Use html-to-image which handles modern CSS and SVGs much better than html2canvas
+    const imgData = await htmlToImage.toPng(element, {
+      pixelRatio: scale,
+      backgroundColor: '#ffffff',
+      filter: (el) => {
+        if (el.classList && el.classList.contains('no-export')) return false;
+        return true;
+      },
+      // Using cacheBust helps avoid some stale CORS issues locally
+      cacheBust: true,
     });
-
-    const imgData = canvas.toDataURL('image/png', options.quality || 0.95);
     const orientation = options.orientation || 'portrait';
     const paperFormat = getPaperFormat(options.paperSize || 'a4');
 
@@ -88,7 +89,7 @@ export async function exportElementToPDF(
     const availW = pageWidth - margin * 2;
     const availH = pageHeight - margin * 2;
 
-    const imgAspect = canvas.width / canvas.height;
+    const imgAspect = element.offsetWidth / element.offsetHeight;
     let drawW = availW;
     let drawH = drawW / imgAspect;
 
