@@ -199,7 +199,7 @@ export default function IssueCertificatePage() {
           await sendCertificateNotification({
             to: email,
             name: recipientName,
-            type: formData.type.replace('_', ' ').toUpperCase(),
+            type: 'CERTIFICADO DE RESIDENCIA',
             folio: folio.toString().padStart(6, '0'),
             rut: recipientRut,
             orgName: organization.name,

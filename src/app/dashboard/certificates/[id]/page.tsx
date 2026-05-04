@@ -105,7 +105,7 @@ export default function ViewCertificatePage() {
     const data: Record<string, string> = {
       'Folio': cert.folio.toString().padStart(6, '0'),
       'Valor': cert.cost.toLocaleString('es-CL'),
-      'Tipo': cert.type === 'socio_activo' ? 'SOCIO ACTIVO' : cert.type === 'socio_inactivo' ? 'SOCIO INACTIVO' : 'RESIDENTE',
+      'Tipo': 'CERTIFICADO DE RESIDENCIA',
       'Nombre receptor': cert.resident_data?.full_name || cert.beneficiaries?.full_name || '',
       'RUT receptor': formatRUT(cert.resident_data?.rut || cert.beneficiaries?.rut || ''),
       'Dirección receptor': cert.resident_data?.address || cert.beneficiaries?.address || '',
