@@ -386,9 +386,8 @@ function TextElementBody({ element, scale = 1 }: { element: TextElement; scale?:
 
 const proxyImageUrl = (url: string | undefined | null) => {
   if (!url) return undefined;
-  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
-  const direct = url.replace(/^https?:\/\//, '');
-  return `https://images.weserv.nl/?url=${encodeURIComponent(direct)}&w=800&fit=cover`;
+  if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('/')) return url;
+  return `/api/proxy-image?url=${encodeURIComponent(url)}`;
 };
 
 function ImageElementBody({ element, scale = 1 }: { element: ImageElement; scale?: number }) {
