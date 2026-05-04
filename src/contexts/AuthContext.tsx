@@ -10,11 +10,13 @@ interface AuthContextType {
   session: Session | null;
   organization: Organization | null;
   membership: OrgMember | null;
+  memberships: any[]; // Lista de todas las membresías
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, orgName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshOrganization: () => Promise<void>;
+  switchOrganization: (orgId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,36 +26,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [membership, setMembership] = useState<OrgMember | null>(null);
+  const [memberships, setMemberships] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  const fetchOrganization = async (userId: string) => {
+  const fetchOrganization = async (userId: string, preferredOrgId?: string) => {
     try {
-      // Get user's organization membership
-      const { data: memberData } = await supabase
+      // Obtener todas las membresías del usuario
+      const { data: allMemberships } = await supabase
         .from('org_members')
         .select('*, organizations(*)')
-        .eq('user_id', userId)
-        .limit(1)
-        .maybeSingle();
+        .eq('user_id', userId);
 
-      if (memberData) {
+      if (!allMemberships || allMemberships.length === 0) {
+        setMemberships([]);
+        setOrganization(null);
+        setMembership(null);
+        return;
+      }
+
+      setMemberships(allMemberships);
+
+      // Determinar cuál organización activar
+      // 1. La preferida (si viene de switchOrganization)
+      // 2. La guardada en localStorage
+      // 3. La primera de la lista
+      const lastOrgId = preferredOrgId || localStorage.getItem('last_org_id');
+      const activeMember = allMemberships.find(m => m.org_id === lastOrgId) || allMemberships[0];
+
+      if (activeMember) {
         setMembership({
-          id: memberData.id,
-          org_id: memberData.org_id,
-          user_id: memberData.user_id,
-          role: memberData.role,
-          created_at: memberData.created_at,
+          id: activeMember.id,
+          org_id: activeMember.org_id,
+          user_id: activeMember.user_id,
+          role: activeMember.role,
+          created_at: activeMember.created_at,
         });
-        setOrganization((memberData as unknown as { organizations: Organization }).organizations);
+        setOrganization(activeMember.organizations);
+        localStorage.setItem('last_org_id', activeMember.org_id);
       }
     } catch (error) {
-      console.error('Error fetching organization:', error);
+      console.error('Error fetching organizations:', error);
     }
   };
 
   useEffect(() => {
-    // Failsafe timeout to prevent infinite loading
     const failsafe = setTimeout(() => {
       setLoading(false);
     }, 5000);
@@ -61,11 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const getSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error in getSession:', error);
-        }
-        const currentSession = data?.session || null;
+        if (error) console.error('Error in getSession:', error);
         
+        const currentSession = data?.session || null;
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
@@ -92,6 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else {
             setOrganization(null);
             setMembership(null);
+            setMemberships([]);
+            localStorage.removeItem('last_org_id');
           }
         } catch (err) {
           console.error('Error in onAuthStateChange:', err);
@@ -105,7 +122,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(failsafe);
       subscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -117,7 +133,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error || !data.user) return { error: error as Error | null };
 
-    // Create organization using RPC to bypass RLS race conditions safely
     const slug = orgName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -130,12 +145,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (rpcError) {
       console.error("RPC Error:", rpcError);
-      return { error: new Error('Error al crear la organización. Asegúrate de ejecutar la función SQL.') };
+      return { error: new Error('Error al crear la organización.') };
     }
 
-    // Actualizar el estado local
     await refreshOrganization();
-
     return { error: null };
   };
 
@@ -143,11 +156,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setOrganization(null);
     setMembership(null);
+    setMemberships([]);
+    localStorage.removeItem('last_org_id');
   };
 
   const refreshOrganization = async () => {
     if (user) {
       await fetchOrganization(user.id);
+    }
+  };
+
+  const switchOrganization = async (orgId: string) => {
+    if (user) {
+      setLoading(true);
+      await fetchOrganization(user.id, orgId);
+      setLoading(false);
     }
   };
 
@@ -158,11 +181,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         organization,
         membership,
+        memberships,
         loading,
         signIn,
         signUp,
         signOut,
         refreshOrganization,
+        switchOrganization,
       }}
     >
       {children}

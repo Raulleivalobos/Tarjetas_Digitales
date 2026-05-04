@@ -27,7 +27,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, organization, membership, signOut, loading } = useAuth();
+  const { user, organization, membership, memberships, switchOrganization, signOut, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -128,23 +128,46 @@ export default function DashboardLayout({
             </button>
           </div>
 
-          {/* Organization info */}
-          {organization && (
-            <div className="mx-4 mt-4 p-3 rounded-xl bg-brand-500/5 border border-brand-500/10">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-brand-600/20 flex items-center justify-center overflow-hidden">
+          {/* Organization Switcher */}
+          {memberships && memberships.length > 1 && (
+            <div className="px-4 py-4 border-b border-brand-500/10">
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+                Cambiar de Entidad
+              </label>
+              <div className="relative group">
+                <select
+                  value={organization?.id}
+                  onChange={(e) => switchOrganization(e.target.value)}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white appearance-none cursor-pointer focus:ring-1 focus:ring-brand-500 outline-none transition-all group-hover:border-brand-500/30"
+                >
+                  {memberships.map((m) => (
+                    <option key={m.org_id} value={m.org_id} className="bg-slate-900 text-white">
+                      {m.organizations.name} {m.org_id === organization?.id ? '(Actual)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                  <ChevronRight className="w-3.5 h-3.5 rotate-90" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Org Logo & Info (Condensed if switcher exists) */}
+          {(!memberships || memberships.length <= 1) && organization && (
+            <div className="p-6 border-b border-brand-500/10">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center overflow-hidden">
                   {organization.logo_url ? (
-                    <img src={organization.logo_url} alt={organization.name} className="w-full h-full object-contain" />
+                    <img src={organization.logo_url} className="w-full h-full object-contain" alt="Logo" />
                   ) : (
-                    <Building2 className="w-4 h-4 text-brand-400" />
+                    <Building2 className="w-6 h-6 text-brand-500" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-200 truncate">
-                    {organization.name}
-                  </p>
-                  <p className="text-xs text-slate-500 truncate">
-                    /{organization.slug}
+                  <h2 className="text-sm font-bold text-white truncate">{organization.name}</h2>
+                  <p className="text-[10px] text-brand-400 font-mono uppercase tracking-widest mt-0.5">
+                    {organization.org_type || 'JJVV'}
                   </p>
                 </div>
               </div>
