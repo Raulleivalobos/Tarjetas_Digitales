@@ -212,6 +212,34 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Municipal Access Banner */}
+      {organization?.org_type === 'municipality' && (
+        <div className="glass-card p-8 bg-gradient-to-br from-indigo-500/20 via-brand-500/10 to-transparent border-indigo-500/30 relative overflow-hidden group">
+          <div className="absolute -right-12 -bottom-12 p-12 opacity-5 group-hover:opacity-10 transition-transform duration-500 group-hover:scale-110">
+            <Building2 className="w-64 h-64 text-white" />
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-widest mb-1">
+                <Building2 className="w-4 h-4" />
+                Perfil Municipal Detectado
+              </div>
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Panel de Inteligencia Territorial</h2>
+              <p className="text-slate-400 text-sm max-w-xl leading-relaxed">
+                Has ingresado como administrador municipal. Tu acceso está optimizado para la supervisión estadística y gestión de Juntas de Vecinos vinculadas.
+              </p>
+            </div>
+            <Link 
+              href="/dashboard/municipal" 
+              className="btn-primary px-8 py-4 text-xs font-black uppercase tracking-widest whitespace-nowrap flex items-center gap-3 shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] transition-all"
+            >
+              Entrar al Panel de Control
+              <ArrowUpRight className="w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Quick Actions Panel - P1 Efficiency Fix */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
         <Link href="/dashboard/beneficiaries" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-brand-500/10 hover:border-brand-500/30 group transition-all relative overflow-hidden">

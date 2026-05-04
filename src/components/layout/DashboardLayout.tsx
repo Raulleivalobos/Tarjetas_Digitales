@@ -32,28 +32,40 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const isMunicipal = organization?.org_type === 'municipality' || ['municipal_admin', 'municipal_viewer'].includes(membership?.role || '');
+
   const navigation = [
     { name: 'Panel', href: '/dashboard', icon: LayoutDashboard },
     // Solo mostrar Panel Municipal a Municipalidades o admins municipales
-    ...(organization?.org_type === 'municipality' || ['municipal_admin', 'municipal_viewer'].includes(membership?.role || '') ? [
+    ...(isMunicipal ? [
       { name: 'Panel Municipal', href: '/dashboard/municipal', icon: Building2 },
     ] : []),
-    { name: 'Diseños', href: '/dashboard/designs', icon: Palette },
-    { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
-    { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
-    { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
-    { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
-    { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
-    { name: 'Validar QR', href: '/dashboard/scanner', icon: QrCode },
-    { name: 'Emitir', href: '/dashboard/issue', icon: Upload },
+    
+    // Solo mostrar herramientas operativas si NO es un perfil puramente municipal
+    ...(!isMunicipal ? [
+      { name: 'Diseños', href: '/dashboard/designs', icon: Palette },
+      { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
+      { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
+      { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
+      { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
+      { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
+      { name: 'Validar QR', href: '/dashboard/scanner', icon: QrCode },
+      { name: 'Emitir', href: '/dashboard/issue', icon: Upload },
+    ] : []),
+    
     { name: 'Configuración', href: '/dashboard/settings', icon: Settings },
   ];
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else if (isMunicipal && pathname !== '/dashboard/municipal' && pathname !== '/dashboard' && pathname !== '/dashboard/settings') {
+        // Redirigir a perfiles municipales a su panel específico si intentan entrar a áreas JJVV
+        router.push('/dashboard/municipal');
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isMunicipal, pathname]);
 
   if (loading) {
     return (
