@@ -23,7 +23,11 @@ export async function sendCertificateNotification(data: CertificateEmailData) {
   if (data.customFields && Object.keys(data.customFields).length > 0) {
     customFieldsText = '\n\nInformación Adicional:\n' + 
       Object.entries(data.customFields)
-        .map(([key, val]) => `• ${key}: ${val}`)
+        .map(([key, val]) => {
+          const isPhoto = key.trim().toUpperCase() === 'FOTO' || key.trim().toUpperCase() === 'PHOTO';
+          const displayVal = (isPhoto && val.startsWith('http')) ? '✔️ Incluida' : val;
+          return `• ${key}: ${displayVal}`;
+        })
         .join('\n');
   }
 
