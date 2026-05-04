@@ -312,7 +312,10 @@ export default function IssuePage() {
             else if (keyUpper === 'RUT') val = customVal || formatRut(manualForm.rut) || val;
             else if (keyUpper === 'ID SOCIO') val = customVal || val;
             else if (keyUpper === 'FECHA' || keyUpper === 'FECHA EMISIÓN' || keyUpper === 'VÁLIDA DESDE') val = customVal || manualForm.expiryDate || previewDate;
-            else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO' || keyUpper === 'STATUS') val = customVal || 'Activo';
+            else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO' || keyUpper === 'STATUS') {
+              const defaultStatus = manualForm.status === 'inactive' ? 'Inactivo' : 'Activo';
+              val = customVal || defaultStatus;
+            }
             else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') val = customVal || manualForm.email || val;
             else if (keyUpper === 'N° TARJETA' || keyUpper === 'NRO TARJETA' || keyUpper === 'HASH') {
               val = customVal || 'CS-PREVIEW-001';
@@ -829,8 +832,9 @@ export default function IssuePage() {
                           placeholder = 'DD-MM-AAAA';
                           hint = 'Se autocompleta con la fecha actual';
                         } else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO') {
-                          placeholder = 'Activo';
-                          hint = 'Se autocompleta como Activo';
+                          const defaultStatus = manualForm.status === 'inactive' ? 'Inactivo' : 'Activo';
+                          placeholder = defaultStatus;
+                          hint = `Se autocompleta como ${defaultStatus}`;
                         } else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') {
                           placeholder = manualForm.email || 'Autocompletado...';
                           hint = 'Se autocompleta con el Email superior';
