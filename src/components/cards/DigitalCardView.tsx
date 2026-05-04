@@ -116,10 +116,10 @@ export function DigitalCardView({
           else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') val = customVal || beneficiary.email || val;
           else if (keyUpper && (keyUpper.includes('TARJETA') || keyUpper.includes('Nº') || keyUpper.includes('N°'))) {
             val = card.card_number || val;
-            // Forzar un tamaño de fuente pequeño para asegurar que el ID de la tarjeta quepa en una sola línea
-            if (el.data.fontSize > 9) {
-              el.data.fontSize = 9;
-            }
+            // Forzar un tamaño de fuente pequeño y forzar un ancho mínimo para que quepa en una sola línea
+            if (el.data.fontSize > 8) el.data.fontSize = 8;
+            if (el.width < 40) el.width = 40; // expandir ancho a 40%
+            el.data.textAlign = 'right'; // alinear a la derecha si está bajo el QR
           }
           else if (customVal !== undefined) val = customVal;
 
