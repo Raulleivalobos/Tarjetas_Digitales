@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const decodedUrl = decodeURIComponent(url);
-    const response = await fetch(decodedUrl);
+    const validUrl = new URL(url).toString();
+    const response = await fetch(validUrl);
 
     if (!response.ok) {
       return new NextResponse(`Failed to fetch image: ${response.statusText}`, { status: response.status });

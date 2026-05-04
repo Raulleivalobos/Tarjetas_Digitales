@@ -408,7 +408,7 @@ function ImageElementBody({ element, scale = 1 }: { element: ImageElement; scale
         // eslint-disable-next-line @next/next/no-img-element
         <img 
           key={safeSrc}
-          src={`${safeSrc}&cb=${Date.now()}`} 
+          src={safeSrc} 
           alt="" 
           className="w-full h-full object-cover" 
           draggable={false} 
@@ -573,7 +573,7 @@ export function CanvasPreview({
         {design.background.type === 'image' && design.background.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img 
-            src={`${proxyImageUrl(design.background.imageUrl)}&cb=${Date.now()}`} 
+            src={proxyImageUrl(design.background.imageUrl)} 
             alt="background" 
             crossOrigin="anonymous"
             className="absolute inset-0 w-full h-full object-cover pointer-events-none"

@@ -152,7 +152,7 @@ export function DigitalCardView({
           {organization.logo_url ? (
             <div className="relative flex-shrink-0">
               <img
-                src={`${organization.logo_url.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(organization.logo_url)}` : organization.logo_url}&cb=${Date.now()}`}
+                src={organization.logo_url.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(organization.logo_url)}` : organization.logo_url}
                 alt={organization.name}
                 width={compact ? 28 : 48}
                 height={compact ? 28 : 48}
@@ -187,7 +187,7 @@ export function DigitalCardView({
           >
             {proxiedPhotoUrl ? (
               <img
-                src={`${proxiedPhotoUrl}${proxiedPhotoUrl.includes('?') ? '&' : '?'}cb=${Date.now()}`}
+                src={proxiedPhotoUrl}
                 alt={beneficiary.full_name}
                 width={compact ? 48 : 80}
                 height={compact ? 48 : 80}
