@@ -187,8 +187,14 @@ export default function IssuePage() {
         const qrCode = `${organization.slug}-${beneficiaryId}-${Math.random().toString(36).substring(2, 7)}`;
         const expiresAt = manualForm.expiryDate ? new Date(manualForm.expiryDate).toISOString() : null;
 
-        const { data: newCard, error: cardError } = await supabase.from('digital_cards').insert({
-          beneficiary_id: beneficiaryId,
+        // Verificar si ya tiene tarjeta
+        const { data: existingCard } = await supabase
+          .from('digital_cards')
+          .select('id')
+          .eq('beneficiary_id', beneficiaryId)
+          .maybeSingle();
+
+        const cardData = {
           org_id: organization.id,
           card_number: cardNumber,
           qr_code: qrCode,
@@ -199,9 +205,29 @@ export default function IssuePage() {
             credential_type: manualForm.type,
             language: manualForm.language
           }
-        }).select('id').single();
+        };
 
-        if (cardError) throw cardError;
+        let newCard;
+        if (existingCard) {
+          // Re-emitir tarjeta (actualizar)
+          const { data, error: cardError } = await supabase
+            .from('digital_cards')
+            .update(cardData)
+            .eq('id', existingCard.id)
+            .select('id')
+            .single();
+          if (cardError) throw cardError;
+          newCard = data;
+        } else {
+          // Emitir nueva tarjeta
+          const { data, error: cardError } = await supabase
+            .from('digital_cards')
+            .insert({ ...cardData, beneficiary_id: beneficiaryId })
+            .select('id')
+            .single();
+          if (cardError) throw cardError;
+          newCard = data;
+        }
         
         // Enviar notificación por email
         if (manualForm.email) {

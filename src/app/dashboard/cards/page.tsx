@@ -153,9 +153,13 @@ export default function CardsPage() {
         setCards(cards.filter(c => !ids.includes(c.id)));
         setSelectedIds(selectedIds.filter(selId => !ids.includes(selId)));
         setSelectedCard(null); // in case we deleted the selected one
+      } else {
+        console.error(error);
+        alert(`No se pudo eliminar la tarjeta. Es probable que esté siendo referenciada por un registro de asistencia o escaneo. Error: ${error.message}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      alert(`Error inesperado al eliminar: ${error?.message || 'Desconocido'}`);
     } finally {
       setIsUpdating(false);
     }
