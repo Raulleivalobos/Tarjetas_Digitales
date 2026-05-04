@@ -240,7 +240,8 @@ export default function IssuePage() {
               folio: cardNumber,
               rut: formatRut(cleanRut),
               orgName: organization.name,
-              url: `${window.location.origin}/validate/${organization.slug}/${newCard.id}`
+              url: `${window.location.origin}/validate/${organization.slug}/${newCard.id}`,
+              customFields: manualForm.customFields
             });
           } catch (emailErr) {
             console.error('Error enviando notificación de tarjeta:', emailErr);

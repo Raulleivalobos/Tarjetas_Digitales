@@ -555,12 +555,27 @@ export function CanvasPreview({
         style={{
           width: `${design.width * scale}px`,
           height: `${design.height * scale}px`,
-          ...getBackgroundStyle(design),
+          ...(design.background.type !== 'image' ? getBackgroundStyle(design) : { backgroundColor: '#ffffff' }),
           borderRadius: '16px',
           border: '1px solid rgba(99, 102, 241, 0.3)',
           outline: '12px solid rgba(15, 23, 42, 0.5)',
         }}
       >
+        {/* Render background image explicitly to avoid CORS issues in html2canvas */}
+        {design.background.type === 'image' && design.background.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img 
+            src={design.background.imageUrl} 
+            alt="background" 
+            crossOrigin="anonymous"
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            style={{ 
+              objectFit: design.background.imageSize === 'contain' ? 'contain' : 'cover',
+              zIndex: 0
+            }}
+          />
+        )}
+
         {/* Background overlay for images */}
         {design.background.type === 'image' &&
           design.background.imageOpacity !== undefined && (
