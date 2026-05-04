@@ -7,7 +7,7 @@ import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCi
 import { CHILE_DATA } from '@/lib/chile-data';
 
 type Tab = 'general' | 'members' | 'certificates' | 'security';
-type Role = 'owner' | 'admin' | 'validator' | 'viewer';
+type Role = 'owner' | 'admin' | 'validator' | 'viewer' | 'municipal_admin' | 'municipal_viewer';
 
 interface Member {
   id: string;
@@ -22,6 +22,8 @@ const roleDescriptions: Record<Role, { title: string; desc: string }> = {
   admin: { title: 'Administrador', desc: 'Puede gestionar beneficiarios, beneficios y tarjetas.' },
   validator: { title: 'Validador', desc: 'Solo puede escanear y validar tarjetas/beneficios.' },
   viewer: { title: 'Visualizador', desc: 'Acceso de solo lectura a métricas e información.' },
+  municipal_admin: { title: 'Admin Municipal', desc: 'Acceso administrativo para gestión de convenios municipales.' },
+  municipal_viewer: { title: 'Observador Municipal', desc: 'Acceso estadístico para entes gubernamentales.' },
 };
 
 export default function SettingsPage() {
@@ -31,6 +33,7 @@ export default function SettingsPage() {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [members, setMembers] = useState<Member[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [municipalities, setMunicipalities] = useState<any[]>([]);
   const supabase = createClient();
   const [formData, setFormData] = useState({
     name: organization?.name || '',
@@ -43,7 +46,8 @@ export default function SettingsPage() {
     commune: (organization?.settings as any)?.commune || '',
     province: (organization?.settings as any)?.province || '',
     region: (organization?.settings as any)?.region || '',
-    logo_url: organization?.logo_url || '',
+    org_type: organization?.org_type || 'jjvv',
+    parent_org_id: organization?.parent_org_id || '',
     certificate_prices: (organization?.settings as any)?.certificate_prices || {
       active: 500,
       inactive: 1000,
@@ -71,7 +75,18 @@ export default function SettingsPage() {
     if (activeTab === 'members' && organization) {
       fetchMembers();
     }
+    if (activeTab === 'general') {
+      fetchMunicipalities();
+    }
   }, [activeTab, organization]);
+
+  const fetchMunicipalities = async () => {
+    const { data } = await supabase
+      .from('organizations')
+      .select('id, name')
+      .eq('org_type', 'municipality');
+    if (data) setMunicipalities(data);
+  };
 
   const fetchMembers = async () => {
     if (!organization) return;
@@ -148,6 +163,8 @@ export default function SettingsPage() {
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
           logo_url: formData.logo_url,
+          org_type: formData.org_type,
+          parent_org_id: formData.parent_org_id || null,
           settings: {
             ...currentSettings,
             rut: formData.rut,
@@ -250,6 +267,46 @@ export default function SettingsPage() {
           {activeTab === 'general' && (
             <form onSubmit={handleSubmit} className="glass-card p-6 md:p-8 space-y-8 animate-fade-in">
               <div className="space-y-6">
+                {/* Tipo de Organización y Jerarquía */}
+                <div className="p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 mb-8">
+                  <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-indigo-400" />
+                    Configuración de Nivel Institucional
+                  </h2>
+                  <p className="text-sm text-slate-400 mb-6">Define si eres una Junta de Vecinos o una Municipalidad para activar funciones avanzadas.</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-400 ml-1">Tipo de Organización</label>
+                      <select
+                        value={formData.org_type}
+                        onChange={(e) => setFormData({ ...formData, org_type: e.target.value as any })}
+                        className="glass-input w-full px-4 py-3 text-sm appearance-none cursor-pointer border-brand-500/30"
+                      >
+                        <option value="jjvv">Junta de Vecinos (JJVV)</option>
+                        <option value="municipality">Municipalidad (Entidad Superior)</option>
+                        <option value="corporation">Corporación / Privado</option>
+                      </select>
+                    </div>
+
+                    {formData.org_type === 'jjvv' && (
+                      <div className="space-y-2 animate-slide-in-right">
+                        <label className="text-sm font-medium text-slate-400 ml-1">Vincular con Municipalidad</label>
+                        <select
+                          value={formData.parent_org_id}
+                          onChange={(e) => setFormData({ ...formData, parent_org_id: e.target.value })}
+                          className="glass-input w-full px-4 py-3 text-sm appearance-none cursor-pointer border-indigo-500/30"
+                        >
+                          <option value="">Independiente (Sin vínculo)</option>
+                          {municipalities.map(m => (
+                            <option key={m.id} value={m.id}>{m.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-400 ml-1">Nombre de la Institución</label>
@@ -789,6 +846,8 @@ export default function SettingsPage() {
                       <option value="admin">Administrador</option>
                       <option value="validator">Validador (Solo Escanear)</option>
                       <option value="viewer">Visualizador (Solo Lectura)</option>
+                      <option value="municipal_admin">Admin Municipal</option>
+                      <option value="municipal_viewer">Observador Municipal</option>
                     </select>
                   </div>
                   

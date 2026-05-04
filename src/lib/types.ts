@@ -15,6 +15,8 @@ export interface Organization {
   villa: string | null;
   commune: string | null;
   region: string | null;
+  org_type: 'municipality' | 'jjvv' | 'corporation';
+  parent_org_id: string | null; // For JJVV linked to a Municipality
   settings: {
     certificate_prices?: {
       active: number;
@@ -35,7 +37,7 @@ export interface OrgMember {
   id: string;
   org_id: string;
   user_id: string;
-  role: 'owner' | 'admin' | 'validator' | 'viewer';
+  role: 'owner' | 'admin' | 'validator' | 'viewer' | 'municipal_admin' | 'municipal_viewer';
   created_at: string;
 }
 

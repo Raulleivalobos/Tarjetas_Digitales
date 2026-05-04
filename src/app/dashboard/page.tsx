@@ -180,7 +180,35 @@ export default function DashboardPage() {
             <span>ID_SESIÓN: CS-X92-2024</span>
           </div>
         </div>
+      </div>
 
+      {/* Onboarding Banner - New Institutional Level Prompt */}
+      {!organization?.parent_org_id && (
+        <div className="glass-card p-6 bg-gradient-to-r from-brand-500/10 via-indigo-500/5 to-transparent border-brand-500/20 relative overflow-hidden group">
+          <div className="absolute -right-8 -top-8 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Building2 className="w-32 h-32 text-white" />
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-brand-400 text-xs font-bold uppercase tracking-widest mb-1">
+                <Zap className="w-3 h-3 fill-current" />
+                Nueva Funcionalidad
+              </div>
+              <h2 className="text-xl font-bold text-white tracking-tight">Configura tu Nivel Institucional</h2>
+              <p className="text-slate-400 text-sm max-w-2xl">
+                Ahora puedes vincular tu organización con una Municipalidad para acceder a estadísticas compartidas o activar el perfil de Municipalidad para supervisar a tus Juntas de Vecinos.
+              </p>
+            </div>
+            <Link 
+              href="/dashboard/settings" 
+              className="btn-primary px-6 py-3 text-xs font-black uppercase tracking-widest whitespace-nowrap flex items-center gap-2"
+            >
+              Configurar Ahora
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      )}
       {/* Quick Actions Panel - P1 Efficiency Fix */}
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
         <Link href="/dashboard/beneficiaries" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-brand-500/10 hover:border-brand-500/30 group transition-all relative overflow-hidden">

@@ -22,28 +22,32 @@ import {
   FileText,
 } from 'lucide-react';
 
-const navigation = [
-  { name: 'Panel', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Diseños', href: '/dashboard/designs', icon: Palette },
-  { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
-  { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
-  { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
-  { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
-  { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
-  { name: 'Validar QR', href: '/dashboard/scanner', icon: QrCode },
-  { name: 'Emitir', href: '/dashboard/issue', icon: Upload },
-  { name: 'Configuración', href: '/dashboard/settings', icon: Settings },
-];
-
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, organization, signOut, loading } = useAuth();
+  const { user, organization, membership, signOut, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const navigation = [
+    { name: 'Panel', href: '/dashboard', icon: LayoutDashboard },
+    // Solo mostrar Panel Municipal a Municipalidades o admins municipales
+    ...(organization?.org_type === 'municipality' || ['municipal_admin', 'municipal_viewer'].includes(membership?.role || '') ? [
+      { name: 'Panel Municipal', href: '/dashboard/municipal', icon: Building2 },
+    ] : []),
+    { name: 'Diseños', href: '/dashboard/designs', icon: Palette },
+    { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
+    { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
+    { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
+    { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
+    { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
+    { name: 'Validar QR', href: '/dashboard/scanner', icon: QrCode },
+    { name: 'Emitir', href: '/dashboard/issue', icon: Upload },
+    { name: 'Configuración', href: '/dashboard/settings', icon: Settings },
+  ];
 
   useEffect(() => {
     if (!loading && !user) {
