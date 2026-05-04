@@ -73,7 +73,7 @@ export async function exportElementToPDF(
       useCORS: true,
       backgroundColor: null,
       logging: false,
-      allowTaint: true,
+      allowTaint: false,
       ignoreElements: (el) => el.classList.contains('no-export'),
     });
 

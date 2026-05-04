@@ -113,8 +113,8 @@ export function DigitalCardView({
                              attrKeyUpper === 'PHOTO_URL' ||
                              (attrKeyUpper && (attrKeyUpper.includes('FOTO') || attrKeyUpper.includes('PHOTO')));
 
-          if (isPhotoAttr && directPhotoUrl) {
-            src = directPhotoUrl;
+          if (isPhotoAttr && proxiedPhotoUrl) {
+            src = proxiedPhotoUrl;
           }
           return { ...el, data: { ...el.data, src } };
         }
@@ -152,7 +152,7 @@ export function DigitalCardView({
           {organization.logo_url ? (
             <div className="relative flex-shrink-0">
               <img
-                src={organization.logo_url}
+                src={`${organization.logo_url}${organization.logo_url.includes('?') ? '&' : '?'}cb=${Date.now()}`}
                 alt={organization.name}
                 width={compact ? 28 : 48}
                 height={compact ? 28 : 48}
@@ -187,7 +187,7 @@ export function DigitalCardView({
           >
             {proxiedPhotoUrl ? (
               <img
-                src={proxiedPhotoUrl}
+                src={`${proxiedPhotoUrl}${proxiedPhotoUrl.includes('?') ? '&' : '?'}cb=${Date.now()}`}
                 alt={beneficiary.full_name}
                 width={compact ? 48 : 80}
                 height={compact ? 48 : 80}

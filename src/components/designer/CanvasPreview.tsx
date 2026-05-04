@@ -400,7 +400,7 @@ function ImageElementBody({ element, scale = 1 }: { element: ImageElement; scale
         // eslint-disable-next-line @next/next/no-img-element
         <img 
           key={element.src}
-          src={element.src} 
+          src={element.src ? `${element.src}${element.src.includes('?') ? '&' : '?'}cb=${Date.now()}` : undefined} 
           alt="" 
           className="w-full h-full object-cover" 
           draggable={false} 
@@ -565,7 +565,7 @@ export function CanvasPreview({
         {design.background.type === 'image' && design.background.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img 
-            src={design.background.imageUrl} 
+            src={`${design.background.imageUrl}${design.background.imageUrl.includes('?') ? '&' : '?'}cb=${Date.now()}`} 
             alt="background" 
             crossOrigin="anonymous"
             className="absolute inset-0 w-full h-full object-cover pointer-events-none"
