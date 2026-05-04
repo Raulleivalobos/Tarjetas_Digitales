@@ -156,6 +156,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase">
             Panel de Control
@@ -166,7 +167,7 @@ export default function DashboardPage() {
               <span className="text-[10px] font-bold text-emerald-400 font-mono tracking-widest uppercase">Sistema Online</span>
             </div>
             <p className="text-slate-500 text-xs font-mono uppercase tracking-widest">
-              Org: {organization?.name || 'Cargando...'}
+               Org: {organization?.name || 'Cargando...'}
             </p>
           </div>
         </div>
@@ -183,7 +184,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Onboarding Banner - New Institutional Level Prompt */}
-      {!organization?.parent_org_id && (
+      {!organization?.parent_org_id && organization?.org_type !== 'municipality' && (
         <div className="glass-card p-6 bg-gradient-to-r from-brand-500/10 via-indigo-500/5 to-transparent border-brand-500/20 relative overflow-hidden group">
           <div className="absolute -right-8 -top-8 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
             <Building2 className="w-32 h-32 text-white" />
@@ -209,8 +210,9 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
       {/* Quick Actions Panel - P1 Efficiency Fix */}
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
         <Link href="/dashboard/beneficiaries" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-brand-500/10 hover:border-brand-500/30 group transition-all relative overflow-hidden">
           <div className="w-12 h-12 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
             <Users className="w-6 h-6" />
@@ -555,8 +557,8 @@ export default function DashboardPage() {
               <p className="text-xs font-mono uppercase tracking-widest">No hay certificados recientes</p>
             </div>
           )}
-        </div>
       </div>
+    </div>
     </div>
   );
 }
