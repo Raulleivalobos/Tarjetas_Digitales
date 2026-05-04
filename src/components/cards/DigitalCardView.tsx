@@ -95,9 +95,10 @@ export function DigitalCardView({
           else if (keyUpper === 'NOMBRE INSTITUCIÓN' || keyUpper === 'ORGANIZACION') val = customVal || organization.name || val;
           else if (keyUpper === 'RUT') val = customVal || formatRut(beneficiary.rut) || val;
           else if (keyUpper === 'ID SOCIO') val = customVal || val;
-          else if (keyUpper === 'FECHA') val = customVal || formatDate(card.issued_at) || val;
+          else if (keyUpper === 'FECHA' || keyUpper === 'FECHA EMISIÓN') val = customVal || formatDate(card.issued_at) || val;
           else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO') val = customVal || (card.status === 'active' ? 'Activo' : card.status) || val;
           else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') val = customVal || beneficiary.email || val;
+          else if (keyUpper && (keyUpper.includes('TARJETA') || keyUpper.includes('Nº') || keyUpper.includes('N°'))) val = card.card_number || val;
           else if (customVal !== undefined) val = customVal;
 
           return { ...el, data: { ...el.data, content: val } };
