@@ -34,6 +34,7 @@ export default function IssuePage() {
     email: '',
     type: 'basic', // basic or blockchain
     language: 'es',
+    status: 'active',
     expiryDate: '',
     customFields: {} as Record<string, string>
   });
@@ -102,7 +103,7 @@ export default function IssuePage() {
   const [result, setResult] = useState<BulkUploadResult | null>(null);
 
   // -- Manual Logic --
-  const handleManualSubmit = async (e?: React.FormEvent | React.MouseEvent, status: 'active' | 'draft' = 'active') => {
+  const handleManualSubmit = async (e?: React.FormEvent | React.MouseEvent, overrideStatus?: 'draft') => {
     if (e) e.preventDefault();
     if (!organization) return;
     
@@ -191,7 +192,7 @@ export default function IssuePage() {
           org_id: organization.id,
           card_number: cardNumber,
           qr_code: qrCode,
-          status: status, // 'active' or 'draft'
+          status: overrideStatus === 'draft' ? 'draft' : manualForm.status,
           expires_at: expiresAt,
           metadata: {
             design_id: selectedDesign?.id,
@@ -226,6 +227,7 @@ export default function IssuePage() {
           email: '', 
           type: manualForm.type, 
           language: manualForm.language, 
+          status: 'active',
           expiryDate: '',
           customFields: {} 
         });
@@ -888,6 +890,20 @@ export default function IssuePage() {
                     </select>
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Estado Inicial</label>
+                  <div className="flex items-center gap-2">
+                    <select 
+                      value={manualForm.status}
+                      onChange={(e) => setManualForm({...manualForm, status: e.target.value})}
+                      className="glass-input px-3 py-1.5 text-sm w-full"
+                    >
+                      <option value="active">Activa (Por defecto)</option>
+                      <option value="inactive">Inactiva</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1204,7 +1220,7 @@ export default function IssuePage() {
               <button
                 onClick={(e) => {
                   setPreviewModalOpen(false);
-                  handleManualSubmit(e, 'active');
+                  handleManualSubmit(e);
                 }}
                 className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20"
               >

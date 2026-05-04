@@ -208,6 +208,7 @@ export default function CardsPage() {
               <option value="all">Todas</option>
               <option value="draft">Borradores</option>
               <option value="active">Activas</option>
+              <option value="inactive">Inactivas</option>
               <option value="expired">Caducadas</option>
               <option value="blocked">Bloqueadas</option>
               <option value="revoked">Revocadas</option>
@@ -241,6 +242,13 @@ export default function CardsPage() {
               className="px-3 py-1 text-xs bg-slate-500/10 text-slate-300 hover:bg-slate-500/20 rounded-md border border-slate-500/20 transition-colors disabled:opacity-50"
             >
               Pendiente
+            </button>
+            <button
+              onClick={() => handleBulkStatusChange('inactive')}
+              disabled={isUpdating}
+              className="px-3 py-1 text-xs bg-gray-500/10 text-gray-400 hover:bg-gray-500/20 rounded-md border border-gray-500/20 transition-colors disabled:opacity-50"
+            >
+              Inactivar
             </button>
             <button
               onClick={() => handleBulkStatusChange('revoked')}
