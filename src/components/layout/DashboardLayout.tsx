@@ -32,14 +32,17 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const isMunicipal = organization?.org_type === 'municipality' || ['municipal_admin', 'municipal_viewer'].includes(membership?.role || '');
+  const isMunicipalRole = ['municipal_admin', 'municipal_viewer'].includes(membership?.role || '');
+  const isMunicipalOrg = organization?.org_type === 'municipality';
+  const isMunicipal = isMunicipalOrg || isMunicipalRole;
 
   const navigation = [
-    { name: 'Panel', href: '/dashboard', icon: LayoutDashboard },
-    // Solo mostrar Panel Municipal a Municipalidades o admins municipales
+    // Si es municipal, el Panel Municipal es su pantalla principal de entrada
     ...(isMunicipal ? [
       { name: 'Panel Municipal', href: '/dashboard/municipal', icon: Building2 },
-    ] : []),
+    ] : [
+      { name: 'Panel', href: '/dashboard', icon: LayoutDashboard },
+    ]),
     
     // Solo mostrar herramientas operativas si NO es un perfil puramente municipal
     ...(!isMunicipal ? [
@@ -60,8 +63,8 @@ export default function DashboardLayout({
     if (!loading) {
       if (!user) {
         router.push('/login');
-      } else if (isMunicipal && pathname !== '/dashboard/municipal' && pathname !== '/dashboard' && pathname !== '/dashboard/settings') {
-        // Redirigir a perfiles municipales a su panel específico si intentan entrar a áreas JJVV
+      } else if (isMunicipal && (pathname === '/dashboard' || !['/dashboard/municipal', '/dashboard/settings'].includes(pathname))) {
+        // Redirigir a perfiles municipales a su panel específico si intentan entrar a áreas JJVV o al dashboard base
         router.push('/dashboard/municipal');
       }
     }
