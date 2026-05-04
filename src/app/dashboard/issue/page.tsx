@@ -102,6 +102,52 @@ export default function IssuePage() {
   const [preview, setPreview] = useState<BulkUploadRow[]>([]);
   const [result, setResult] = useState<BulkUploadResult | null>(null);
 
+  // Auto-fetch beneficiary data when a valid RUT is typed
+  useEffect(() => {
+    if (!organization || !manualForm.rut) return;
+    const cleanRut = String(manualForm.rut).replace(/[^0-9kK]/g, '');
+    if (validateRut(cleanRut)) {
+      const fetchBeneficiary = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('beneficiaries')
+            .select('*')
+            .eq('org_id', organization.id)
+            .eq('rut', cleanRut)
+            .maybeSingle();
+
+          if (data && !error) {
+            setManualForm(prev => ({
+              ...prev,
+              full_name: data.full_name || prev.full_name,
+              email: data.email || prev.email,
+              status: data.status || prev.status,
+              customFields: { ...prev.customFields, ...(data.custom_fields || {}) }
+            }));
+            
+            // Si el beneficiario tiene una foto guardada y no hemos subido una nueva
+            if (data.photo_url && !photoFile) {
+              setPhotoPreview(data.photo_url);
+              
+              setManualForm(prev => {
+                const currentFields = { ...prev.customFields };
+                const designHasFoto = selectedDesign?.attributes?.some(a => ['FOTO', 'PHOTO'].includes(a.label?.trim().toUpperCase() || ''));
+                if (designHasFoto) {
+                  const photoKey = selectedDesign!.attributes!.find(a => ['FOTO', 'PHOTO'].includes(a.label?.trim().toUpperCase() || ''))!.label!;
+                  currentFields[photoKey] = data.photo_url;
+                }
+                return { ...prev, customFields: currentFields };
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error auto-fetching beneficiary:", err);
+        }
+      };
+      fetchBeneficiary();
+    }
+  }, [manualForm.rut, organization, supabase, photoFile]);
+
   // -- Manual Logic --
   const handleManualSubmit = async (e?: React.FormEvent | React.MouseEvent, overrideStatus?: 'draft') => {
     if (e) e.preventDefault();
@@ -137,7 +183,7 @@ export default function IssuePage() {
       if (photoFile) {
         const fileExt = photoFile.name.split('.').pop();
         const filePath = `${organization.id}/${Date.now()}.${fileExt}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('photos')
           .upload(filePath, photoFile);
@@ -861,6 +907,7 @@ export default function IssuePage() {
                               })}
                               className="glass-input w-full px-4 py-2"
                               placeholder={placeholder}
+                              autoComplete="off"
                             />
                             {hint && <p className="text-[10px] text-brand-400/70 mt-1">{hint}</p>}
                           </div>
