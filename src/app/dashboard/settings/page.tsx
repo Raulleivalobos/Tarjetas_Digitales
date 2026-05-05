@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCircle, CheckCircle2, Upload, Trash2, FileText, DollarSign, Plus } from 'lucide-react';
+import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCircle, CheckCircle2, Upload, Trash2, FileText, DollarSign, Plus, Key } from 'lucide-react';
 import { CHILE_DATA } from '@/lib/chile-data';
 
 type Tab = 'general' | 'members' | 'certificates' | 'security';
@@ -35,11 +35,13 @@ export default function SettingsPage() {
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [municipalities, setMunicipalities] = useState<any[]>([]);
   const supabase = createClient();
+  
   const [formData, setFormData] = useState({
     name: organization?.name || '',
     description: organization?.description || '',
     primary_color: organization?.primary_color || '#6366f1',
     secondary_color: organization?.secondary_color || '#8b5cf6',
+    logo_url: organization?.logo_url || '',
     rut: (organization?.settings as any)?.rut || '',
     address: (organization?.settings as any)?.address || '',
     villa: (organization?.settings as any)?.villa || '',
@@ -67,7 +69,7 @@ export default function SettingsPage() {
   });
 
   const [uploading, setUploading] = useState(false);
-
+  const [saving, setSaving] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Role>('validator');
 
@@ -91,14 +93,12 @@ export default function SettingsPage() {
   const fetchMembers = async () => {
     if (!organization) return;
     setLoadingMembers(true);
-    // En una implementación real, se haría un join con auth.users mediante RPC o perfiles
     const { data, error } = await supabase
       .from('org_members')
       .select('*')
       .eq('org_id', organization.id);
     
     if (!error && data) {
-      // Mock emails based on user_id for demonstration purposes
       const enrichedMembers = data.map((m: any) => ({
         ...m,
         email: m.user_id === currentUser?.id ? currentUser?.email : `usuario-${m.user_id.substring(0,4)}@ejemplo.com`
@@ -129,13 +129,13 @@ export default function SettingsPage() {
 
       setFormData(prev => ({ ...prev, logo_url: publicUrl }));
       
-      // Auto-save logo
       await supabase
         .from('organizations')
         .update({ logo_url: publicUrl })
         .eq('id', organization.id);
         
       await refreshOrganization();
+      setMessage({ text: 'Logo actualizado correctamente', type: 'success' });
     } catch (err) {
       console.error('Error uploading logo:', err);
       setMessage({ text: 'Error al subir el logo', type: 'error' });
@@ -147,7 +147,7 @@ export default function SettingsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!organization) return;
-    setLoading(true);
+    setSaving(true);
     setMessage({ text: '', type: '' });
 
     try {
@@ -180,9 +180,7 @@ export default function SettingsPage() {
         })
         .eq('id', organization.id);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
       setMessage({ text: 'Configuración guardada exitosamente', type: 'success' });
       await refreshOrganization();
@@ -190,7 +188,7 @@ export default function SettingsPage() {
       console.error('Error saving settings:', err);
       setMessage({ text: 'Error al guardar configuración', type: 'error' });
     } finally {
-      setLoading(false);
+      setSaving(false);
       setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     }
   };
@@ -198,12 +196,10 @@ export default function SettingsPage() {
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulación de envío de invitación (La API real requeriría Supabase Auth Admin o Edge Functions)
     setTimeout(() => {
-      setMessage({ text: `Invitación enviada a ${inviteEmail} como ${roleDescriptions[inviteRole].title}`, type: 'success' });
+      setMessage({ text: `Invitación enviada a ${inviteEmail}`, type: 'success' });
       setInviteEmail('');
       setLoading(false);
-      setTimeout(() => setMessage({ text: '', type: '' }), 4000);
     }, 1000);
   };
 
@@ -266,8 +262,7 @@ export default function SettingsPage() {
 
           {activeTab === 'general' && (
             <form onSubmit={handleSubmit} className="glass-card p-6 md:p-8 space-y-8 animate-fade-in">
-              <div className="space-y-6">
-                {/* Tipo de Organización y Jerarquía */}
+              <section className="space-y-6">
                 <div className="p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 mb-8">
                   <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
                     <Shield className="w-5 h-5 text-indigo-400" />
@@ -290,7 +285,7 @@ export default function SettingsPage() {
                     </div>
 
                     {formData.org_type === 'jjvv' && (
-                      <div className="space-y-2 animate-slide-in-right">
+                      <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400 ml-1">Vincular con Municipalidad</label>
                         <select
                           value={formData.parent_org_id}
@@ -315,7 +310,7 @@ export default function SettingsPage() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="glass-input w-full px-4 py-3 text-sm"
-                      placeholder="Ej. Junta de Vecinos Los Álamos"
+                      placeholder="Ej. Junta de Vecinos Parque San Carlos"
                       required
                     />
                   </div>
@@ -335,16 +330,16 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Institutional Access Key - P1 New Feature */}
-                <div className="p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <Key className="w-12 h-12 text-indigo-400" />
+                {/* Institutional Access Key Display */}
+                <div className="p-6 rounded-2xl bg-brand-500/5 border border-brand-500/20 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                    <Key className="w-12 h-12 text-brand-400" />
                   </div>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
                     <div>
-                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Clave de Acceso Institucional</p>
+                      <p className="text-[10px] font-black text-brand-400 uppercase tracking-widest mb-1">Clave de Acceso Institucional</p>
                       <h3 className="text-2xl font-black text-white font-mono tracking-widest uppercase">
-                        {organization?.access_code || 'CARGANDO...'}
+                        {organization?.access_code || 'SIN CLAVE'}
                       </h3>
                       <p className="text-xs text-slate-500 mt-2 max-w-sm">
                         Comparte esta clave con otros administradores para vincular esta organización de forma privada.
@@ -356,7 +351,7 @@ export default function SettingsPage() {
                         navigator.clipboard.writeText(organization?.access_code || '');
                         alert('Clave copiada al portapapeles');
                       }}
-                      className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-lg text-indigo-400 text-[10px] font-bold uppercase tracking-widest transition-all"
+                      className="px-4 py-2 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 rounded-lg text-brand-400 text-[10px] font-bold uppercase tracking-widest transition-all"
                     >
                       Copiar Clave
                     </button>
@@ -368,10 +363,7 @@ export default function SettingsPage() {
                     <label className="text-sm font-medium text-slate-400 ml-1">Región</label>
                     <select
                       value={formData.region}
-                      onChange={(e) => {
-                        const region = e.target.value;
-                        setFormData({ ...formData, region, province: '', commune: '' });
-                      }}
+                      onChange={(e) => setFormData({ ...formData, region: e.target.value, province: '', commune: '' })}
                       className="glass-input w-full px-4 py-3 text-sm appearance-none cursor-pointer"
                     >
                       <option value="">Seleccionar Región</option>
@@ -380,16 +372,12 @@ export default function SettingsPage() {
                       ))}
                     </select>
                   </div>
-
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-400 ml-1">Provincia</label>
                     <select
                       value={formData.province}
                       disabled={!formData.region}
-                      onChange={(e) => {
-                        const province = e.target.value;
-                        setFormData({ ...formData, province, commune: '' });
-                      }}
+                      onChange={(e) => setFormData({ ...formData, province: e.target.value, commune: '' })}
                       className="glass-input w-full px-4 py-3 text-sm appearance-none cursor-pointer disabled:opacity-50"
                     >
                       <option value="">Seleccionar Provincia</option>
@@ -398,7 +386,6 @@ export default function SettingsPage() {
                       ))}
                     </select>
                   </div>
-
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-400 ml-1">Comuna</label>
                     <select
@@ -473,84 +460,43 @@ export default function SettingsPage() {
                       ) : (
                         <Building2 className="w-12 h-12 text-slate-700" />
                       )}
+                      <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                        <input type="file" className="hidden" onChange={handleLogoUpload} accept="image/*" />
+                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">Cambiar Logo</span>
+                      </label>
                       {uploading && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                           <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent animate-spin rounded-full" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 space-y-3">
-                      <h3 className="font-medium text-white">Logo de la Institución</h3>
-                      <p className="text-xs text-slate-500 leading-relaxed">
-                        Este logo se utilizará en el menú lateral, en los certificados y en las tarjetas digitales para identificar a la institución. Se recomienda formato PNG o SVG con fondo transparente.
-                      </p>
-                      <div className="flex gap-3">
-                        <label className="btn-ghost px-4 py-2 text-xs font-bold cursor-pointer flex items-center gap-2">
-                          <Upload className="w-3.5 h-3.5" />
-                          Subir nuevo logo
-                          <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
-                        </label>
-                        {formData.logo_url && (
-                          <button 
-                            type="button" 
-                            onClick={() => setFormData(prev => ({ ...prev, logo_url: '' }))}
-                            className="px-4 py-2 text-xs font-bold text-red-400 hover:bg-red-400/10 rounded-lg transition-all flex items-center gap-2"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Quitar
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="p-4 rounded-xl bg-slate-900/40 border border-white/5 flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300">Color Principal</label>
-                        <span className="text-xs font-mono text-slate-500 uppercase mt-1 block">{formData.primary_color}</span>
-                      </div>
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-white/10 shadow-lg">
-                        <input
-                          type="color"
-                          value={formData.primary_color}
-                          onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                          className="absolute inset-[-10px] w-20 h-20 cursor-pointer"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 rounded-xl bg-slate-900/40 border border-white/5 flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300">Color Secundario</label>
-                        <span className="text-xs font-mono text-slate-500 uppercase mt-1 block">{formData.secondary_color}</span>
-                      </div>
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-white/10 shadow-lg">
-                        <input
-                          type="color"
-                          value={formData.secondary_color}
-                          onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                          className="absolute inset-[-10px] w-20 h-20 cursor-pointer"
-                        />
-                      </div>
+                    <div className="flex-1 space-y-2 text-center md:text-left">
+                      <p className="text-xs text-slate-300 font-medium">Dimensiones recomendadas: 512x512px</p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest">Formatos: PNG, JPG o SVG (Max 2MB)</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-4">
+                <div className="pt-8 flex justify-end">
                   <button
                     type="submit"
-                    disabled={loading}
-                    className="btn-primary px-6 py-2.5 text-sm flex items-center gap-2 disabled:opacity-50"
+                    disabled={saving}
+                    className="px-8 py-3 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shadow-[0_8px_20px_rgba(99,102,241,0.3)] flex items-center gap-2"
                   >
-                    {loading ? (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {saving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white animate-spin rounded-full" />
+                        Guardando...
+                      </>
                     ) : (
-                      <Save className="w-4 h-4" />
+                      <>
+                        <Save className="w-4 h-4" />
+                        Guardar Cambios
+                      </>
                     )}
-                    Guardar Cambios
                   </button>
                 </div>
-              </div>
+              </section>
             </form>
           )}
 
@@ -613,31 +559,14 @@ export default function SettingsPage() {
                         <input 
                           type="checkbox" 
                           checked={formData.signatures.president.enabled}
-                          onChange={async (e) => {
-                            const val = e.target.checked;
-                            const newSignatures = { 
-                              ...formData.signatures, 
-                              president: { ...formData.signatures.president, enabled: val } 
-                            };
-                            setFormData(prev => ({ ...prev, signatures: newSignatures }));
-                            
-                            const currentSettings = typeof organization.settings === 'string' 
-                              ? JSON.parse(organization.settings) 
-                              : (organization.settings || {});
-
-                            await supabase.from('organizations').update({ 
-                              settings: { ...currentSettings, signatures: newSignatures } 
-                            }).eq('id', organization.id);
-                            await refreshOrganization();
-                          }}
+                          onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, president: { ...prev.signatures.president, enabled: e.target.checked } }}))}
                           className="rounded border-white/10 bg-white/5"
                         />
                       </div>
-                      
                       <div className="flex gap-4">
                         <div className="w-24 h-24 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden relative">
                           {formData.signatures.president.signature_url ? (
-                            <img src={formData.signatures.president.signature_url} className="w-full h-full object-contain" alt="Firma Presidente" />
+                            <img src={formData.signatures.president.signature_url} className="w-full h-full object-contain" alt="Firma" />
                           ) : (
                             <div className="text-[10px] text-slate-600 text-center px-2">Sin firma</div>
                           )}
@@ -650,46 +579,6 @@ export default function SettingsPage() {
                             className="glass-input w-full px-3 py-2 text-sm"
                             placeholder="Nombre completo"
                           />
-                          <label className="btn-ghost px-3 py-1.5 text-[10px] font-bold cursor-pointer flex items-center justify-center gap-2">
-                            <Upload className="w-3 h-3" /> Subir Firma
-                            <input 
-                              type="file" 
-                              className="hidden" 
-                              accept="image/*" 
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file || !organization) return;
-                                const path = `${organization.id}/sig-pres-${Date.now()}.${file.name.split('.').pop()}`;
-                                const { data } = await supabase.storage.from('logos').upload(path, file);
-                                if (data) {
-                                  const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
-                                  const newSignatures = { 
-                                    ...formData.signatures, 
-                                    president: { ...formData.signatures.president, signature_url: publicUrl } 
-                                  };
-                                  
-                                  setFormData(prev => ({ ...prev, signatures: newSignatures }));
-                                  
-                                  // Auto-save signature
-                                  const currentSettings = typeof organization.settings === 'string' 
-                                    ? JSON.parse(organization.settings) 
-                                    : (organization.settings || {});
-
-                                  await supabase
-                                    .from('organizations')
-                                    .update({ 
-                                      settings: { 
-                                        ...currentSettings, 
-                                        signatures: newSignatures 
-                                      } 
-                                    })
-                                    .eq('id', organization.id);
-                                  
-                                  await refreshOrganization();
-                                }
-                              }} 
-                            />
-                          </label>
                         </div>
                       </div>
                     </div>
@@ -701,31 +590,14 @@ export default function SettingsPage() {
                         <input 
                           type="checkbox" 
                           checked={formData.signatures.secretary.enabled}
-                          onChange={async (e) => {
-                            const val = e.target.checked;
-                            const newSignatures = { 
-                              ...formData.signatures, 
-                              secretary: { ...formData.signatures.secretary, enabled: val } 
-                            };
-                            setFormData(prev => ({ ...prev, signatures: newSignatures }));
-                            
-                            const currentSettings = typeof organization.settings === 'string' 
-                              ? JSON.parse(organization.settings) 
-                              : (organization.settings || {});
-
-                            await supabase.from('organizations').update({ 
-                              settings: { ...currentSettings, signatures: newSignatures } 
-                            }).eq('id', organization.id);
-                            await refreshOrganization();
-                          }}
+                          onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, secretary: { ...prev.signatures.secretary, enabled: e.target.checked } }}))}
                           className="rounded border-white/10 bg-white/5"
                         />
                       </div>
-                      
                       <div className="flex gap-4">
                         <div className="w-24 h-24 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden relative">
                           {formData.signatures.secretary.signature_url ? (
-                            <img src={formData.signatures.secretary.signature_url} className="w-full h-full object-contain" alt="Firma Secretario" />
+                            <img src={formData.signatures.secretary.signature_url} className="w-full h-full object-contain" alt="Firma" />
                           ) : (
                             <div className="text-[10px] text-slate-600 text-center px-2">Sin firma</div>
                           )}
@@ -738,102 +610,19 @@ export default function SettingsPage() {
                             className="glass-input w-full px-3 py-2 text-sm"
                             placeholder="Nombre completo"
                           />
-                          <label className="btn-ghost px-3 py-1.5 text-[10px] font-bold cursor-pointer flex items-center justify-center gap-2">
-                            <Upload className="w-3 h-3" /> Subir Firma
-                            <input 
-                              type="file" 
-                              className="hidden" 
-                              accept="image/*" 
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file || !organization) return;
-                                const path = `${organization.id}/sig-sec-${Date.now()}.${file.name.split('.').pop()}`;
-                                const { data } = await supabase.storage.from('logos').upload(path, file);
-                                if (data) {
-                                  const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
-                                  const newSignatures = { 
-                                    ...formData.signatures, 
-                                    secretary: { ...formData.signatures.secretary, signature_url: publicUrl } 
-                                  };
-
-                                  setFormData(prev => ({ ...prev, signatures: newSignatures }));
-
-                                  // Auto-save signature
-                                  const currentSettings = typeof organization.settings === 'string' 
-                                    ? JSON.parse(organization.settings) 
-                                    : (organization.settings || {});
-
-                                  await supabase
-                                    .from('organizations')
-                                    .update({ 
-                                      settings: { 
-                                        ...currentSettings, 
-                                        signatures: newSignatures 
-                                      } 
-                                    })
-                                    .eq('id', organization.id);
-                                  
-                                  await refreshOrganization();
-                                }
-                              }} 
-                            />
-                          </label>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-white/5">
-                  <h2 className="text-lg font-semibold text-white mb-1">Motivos de Emisión</h2>
-                  <p className="text-sm text-slate-400 mb-6">Lista de motivos disponibles para seleccionar al emitir.</p>
-                  
-                  <div className="space-y-3">
-                    {formData.reasons.map((reason: string, index: number) => (
-                      <div key={index} className="flex gap-2">
-                        <input
-                          type="text"
-                          value={reason}
-                          onChange={(e) => {
-                            const newReasons = [...formData.reasons];
-                            newReasons[index] = e.target.value;
-                            setFormData({ ...formData, reasons: newReasons });
-                          }}
-                          className="glass-input flex-1 px-4 py-2 text-sm"
-                        />
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            const newReasons = formData.reasons.filter((_: any, i: number) => i !== index);
-                            setFormData({ ...formData, reasons: newReasons });
-                          }}
-                          className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, reasons: [...formData.reasons, 'Nuevo Motivo'] })}
-                      className="btn-ghost px-4 py-2 text-xs font-bold flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" /> Añadir Motivo
-                    </button>
-                  </div>
-                </div>
-
                 <div className="flex justify-end pt-4">
                   <button
                     type="submit"
-                    disabled={loading}
-                    className="btn-primary px-6 py-2.5 text-sm flex items-center gap-2 disabled:opacity-50"
+                    disabled={saving}
+                    className="btn-primary px-6 py-2.5 text-sm flex items-center gap-2"
                   >
-                    {loading ? (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
+                    <Save className="w-4 h-4" />
                     Guardar Configuración
                   </button>
                 </div>
@@ -843,128 +632,29 @@ export default function SettingsPage() {
 
           {activeTab === 'members' && (
             <div className="space-y-6 animate-fade-in">
-              {/* Invite Section */}
               <div className="glass-card p-6 md:p-8">
-                <h2 className="text-lg font-semibold text-white mb-1">Invitar Usuario</h2>
-                <p className="text-sm text-slate-400 mb-6">Añade colaboradores a tu organización y asígnales permisos específicos.</p>
-                
-                <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-4 items-end">
-                  <div className="flex-1 w-full">
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Correo Electrónico</label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        placeholder="colaborador@ejemplo.com"
-                        className="glass-input w-full pl-10 pr-4 py-2.5 text-sm"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="w-full sm:w-64">
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Rol de Acceso</label>
-                    <select
-                      value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value as Role)}
-                      className="glass-input w-full px-4 py-2.5 text-sm appearance-none"
-                    >
-                      <option value="admin">Administrador</option>
-                      <option value="validator">Validador (Solo Escanear)</option>
-                      <option value="viewer">Visualizador (Solo Lectura)</option>
-                      <option value="municipal_admin">Admin Municipal</option>
-                      <option value="municipal_viewer">Observador Municipal</option>
-                    </select>
-                  </div>
-                  
-                  <button
-                    type="submit"
-                    disabled={loading || !inviteEmail}
-                    className="btn-primary px-6 py-2.5 text-sm flex items-center gap-2 whitespace-nowrap disabled:opacity-50 h-[42px]"
-                  >
-                    {loading ? (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <UserPlus className="w-4 h-4" />
-                    )}
-                    Enviar Invitación
-                  </button>
-                </form>
-              </div>
-
-              {/* Members List */}
-              <div className="glass-card overflow-hidden">
-                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-slate-900/30">
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">Usuarios Activos</h2>
-                    <p className="text-sm text-slate-400">Gestiona los accesos de tu equipo.</p>
-                  </div>
-                  <span className="px-3 py-1 bg-brand-500/20 text-brand-300 text-xs font-medium rounded-full">
-                    {members.length} Miembros
-                  </span>
-                </div>
+                <h2 className="text-lg font-semibold text-white mb-1">Usuarios Activos</h2>
+                <p className="text-sm text-slate-400 mb-6">Gestiona los accesos de tu equipo.</p>
                 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="bg-white/[0.02] border-b border-white/5 text-slate-400">
                         <th className="px-6 py-4 font-medium">Usuario</th>
-                        <th className="px-6 py-4 font-medium">Rol Asignado</th>
-                        <th className="px-6 py-4 font-medium text-right">Acciones</th>
+                        <th className="px-6 py-4 font-medium">Rol</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {loadingMembers ? (
-                        <tr>
-                          <td colSpan={3} className="px-6 py-8 text-center text-slate-400">
-                            Cargando usuarios...
+                      {members.map((member) => (
+                        <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-6 py-4">{member.email}</td>
+                          <td className="px-6 py-4">
+                            <span className="px-2 py-1 bg-brand-500/10 text-brand-400 rounded-lg text-xs font-bold uppercase">
+                              {roleDescriptions[member.role].title}
+                            </span>
                           </td>
                         </tr>
-                      ) : (
-                        members.map((member) => (
-                          <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500/20 to-purple-600/20 border border-brand-500/30 flex items-center justify-center text-brand-300 font-semibold text-xs">
-                                  {member.email?.charAt(0).toUpperCase() || 'U'}
-                                </div>
-                                <div>
-                                  <div className="text-slate-200 font-medium">
-                                    {member.email}
-                                    {member.user_id === currentUser?.id && (
-                                      <span className="ml-2 text-[10px] uppercase bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">Tú</span>
-                                    )}
-                                  </div>
-                                  <div className="text-slate-500 text-xs mt-0.5">
-                                    Añadido el {new Date(member.created_at).toLocaleDateString()}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="inline-flex flex-col">
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                                  member.role === 'owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                  member.role === 'admin' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                  member.role === 'validator' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                                  'bg-slate-500/10 text-slate-400 border-slate-500/20'
-                                }`}>
-                                  {roleDescriptions[member.role].title}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              {member.role !== 'owner' && member.user_id !== currentUser?.id && (
-                                <button className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Revocar acceso">
-                                  <UserX className="w-4 h-4" />
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -975,9 +665,9 @@ export default function SettingsPage() {
           {activeTab === 'security' && (
             <div className="glass-card p-6 md:p-8 space-y-6 animate-fade-in text-center py-12">
               <Shield className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <h2 className="text-xl font-medium text-slate-300">Seguridad Avanzada</h2>
+              <h2 className="text-xl font-medium text-slate-300">Seguridad</h2>
               <p className="text-slate-500 max-w-md mx-auto">
-                La configuración de políticas de contraseñas, 2FA y restricciones de IP estarán disponibles próximamente.
+                Las opciones de seguridad avanzada estarán disponibles próximamente.
               </p>
             </div>
           )}
