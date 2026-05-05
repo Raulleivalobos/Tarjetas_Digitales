@@ -20,6 +20,7 @@ import {
   Palette,
   ClipboardList,
   FileText,
+  Search,
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -27,7 +28,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, organization, membership, memberships, switchOrganization, signOut, loading } = useAuth();
+  const { user, organization, membership, memberships, switchOrganization, searchAndJoinOrganization, signOut, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -128,30 +129,50 @@ export default function DashboardLayout({
             </button>
           </div>
 
-          {/* Organization Switcher */}
-          {memberships && memberships.length > 1 && (
-            <div className="px-4 py-4 border-b border-brand-500/10">
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
-                Cambiar de Entidad
-              </label>
-              <div className="relative group">
-                <select
-                  value={organization?.id}
-                  onChange={(e) => switchOrganization(e.target.value)}
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white appearance-none cursor-pointer focus:ring-1 focus:ring-brand-500 outline-none transition-all group-hover:border-brand-500/30"
-                >
-                  {memberships.map((m) => (
-                    <option key={m.org_id} value={m.org_id} className="bg-slate-900 text-white">
-                      {m.organizations.name} {m.org_id === organization?.id ? '(Actual)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                  <ChevronRight className="w-3.5 h-3.5 rotate-90" />
+          {/* Organization Switcher & Global Search */}
+          <div className="px-4 py-4 border-b border-brand-500/10 space-y-4">
+            {memberships && memberships.length > 1 && (
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+                  Cambiar de Entidad
+                </label>
+                <div className="relative group">
+                  <select
+                    value={organization?.id}
+                    onChange={(e) => switchOrganization(e.target.value)}
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white appearance-none cursor-pointer focus:ring-1 focus:ring-brand-500 outline-none transition-all group-hover:border-brand-500/30"
+                  >
+                    {memberships.map((m) => (
+                      <option key={m.org_id} value={m.org_id} className="bg-slate-900 text-white">
+                        {m.organizations?.name || 'Cargando...'}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                    <ChevronRight className="w-3.5 h-3.5 rotate-90" />
+                  </div>
                 </div>
               </div>
+            )}
+
+            {/* Global Search for Owners to recover orgs */}
+            <div className="pt-2">
+              <button 
+                onClick={() => {
+                  const query = window.prompt('Escribe el nombre o RUT de la organización que buscas:');
+                  if (query) {
+                    searchAndJoinOrganization(query).then(res => {
+                      if (res.error) alert(res.error);
+                    });
+                  }
+                }}
+                className="w-full py-2 px-3 rounded-lg border border-dashed border-white/10 text-[10px] font-bold text-slate-500 hover:text-brand-400 hover:border-brand-500/30 hover:bg-brand-500/5 transition-all flex items-center justify-center gap-2 uppercase tracking-widest"
+              >
+                <Search className="w-3 h-3" />
+                ¿No encuentras tu organización?
+              </button>
             </div>
-          )}
+          </div>
 
           {/* Org Logo & Info (Condensed if switcher exists) */}
           {(!memberships || memberships.length <= 1) && organization && (

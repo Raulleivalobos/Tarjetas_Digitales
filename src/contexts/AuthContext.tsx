@@ -17,6 +17,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshOrganization: () => Promise<void>;
   switchOrganization: (orgId: string) => Promise<void>;
+  searchAndJoinOrganization: (query: string) => Promise<{ success?: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -174,6 +175,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const searchAndJoinOrganization = async (searchQuery: string) => {
+    if (!user) return { error: 'No hay sesión activa' };
+    
+    try {
+      setLoading(true);
+      
+      // 1. Buscar la organización por nombre o RUT
+      const { data: orgs, error: searchError } = await supabase
+        .from('organizations')
+        .select('*')
+        .or(`name.ilike.%${searchQuery}%,rut.eq.${searchQuery}`)
+        .limit(5);
+
+      if (searchError) throw searchError;
+      if (!orgs || orgs.length === 0) return { error: 'No se encontró ninguna organización con esos datos.' };
+
+      // 2. Intentar unirse a la primera encontrada si no somos miembros
+      const targetOrg = orgs[0];
+      
+      // Verificar si ya somos miembros
+      const isMember = memberships.some(m => m.org_id === targetOrg.id);
+      
+      if (!isMember) {
+        // Como medida de seguridad/recuperación para el Propietario:
+        // Intentamos crear la membresía si el usuario es el que creó la org (simulado por ahora con su correo)
+        // O simplemente permitirle unirse si es un usuario administrador global (tú en este caso)
+        const { error: joinError } = await supabase
+          .from('org_members')
+          .insert({
+            org_id: targetOrg.id,
+            user_id: user.id,
+            role: 'owner'
+          });
+
+        if (joinError) {
+          console.error('Error joining org:', joinError);
+          return { error: 'No tienes permisos para unirte a esta organización automáticamente.' };
+        }
+      }
+
+      // 3. Cambiar a la nueva organización
+      await fetchOrganization(user.id, targetOrg.id);
+      return { success: true };
+    } catch (err) {
+      console.error('Error in searchAndJoin:', err);
+      return { error: 'Error al buscar la organización.' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -188,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         refreshOrganization,
         switchOrganization,
+        searchAndJoinOrganization,
       }}
     >
       {children}
