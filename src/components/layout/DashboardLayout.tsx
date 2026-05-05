@@ -21,6 +21,7 @@ import {
   ClipboardList,
   FileText,
   Search,
+  Key,
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -28,7 +29,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, organization, membership, memberships, switchOrganization, searchAndJoinOrganization, signOut, loading } = useAuth();
+  const { user, organization, membership, memberships, switchOrganization, searchAndJoinOrganization, joinByCode, signOut, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -155,21 +156,21 @@ export default function DashboardLayout({
               </div>
             )}
 
-            {/* Global Search for Owners to recover orgs */}
+            {/* Join by Institutional Key - ALWAYS VISIBLE BLUE BUTTON */}
             <div className="pt-2">
               <button 
                 onClick={() => {
-                  const query = window.prompt('Escribe el nombre o RUT de la organización que buscas:');
-                  if (query) {
-                    searchAndJoinOrganization(query).then(res => {
+                  const code = window.prompt('Ingresa la Clave de Acceso de la Institución:');
+                  if (code) {
+                    joinByCode(code).then(res => {
                       if (res.error) alert(res.error);
                     });
                   }
                 }}
-                className="w-full py-2 px-3 rounded-lg border border-dashed border-white/10 text-[10px] font-bold text-slate-500 hover:text-brand-400 hover:border-brand-500/30 hover:bg-brand-500/5 transition-all flex items-center justify-center gap-2 uppercase tracking-widest"
+                className="w-full py-2.5 px-3 rounded-xl bg-brand-500 text-[10px] font-black text-white hover:bg-brand-600 transition-all flex items-center justify-center gap-2 uppercase tracking-[0.15em] shadow-[0_4px_12px_rgba(99,102,241,0.3)]"
               >
-                <Search className="w-3 h-3" />
-                ¿No encuentras tu organización?
+                <Key className="w-3.5 h-3.5" />
+                Ingresar Clave Institución
               </button>
             </div>
           </div>

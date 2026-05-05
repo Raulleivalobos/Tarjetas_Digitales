@@ -307,14 +307,14 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-400 ml-1">Nombre de la Institución</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                      className="glass-input w-full px-4 py-3 text-sm"
                       placeholder="Ej. Junta de Vecinos Los Álamos"
                       required
                     />
@@ -332,6 +332,34 @@ export default function SettingsPage() {
                         className="w-full px-4 py-2.5 text-sm bg-transparent text-slate-400 cursor-not-allowed outline-none"
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* Institutional Access Key - P1 New Feature */}
+                <div className="p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Key className="w-12 h-12 text-indigo-400" />
+                  </div>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+                    <div>
+                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Clave de Acceso Institucional</p>
+                      <h3 className="text-2xl font-black text-white font-mono tracking-widest uppercase">
+                        {organization?.access_code || 'CARGANDO...'}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-2 max-w-sm">
+                        Comparte esta clave con otros administradores para vincular esta organización de forma privada.
+                      </p>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(organization?.access_code || '');
+                        alert('Clave copiada al portapapeles');
+                      }}
+                      className="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-lg text-indigo-400 text-[10px] font-bold uppercase tracking-widest transition-all"
+                    >
+                      Copiar Clave
+                    </button>
                   </div>
                 </div>
 

@@ -18,6 +18,7 @@ interface AuthContextType {
   refreshOrganization: () => Promise<void>;
   switchOrganization: (orgId: string) => Promise<void>;
   searchAndJoinOrganization: (query: string) => Promise<{ success?: boolean; error?: string }>;
+  joinByCode: (code: string) => Promise<{ success?: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,9 +50,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setMemberships(allMemberships);
 
       // Determinar cuál organización activar
-      // 1. La preferida (si viene de switchOrganization)
-      // 2. La guardada en localStorage
-      // 3. La primera de la lista
       const lastOrgId = preferredOrgId || localStorage.getItem('last_org_id');
       const activeMember = allMemberships.find(m => m.org_id === lastOrgId) || allMemberships[0];
 
@@ -154,11 +152,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Forzado instantáneo para evitar cuelgues
     setOrganization(null);
     setMembership(null);
     setMemberships([]);
     localStorage.removeItem('last_org_id');
+    supabase.auth.signOut().catch(() => {});
   };
 
   const refreshOrganization = async () => {
@@ -181,46 +180,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       
-      // 1. Buscar la organización por nombre o RUT
-      const { data: orgs, error: searchError } = await supabase
-        .from('organizations')
-        .select('*')
-        .or(`name.ilike.%${searchQuery}%,rut.eq.${searchQuery}`)
-        .limit(5);
+      // Intentar usar el nuevo RPC inteligente si existe
+      const { data: orgs, error: searchError } = await supabase.rpc('search_organizations_unrestricted', {
+        search_query: searchQuery
+      });
 
-      if (searchError) throw searchError;
-      if (!orgs || orgs.length === 0) return { error: 'No se encontró ninguna organización con esos datos.' };
-
-      // 2. Intentar unirse a la primera encontrada si no somos miembros
-      const targetOrg = orgs[0];
-      
-      // Verificar si ya somos miembros
-      const isMember = memberships.some(m => m.org_id === targetOrg.id);
-      
-      if (!isMember) {
-        // Como medida de seguridad/recuperación para el Propietario:
-        // Intentamos crear la membresía si el usuario es el que creó la org (simulado por ahora con su correo)
-        // O simplemente permitirle unirse si es un usuario administrador global (tú en este caso)
-        const { error: joinError } = await supabase
-          .from('org_members')
-          .insert({
-            org_id: targetOrg.id,
-            user_id: user.id,
-            role: 'owner'
-          });
-
-        if (joinError) {
-          console.error('Error joining org:', joinError);
-          return { error: 'No tienes permisos para unirte a esta organización automáticamente.' };
-        }
+      if (searchError) {
+        // Fallback básico si el RPC no está instalado
+        const { data: basicOrgs } = await supabase
+          .from('organizations')
+          .select('*')
+          .or(`name.ilike.%${searchQuery}%,rut.ilike.%${searchQuery.replace(/[^a-zA-Z0-9]/g, '')}%`)
+          .limit(5);
+        
+        if (!basicOrgs || basicOrgs.length === 0) return { error: 'No se encontró la organización.' };
+        return { error: 'Encontrada, pero requiere Clave de Acceso para entrar.' };
       }
 
-      // 3. Cambiar a la nueva organización
+      if (!orgs || orgs.length === 0) return { error: 'No se encontró ninguna organización.' };
+
+      const targetOrg = orgs[0];
       await fetchOrganization(user.id, targetOrg.id);
       return { success: true };
     } catch (err) {
-      console.error('Error in searchAndJoin:', err);
-      return { error: 'Error al buscar la organización.' };
+      return { error: 'Error en la búsqueda.' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const joinByCode = async (code: string) => {
+    if (!user) return { error: 'No hay sesión activa' };
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.rpc('join_org_by_code', {
+        target_code: code.trim().toUpperCase(),
+        target_user_id: user.id
+      });
+
+      if (error) throw error;
+      if (data.error) return { error: data.error };
+
+      await fetchOrganization(user.id, data.org_id);
+      return { success: true };
+    } catch (err) {
+      console.error('Error joining by code:', err);
+      return { error: 'Clave inválida o error de conexión.' };
     } finally {
       setLoading(false);
     }
@@ -241,6 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshOrganization,
         switchOrganization,
         searchAndJoinOrganization,
+        joinByCode,
       }}
     >
       {children}

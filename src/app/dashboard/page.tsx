@@ -367,6 +367,7 @@ export default function DashboardPage() {
                   tick={{ fill: '#64748b', fontStyle: 'normal', fontWeight: 'bold' }}
                 />
                 <Tooltip
+                  formatter={(value: number) => value.toLocaleString('es-CL')}
                   contentStyle={{
                     background: 'rgba(2, 6, 23, 0.95)',
                     border: '1px solid rgba(99, 102, 241, 0.3)',

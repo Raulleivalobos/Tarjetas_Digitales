@@ -141,7 +141,7 @@ export default function MunicipalDashboard() {
           </div>
           <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">JJVV Adscritas</p>
           <div className="flex items-baseline gap-2">
-            <h2 className="text-4xl font-black text-white">{stats.totalJJVV}</h2>
+            <h2 className="text-4xl font-black text-white">{stats.totalJJVV.toLocaleString('es-CL')}</h2>
             <span className="text-emerald-400 text-xs font-bold flex items-center"><ArrowUpRight className="w-3 h-3" /> +2 este mes</span>
           </div>
         </div>

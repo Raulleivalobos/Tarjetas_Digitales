@@ -69,7 +69,9 @@ export function StatsCard({
             </span>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] font-mono">{title}</p>
           </div>
-          <p className="text-4xl font-black text-white tracking-tighter font-mono leading-none">{value}</p>
+          <p className="text-4xl font-black text-white tracking-tighter font-mono leading-none">
+            {typeof value === 'number' ? value.toLocaleString('es-CL') : value}
+          </p>
           {trend && (
             <div className="flex items-center gap-1.5 mt-4">
               <div className={cn(
