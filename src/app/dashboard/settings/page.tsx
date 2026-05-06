@@ -42,6 +42,7 @@ export default function SettingsPage() {
     primary_color: organization?.primary_color || '#6366f1',
     secondary_color: organization?.secondary_color || '#8b5cf6',
     logo_url: organization?.logo_url || '',
+    access_code: organization?.access_code || '',
     rut: (organization?.settings as any)?.rut || '',
     address: (organization?.settings as any)?.address || '',
     villa: (organization?.settings as any)?.villa || '',
@@ -129,13 +130,15 @@ export default function SettingsPage() {
 
       setFormData(prev => ({ ...prev, logo_url: publicUrl }));
       
-      await supabase
+      const { error: updateError } = await supabase
         .from('organizations')
         .update({ logo_url: publicUrl })
         .eq('id', organization.id);
         
+      if (updateError) throw updateError;
+        
       await refreshOrganization();
-      setMessage({ text: 'Logo actualizado correctamente', type: 'success' });
+      setMessage({ text: 'Logo subido correctamente. Haz clic en Guardar Cambios para finalizar.', type: 'success' });
     } catch (err) {
       console.error('Error uploading logo:', err);
       setMessage({ text: 'Error al subir el logo', type: 'error' });
@@ -164,6 +167,7 @@ export default function SettingsPage() {
           secondary_color: formData.secondary_color,
           logo_url: formData.logo_url,
           org_type: formData.org_type,
+          access_code: formData.access_code.trim().toUpperCase(),
           parent_org_id: formData.parent_org_id || null,
           settings: {
             ...currentSettings,
@@ -182,8 +186,8 @@ export default function SettingsPage() {
 
       if (error) throw error;
       
-      setMessage({ text: 'Configuración guardada exitosamente', type: 'success' });
       await refreshOrganization();
+      setMessage({ text: 'Configuración guardada exitosamente', type: 'success' });
     } catch (err) {
       console.error('Error saving settings:', err);
       setMessage({ text: 'Error al guardar configuración', type: 'error' });
@@ -330,31 +334,38 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Institutional Access Key Display */}
+                {/* Institutional Access Key - NOW EDITABLE */}
                 <div className="p-6 rounded-2xl bg-brand-500/5 border border-brand-500/20 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
                     <Key className="w-12 h-12 text-brand-400" />
                   </div>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-                    <div>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                    <div className="flex-1">
                       <p className="text-[10px] font-black text-brand-400 uppercase tracking-widest mb-1">Clave de Acceso Institucional</p>
-                      <h3 className="text-2xl font-black text-white font-mono tracking-widest uppercase">
-                        {organization?.access_code || 'SIN CLAVE'}
-                      </h3>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="text"
+                          value={formData.access_code}
+                          onChange={(e) => setFormData({ ...formData, access_code: e.target.value.toUpperCase() })}
+                          className="bg-transparent text-2xl font-black text-white font-mono tracking-widest uppercase outline-none border-b border-white/10 focus:border-brand-500 transition-colors w-full max-w-[300px]"
+                          placeholder="EJ: MI-CLAVE-2024"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(formData.access_code);
+                            setMessage({ text: 'Clave copiada al portapapeles', type: 'success' });
+                          }}
+                          className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-brand-400 transition-colors"
+                          title="Copiar Clave"
+                        >
+                          <Key className="w-4 h-4" />
+                        </button>
+                      </div>
                       <p className="text-xs text-slate-500 mt-2 max-w-sm">
-                        Comparte esta clave con otros administradores para vincular esta organización de forma privada.
+                        Esta es la llave maestra para entrar a esta organización desde el Login. Puedes cambiarla cuando quieras.
                       </p>
                     </div>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(organization?.access_code || '');
-                        alert('Clave copiada al portapapeles');
-                      }}
-                      className="px-4 py-2 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 rounded-lg text-brand-400 text-[10px] font-bold uppercase tracking-widest transition-all"
-                    >
-                      Copiar Clave
-                    </button>
                   </div>
                 </div>
 
@@ -632,26 +643,96 @@ export default function SettingsPage() {
 
           {activeTab === 'members' && (
             <div className="space-y-6 animate-fade-in">
+              {/* Invite Form */}
               <div className="glass-card p-6 md:p-8">
-                <h2 className="text-lg font-semibold text-white mb-1">Usuarios Activos</h2>
-                <p className="text-sm text-slate-400 mb-6">Gestiona los accesos de tu equipo.</p>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                  <div>
+                    <h2 className="text-lg font-bold text-white mb-1">Añadir Nuevo Usuario</h2>
+                    <p className="text-sm text-slate-400">Envía un acceso a un colaborador para que te ayude a gestionar.</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleInvite} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div className="space-y-2 md:col-span-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Correo Electrónico</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="ejemplo@correo.com"
+                        className="glass-input w-full pl-10 pr-4 py-2.5 text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2 md:col-span-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Rol de Acceso</label>
+                    <select
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value as Role)}
+                      className="glass-input w-full px-4 py-2.5 text-sm appearance-none cursor-pointer"
+                    >
+                      <option value="admin">Administrador</option>
+                      <option value="validator">Validador (Solo Escanear)</option>
+                      <option value="viewer">Visualizador (Solo Lectura)</option>
+                    </select>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Invitar Usuario
+                  </button>
+                </form>
+              </div>
+
+              {/* Members List */}
+              <div className="glass-card overflow-hidden">
+                <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+                  <h2 className="text-lg font-bold text-white">Usuarios con Acceso</h2>
+                  <p className="text-sm text-slate-400">Lista de personas que pueden gestionar esta institución.</p>
+                </div>
                 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="bg-white/[0.02] border-b border-white/5 text-slate-400">
-                        <th className="px-6 py-4 font-medium">Usuario</th>
-                        <th className="px-6 py-4 font-medium">Rol</th>
+                      <tr className="border-b border-white/5 text-slate-500 uppercase text-[10px] tracking-widest font-bold">
+                        <th className="px-6 py-4">Usuario</th>
+                        <th className="px-6 py-4">Rol Asignado</th>
+                        <th className="px-6 py-4 text-right">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {members.map((member) => (
-                        <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
-                          <td className="px-6 py-4">{member.email}</td>
+                        <tr key={member.id} className="hover:bg-white/[0.01] transition-colors">
                           <td className="px-6 py-4">
-                            <span className="px-2 py-1 bg-brand-500/10 text-brand-400 rounded-lg text-xs font-bold uppercase">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-400 font-bold text-xs border border-brand-500/20">
+                                {member.email?.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="text-slate-200 font-medium">{member.email}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${
+                              member.role === 'owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                              member.role === 'admin' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                              member.role === 'validator' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                              'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                            }`}>
                               {roleDescriptions[member.role].title}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            {member.role !== 'owner' && (
+                              <button className="p-2 text-slate-500 hover:text-red-400 transition-colors">
+                                <UserX className="w-4 h-4" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}

@@ -130,56 +130,11 @@ export default function DashboardLayout({
             </button>
           </div>
 
-          {/* Organization Switcher & Global Search */}
-          <div className="px-4 py-4 border-b border-brand-500/10 space-y-4">
-            {memberships && memberships.length > 1 && (
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
-                  Cambiar de Entidad
-                </label>
-                <div className="relative group">
-                  <select
-                    value={organization?.id}
-                    onChange={(e) => switchOrganization(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white appearance-none cursor-pointer focus:ring-1 focus:ring-brand-500 outline-none transition-all group-hover:border-brand-500/30"
-                  >
-                    {memberships.map((m) => (
-                      <option key={m.org_id} value={m.org_id} className="bg-slate-900 text-white">
-                        {m.organizations?.name || 'Cargando...'}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                    <ChevronRight className="w-3.5 h-3.5 rotate-90" />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Join by Institutional Key - ALWAYS VISIBLE BLUE BUTTON */}
-            <div className="pt-2">
-              <button 
-                onClick={() => {
-                  const code = window.prompt('Ingresa la Clave de Acceso de la Institución:');
-                  if (code) {
-                    joinByCode(code).then(res => {
-                      if (res.error) alert(res.error);
-                    });
-                  }
-                }}
-                className="w-full py-2.5 px-3 rounded-xl bg-brand-500 text-[10px] font-black text-white hover:bg-brand-600 transition-all flex items-center justify-center gap-2 uppercase tracking-[0.15em] shadow-[0_4px_12px_rgba(99,102,241,0.3)]"
-              >
-                <Key className="w-3.5 h-3.5" />
-                Ingresar Clave Institución
-              </button>
-            </div>
-          </div>
-
-          {/* Org Logo & Info (Condensed if switcher exists) */}
-          {(!memberships || memberships.length <= 1) && organization && (
-            <div className="p-6 border-b border-brand-500/10">
+          {/* Organization Info - Active context set from login */}
+          {organization && (
+            <div className="p-6 border-b border-brand-500/10 bg-brand-500/[0.02]">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center overflow-hidden shadow-inner">
                   {organization.logo_url ? (
                     <img src={organization.logo_url} className="w-full h-full object-contain" alt="Logo" />
                   ) : (
@@ -187,9 +142,9 @@ export default function DashboardLayout({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-sm font-bold text-white truncate">{organization.name}</h2>
-                  <p className="text-[10px] text-brand-400 font-mono uppercase tracking-widest mt-0.5">
-                    {organization.org_type || 'JJVV'}
+                  <h2 className="text-sm font-bold text-white truncate leading-tight">{organization.name}</h2>
+                  <p className="text-[10px] text-brand-400 font-mono uppercase tracking-widest mt-1">
+                    {organization.org_type === 'municipality' ? 'Municipalidad' : 'Junta de Vecinos'}
                   </p>
                 </div>
               </div>

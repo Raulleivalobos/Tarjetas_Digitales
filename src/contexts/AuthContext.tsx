@@ -12,7 +12,7 @@ interface AuthContextType {
   membership: OrgMember | null;
   memberships: any[]; // Lista de todas las membresías
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string, accessCode?: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, orgName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshOrganization: () => Promise<void>;
@@ -123,8 +123,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const signIn = async (email: string, password: string, accessCode?: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (!error && data.user && accessCode) {
+      // Intentar vincular automáticamente si hay una clave
+      try {
+        const { data: joinData } = await supabase.rpc('join_org_by_code', {
+          target_code: accessCode.trim().toUpperCase(),
+          target_user_id: data.user.id
+        });
+        
+        if (joinData && joinData.org_id) {
+          localStorage.setItem('last_org_id', joinData.org_id);
+        }
+      } catch (err) {
+        console.error('Auto-join failed:', err);
+      }
+    }
+
     return { error: error as Error | null };
   };
 
