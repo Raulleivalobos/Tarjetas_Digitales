@@ -74,21 +74,24 @@ export default function IssueCertificatePage() {
       if (!organization) return;
       try {
         const { data } = await supabase
-          .from('card_designs')
-          .select('id, name, description, background, design_type')
-          .eq('org_id', organization.id)
-          .order('created_at', { ascending: false });
-        
-        const allDesigns = data || [];
-        
-        // Filter specifically for certificates
-        const certificateDesigns = allDesigns.filter((d: any) => 
-          d.design_type === 'certificate' || 
-          d.name.toLowerCase().includes('certificado') || 
-          d.name.toLowerCase().includes('residencia')
-        );
+        .from('card_designs')
+        .select('*')
+        .eq('org_id', organization.id)
+        .order('created_at', { ascending: false });
+      
+      const results = (data || []).map(d => ({
+        ...d,
+        additionalInfo: d.additional_info || []
+      })) as any[];
 
-        setDesigns(certificateDesigns);
+      // Filter specifically for certificates
+      const certificateDesigns = results.filter((d: any) => 
+        d.design_type === 'certificate' || 
+        d.name.toLowerCase().includes('certificado') || 
+        d.name.toLowerCase().includes('residencia')
+      );
+
+      setDesigns(certificateDesigns);
         
         // Auto-select first certificate or any available
         if (certificateDesigns.length > 0) {
@@ -236,12 +239,60 @@ export default function IssueCertificatePage() {
     }
   };
 
+  const getPopulatedDesign = () => {
+    const selectedDesign = designs.find(d => d.id === selectedDesignId);
+    if (!selectedDesign || !selectedDesign.elements) return null;
+    
+    try {
+      const elements = [...selectedDesign.elements];
+      const previewDate = new Date().toLocaleDateString('es-CL');
+
+      return {
+        ...selectedDesign,
+        elements: elements.map((el: any) => {
+          if (!el.data) return el;
+          if (el.type === 'text' && el.data.isAttribute) {
+            const attrKey = el.data.attributeKey?.trim().toUpperCase();
+            if (!attrKey) return el;
+            
+            let val = el.data.content || '';
+            if (attrKey === 'NOMBRE RECEPTOR' || attrKey === 'NOMBRE') val = recipientName || val;
+            else if (attrKey === 'NOMBRE INSTITUCIÓN' || attrKey === 'ORGANIZACION') val = organization?.name || val;
+            else if (attrKey === 'RUT') val = recipientRut || val;
+            else if (attrKey === 'FECHA') val = previewDate;
+            else if (attrKey === 'MOTIVO') val = formData.reason || val;
+            else if (attrKey === 'COMUNA') val = organization?.settings?.commune || val;
+            
+            return { ...el, data: { ...el.data, content: val } };
+          }
+          if (el.type === 'image' && el.data.isAttribute) {
+            const attrKey = el.data.attributeKey?.trim().toUpperCase();
+            let src = el.data.src;
+            if (attrKey === 'LOGO INSTITUCIÓN' || attrKey === 'LOGO') {
+              src = organization?.logo_url || src;
+            }
+            return { ...el, data: { ...el.data, src } };
+          }
+          if (el.type === 'qr') {
+            return { ...el, data: { ...el.data, content: 'PREVIEW-QR' } };
+          }
+          return el;
+        }),
+      };
+    } catch (err) {
+      console.error("Error populating design:", err);
+      return selectedDesign;
+    }
+  };
+
   const recipientName = formData.type === 'residente' 
     ? formData.resident_data.full_name 
     : selectedBeneficiary?.full_name || '';
   const recipientRut = formData.type === 'residente' 
     ? formData.resident_data.rut 
     : selectedBeneficiary?.rut || '';
+
+  const populatedDesign = getPopulatedDesign();
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in pb-20">
@@ -355,7 +406,28 @@ export default function IssueCertificatePage() {
         {/* Sidebar */}
         <div className="space-y-6">
           <div className="glass-card p-6 sticky top-6">
-            <h2 className="text-lg font-semibold text-white mb-6">Resumen</h2>
+            <h2 className="text-lg font-semibold text-white mb-6">Vista Previa</h2>
+            
+            {/* Live Preview Canvas */}
+            <div className="aspect-[1/1.4] w-full bg-white rounded-lg mb-6 overflow-hidden relative shadow-2xl border border-white/10 group cursor-zoom-in" onClick={() => setPreviewModalOpen(true)}>
+              {populatedDesign ? (
+                <div className="scale-[0.28] origin-top-left w-[1000%] h-[1000%]">
+                   <CanvasPreview 
+                    design={populatedDesign as any} 
+                    elements={populatedDesign.elements} 
+                    onElementSelect={() => {}}
+                  />
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-xs">
+                  Selecciona un modelo
+                </div>
+              )}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <Eye className="w-8 h-8 text-white drop-shadow-lg" />
+              </div>
+            </div>
+
             <div className="space-y-4 mb-8">
               <div className="flex justify-between text-sm"><span className="text-slate-500">Modelo:</span><span className="text-brand-400 font-bold text-right max-w-[180px] break-words leading-tight">{designs.find((d: any) => d.id === selectedDesignId)?.name || 'No elegido'}</span></div>
               <div className="flex justify-between text-sm"><span className="text-slate-500">Tipo:</span><span className="text-white font-bold capitalize">{formData.type.replace('_', ' ')}</span></div>
@@ -384,7 +456,7 @@ export default function IssueCertificatePage() {
         <div className="glass-card-solid w-full max-w-lg mx-4 p-6 space-y-5 border border-brand-500/20 shadow-2xl">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Eye className="w-5 h-5 text-brand-400" />
+              <CheckCircle2 className="w-5 h-5 text-brand-400" />
               Confirmar Emisión
             </h2>
             <button onClick={() => setShowConfirm(false)} className="p-1 text-slate-400 hover:text-white">
@@ -426,7 +498,7 @@ export default function IssueCertificatePage() {
           <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
             <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-200 leading-relaxed">
-              Al confirmar, se generará el certificado con folio correlativo y se registrará el cobro de <strong>${formData.cost.toLocaleString('es-CL')}</strong>. Esta acción no se puede deshacer.
+              Al confirmar, se generará el certificado con folio correlativo y se enviará por correo. Esta acción no se puede deshacer.
             </p>
           </div>
 
@@ -444,6 +516,31 @@ export default function IssueCertificatePage() {
             >
               {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save className="w-5 h-5" />Confirmar y Emitir</>}
             </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Full Screen Preview Modal */}
+    {previewModalOpen && populatedDesign && (
+      <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in p-4 md:p-8">
+        <div className="relative w-full max-w-5xl h-full flex flex-col">
+          <div className="flex justify-end mb-4">
+            <button 
+              onClick={() => setPreviewModalOpen(false)}
+              className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all shadow-xl border border-white/10"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="flex-1 bg-white rounded-2xl shadow-2xl overflow-auto p-4 md:p-12 flex justify-center items-start">
+            <div className="scale-[0.5] md:scale-[0.85] origin-top">
+              <CanvasPreview 
+                design={populatedDesign as any} 
+                elements={populatedDesign.elements} 
+                onElementSelect={() => {}}
+              />
+            </div>
           </div>
         </div>
       </div>
