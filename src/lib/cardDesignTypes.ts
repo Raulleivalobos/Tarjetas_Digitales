@@ -114,6 +114,7 @@ export interface CardDesign {
   org_id: string;
   name: string;
   description: string;
+  design_type: 'card' | 'certificate';
   width: number;
   height: number;
   format: PaperFormat;
@@ -131,6 +132,7 @@ export interface CardDesign {
 export interface CardDesignFormData {
   name: string;
   description?: string;
+  design_type: 'card' | 'certificate';
   width?: number;
   height?: number;
   background?: CardBackground;

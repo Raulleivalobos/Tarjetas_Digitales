@@ -72,19 +72,30 @@ export default function IssueCertificatePage() {
   useEffect(() => {
     const fetchDesigns = async () => {
       if (!organization) return;
-      const { data } = await supabase
-        .from('card_designs')
-        .select('id, name, description, background')
-        .eq('org_id', organization.id)
-        .order('created_at', { ascending: false });
-      
-      const results = data || [];
-      setDesigns(results);
-      
-      // Auto-select first design or one containing 'certificado'
-      const defaultDesign = results.find((d: any) => d.name.toLowerCase().includes('certificado')) || results[0];
-      if (defaultDesign) {
-        setSelectedDesignId(defaultDesign.id);
+      try {
+        const { data } = await supabase
+          .from('card_designs')
+          .select('id, name, description, background, design_type')
+          .eq('org_id', organization.id)
+          .order('created_at', { ascending: false });
+        
+        const allDesigns = data || [];
+        
+        // Filter specifically for certificates
+        const certificateDesigns = allDesigns.filter((d: any) => 
+          d.design_type === 'certificate' || 
+          d.name.toLowerCase().includes('certificado') || 
+          d.name.toLowerCase().includes('residencia')
+        );
+
+        setDesigns(certificateDesigns);
+        
+        // Auto-select first certificate or any available
+        if (certificateDesigns.length > 0) {
+          setSelectedDesignId(certificateDesigns[0].id);
+        }
+      } catch (err) {
+        console.error('Error fetching designs:', err);
       }
     };
     fetchDesigns();
@@ -147,17 +158,20 @@ export default function IssueCertificatePage() {
     }
   };
 
+  const [formError, setFormError] = useState('');
+
   const handleConfirm = () => {
+    setFormError('');
     if (!organization || !selectedDesignId) {
-      alert('Debes seleccionar un diseño antes de emitir.');
+      setFormError('Debes seleccionar un diseño antes de emitir.');
       return;
     }
     if (formData.type === 'residente' && (!formData.resident_data.full_name || !formData.resident_data.email)) {
-      alert('Debes ingresar el nombre y el correo del residente.');
+      setFormError('Debes ingresar el nombre y el correo del residente.');
       return;
     }
     if (formData.type !== 'residente' && (!selectedBeneficiary || !selectedBeneficiary.email)) {
-      alert('Debes seleccionar un socio que tenga correo electrónico registrado. Actualiza sus datos en la sección Beneficiarios primero si es necesario.');
+      setFormError('El socio seleccionado no tiene correo electrónico registrado. Actualiza sus datos en la sección Beneficiarios primero.');
       return;
     }
     setShowConfirm(true);
@@ -347,6 +361,12 @@ export default function IssueCertificatePage() {
               <div className="flex justify-between text-sm"><span className="text-slate-500">Tipo:</span><span className="text-white font-bold capitalize">{formData.type.replace('_', ' ')}</span></div>
               <div className="flex justify-between text-sm"><span className="text-slate-500">Costo:</span><span className="text-emerald-400 font-black">${formData.cost.toLocaleString('es-CL')}</span></div>
             </div>
+            {formError && (
+              <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2 animate-shake">
+                <AlertCircle className="w-4 h-4" />
+                {formError}
+              </div>
+            )}
             <button
               onClick={handleConfirm}
               disabled={loading || (formData.type === 'residente' ? !formData.resident_data.full_name : !selectedBeneficiary) || !selectedDesignId}

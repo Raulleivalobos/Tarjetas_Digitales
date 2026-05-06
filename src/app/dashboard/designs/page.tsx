@@ -22,6 +22,8 @@ import {
   CreditCard,
   Award,
   FileText,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 
 function getBackgroundCSS(bg: CardBackground): string {
@@ -79,6 +81,7 @@ export default function DesignsPage() {
   const [newDesignName, setNewDesignName] = useState('');
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [message, setMessage] = useState({ text: '', type: '' });
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -90,7 +93,6 @@ export default function DesignsPage() {
     }
     setLoading(true);
     try {
-      // Fetch from DB
       const { data, error } = await supabase
         .from('card_designs')
         .select('*')
@@ -100,41 +102,12 @@ export default function DesignsPage() {
       if (!error && data) {
         setDesigns(data);
       }
-      
-      // Optional: Migrate local designs if any still exist
-      const stored = localStorage.getItem('cardsocial_designs');
-      if (stored) {
-        const parsed = JSON.parse(stored) as CardDesign[];
-        if (parsed.length > 0) {
-          for (const d of parsed) {
-            await supabase.from('card_designs').insert({
-              org_id: organization.id,
-              name: d.name,
-              description: d.description,
-              width: d.width,
-              height: d.height,
-              format: d.format,
-              background: d.background,
-              elements: d.elements,
-              attributes: d.attributes,
-              additional_info: d.additionalInfo || d.additional_info,
-              thumbnail: d.thumbnail,
-              is_default: d.is_default
-            });
-          }
-          localStorage.removeItem('cardsocial_designs');
-          // Reload
-          const { data: newData } = await supabase.from('card_designs').select('*').eq('org_id', organization.id).order('created_at', { ascending: false });
-          if (newData) setDesigns(newData);
-        }
-      }
     } catch (e) {
       console.error('Error loading designs', e);
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organization, authLoading]);
+  }, [organization, authLoading, supabase]);
 
   useEffect(() => {
     loadDesigns();
@@ -147,16 +120,30 @@ export default function DesignsPage() {
   };
 
   const handleDeleteDesign = async (id: string) => {
+    setLoading(true);
     try {
       const { error } = await supabase.from('card_designs').delete().eq('id', id);
-      if (!error) {
-        setDesigns(designs.filter((d: any) => d.id !== id));
+      
+      if (error) {
+        console.error('Error deleting design:', error);
+        if (error.code === '23503') {
+          setMessage({ text: 'No se puede eliminar: Este diseño está siendo usado en certificados ya emitidos.', type: 'error' });
+        } else {
+          setMessage({ text: 'Error al eliminar el diseño de la base de datos.', type: 'error' });
+        }
+      } else {
+        setDesigns(prev => prev.filter(d => d.id !== id));
+        setMessage({ text: 'Diseño eliminado correctamente.', type: 'success' });
       }
     } catch (e) {
       console.error('Error deleting design', e);
+      setMessage({ text: 'Error inesperado al intentar borrar.', type: 'error' });
+    } finally {
+      setLoading(false);
+      setDeleteConfirm(null);
+      setMenuOpen(null);
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     }
-    setDeleteConfirm(null);
-    setMenuOpen(null);
   };
 
   const handleDuplicateDesign = async (design: CardDesign) => {
@@ -191,6 +178,16 @@ export default function DesignsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Messages */}
+      {message.text && (
+        <div className={`p-4 rounded-xl text-sm flex items-center gap-3 animate-slide-in-right ${
+          message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+        }`}>
+          {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          {message.text}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

@@ -71,13 +71,18 @@ export default function IssuePage() {
       try {
         const { data, error } = await supabase
           .from('card_designs')
-          .select('*')
+          .select('id, name, description, background, design_type')
           .eq('org_id', organization.id)
           .order('created_at', { ascending: false });
           
         if (!error && data) {
-          // Map additional_info to additionalInfo if needed
-          const mapped = data.map(d => ({
+          // Filter only cards
+          const cardDesigns = data.filter((d: any) => 
+            d.design_type === 'card' || 
+            (!d.design_type && !d.name.toLowerCase().includes('certificado'))
+          );
+
+          const mapped = cardDesigns.map(d => ({
             ...d,
             additionalInfo: d.additional_info || []
           })) as CardDesign[];
