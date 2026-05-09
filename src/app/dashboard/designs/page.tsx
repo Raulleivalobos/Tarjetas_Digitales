@@ -68,7 +68,7 @@ const BASE_TEMPLATES: Partial<CardDesign>[] = [
   },
 ];
 
-type TabFilter = 'my-designs' | 'base-credentials' | 'base-certificates';
+type TabFilter = 'my-cards' | 'my-certificates' | 'base-credentials' | 'base-certificates';
 
 export default function DesignsPage() {
   const router = useRouter();
@@ -76,9 +76,10 @@ export default function DesignsPage() {
   const [designs, setDesigns] = useState<CardDesign[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<TabFilter>('my-designs');
+  const [activeTab, setActiveTab] = useState<TabFilter>('my-cards');
   const [showNewDesignModal, setShowNewDesignModal] = useState(false);
   const [newDesignName, setNewDesignName] = useState('');
+  const [newDesignType, setNewDesignType] = useState<'card' | 'certificate'>('card');
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -116,7 +117,7 @@ export default function DesignsPage() {
   const handleCreateDesign = () => {
     if (!newDesignName.trim()) return;
     const name = encodeURIComponent(newDesignName.trim());
-    router.push(`/dashboard/designs/editor?name=${name}`);
+    router.push(`/dashboard/designs/editor?name=${name}&type=${newDesignType}`);
   };
 
   const handleDeleteDesign = async (id: string) => {
@@ -160,6 +161,7 @@ export default function DesignsPage() {
         attributes: design.attributes,
         additional_info: design.additionalInfo || design.additional_info,
         thumbnail: design.thumbnail,
+        design_type: design.design_type || 'card',
         is_default: false
       };
       const { data, error } = await supabase.from('card_designs').insert(duplicate).select().single();
@@ -225,7 +227,8 @@ export default function DesignsPage() {
         {/* Tab filters */}
         <div className="flex items-center gap-1 border-b border-brand-500/10 pb-3">
           {[
-            { key: 'my-designs' as const, label: 'Mis Diseños', icon: FileText },
+            { key: 'my-cards' as const, label: 'Mis Credenciales', icon: CreditCard },
+            { key: 'my-certificates' as const, label: 'Mis Certificados', icon: Award },
             { key: 'base-credentials' as const, label: 'Credenciales Base', icon: CreditCard },
             { key: 'base-certificates' as const, label: 'Certificados Base', icon: Award },
           ].map(({ key, label, icon: Icon }) => (
@@ -264,9 +267,13 @@ export default function DesignsPage() {
             <div key={i} className="glass-card h-80 animate-pulse bg-white/5" />
           ))}
         </div>
-      ) : activeTab === 'my-designs' && (
+      ) : (activeTab === 'my-cards' || activeTab === 'my-certificates') && (
         <>
-          {filteredDesigns.length === 0 ? (
+          {filteredDesigns.filter(d => 
+            activeTab === 'my-cards' 
+              ? (d.design_type === 'card' || !d.design_type) 
+              : d.design_type === 'certificate'
+          ).length === 0 ? (
             <div className="glass-card">
               <EmptyState
                 icon={<Palette className="w-8 h-8" />}
@@ -276,7 +283,11 @@ export default function DesignsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredDesigns.map((design) => (
+              {filteredDesigns.filter(d => 
+                activeTab === 'my-cards' 
+                  ? (d.design_type === 'card' || !d.design_type) 
+                  : d.design_type === 'certificate'
+              ).map((design) => (
                 <div
                   key={design.id}
                   className="bg-white rounded-[20px] p-4 shadow-sm border border-slate-200 relative group flex flex-col transition-all hover:shadow-md hover:border-slate-300"
@@ -540,6 +551,33 @@ export default function DesignsPage() {
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleCreateDesign()}
             />
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 mb-1.5 block">Tipo de diseño</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setNewDesignType('card')}
+                className={`py-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                  newDesignType === 'card' 
+                    ? 'bg-brand-500/20 border-brand-500 text-white' 
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                }`}
+              >
+                <CreditCard className="w-5 h-5" />
+                <span className="text-sm font-medium">Credencial</span>
+              </button>
+              <button
+                onClick={() => setNewDesignType('certificate')}
+                className={`py-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${
+                  newDesignType === 'certificate' 
+                    ? 'bg-brand-500/20 border-brand-500 text-white' 
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                }`}
+              >
+                <Award className="w-5 h-5" />
+                <span className="text-sm font-medium">Certificado</span>
+              </button>
+            </div>
           </div>
           <div className="flex items-center justify-end gap-3 pt-2">
             <button

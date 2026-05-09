@@ -60,8 +60,8 @@ const TABS: { key: PanelTab; label: string; icon: React.ComponentType<{ classNam
   { key: 'info', label: 'INFORMACIÓN', icon: ListOrdered },
 ];
 
-function createDefaultDesign(orgId: string, name: string): CardDesign {
-  const isCert = name.toLowerCase().includes('certificado');
+function createDefaultDesign(orgId: string, name: string, type: 'card' | 'certificate' = 'card'): CardDesign {
+  const isCert = type === 'certificate' || name.toLowerCase().includes('certificado');
 
   if (isCert) {
     return {
@@ -69,6 +69,7 @@ function createDefaultDesign(orgId: string, name: string): CardDesign {
       org_id: orgId,
       name: name || 'Certificado de Residencia',
       description: 'Formato oficial de certificado A4',
+      design_type: 'certificate',
       width: 794,
       height: 1123,
       format: {
@@ -394,10 +395,11 @@ function createDefaultDesign(orgId: string, name: string): CardDesign {
     org_id: orgId,
     name: name || 'Nuevo Diseño',
     description: '',
+    design_type: type || 'card',
     width: 559,
     height: 432,
     format: {
-      paperSize: 'carta',
+      paperSize: 'credit-card',
       orientation: 'horizontal',
     },
     background: {
@@ -611,6 +613,7 @@ export default function CardDesignEditorPage() {
   const { organization } = useAuth();
   const designId = searchParams.get('id');
   const designName = searchParams.get('name') || 'Nuevo Diseño';
+  const designTypeParam = searchParams.get('type') as 'card' | 'certificate' | null;
   const canvasExportRef = useRef<HTMLDivElement>(null);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
@@ -653,7 +656,7 @@ export default function CardDesignEditorPage() {
       
       if (isMounted) {
         // Fallback to new design
-        const newDesign = createDefaultDesign(organization?.id || '', designName);
+        const newDesign = createDefaultDesign(organization?.id || '', designName, designTypeParam || 'card');
         // We set a temporary ID starting with 'new-' so we know it hasn't been saved yet
         newDesign.id = 'new-' + newDesign.id;
         setDesign(newDesign);
@@ -1159,6 +1162,10 @@ export default function CardDesignEditorPage() {
       if (isNew) {
         const { id, ...insertData } = designToSave;
         insertData.org_id = organization.id;
+        // Ensure design_type is properly set based on the type fallback
+        if (!insertData.design_type) {
+           insertData.design_type = (insertData.name.toLowerCase().includes('certificado') || designTypeParam === 'certificate') ? 'certificate' : 'card';
+        }
         
         const { data, error } = await supabase
           .from('card_designs')
