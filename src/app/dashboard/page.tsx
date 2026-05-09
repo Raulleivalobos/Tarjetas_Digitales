@@ -87,7 +87,8 @@ export default function DashboardPage() {
   const { organization } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   useEffect(() => {
     const fetchDashboardData = async () => {

@@ -9,7 +9,8 @@ import { formatDate } from '@/lib/utils';
 
 export default function AttendancePage() {
   const { organization, user, loading: authLoading } = useAuth();
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const [meetings, setMeetings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

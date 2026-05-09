@@ -19,7 +19,8 @@ import Image from 'next/image';
 export default function NewBeneficiaryPage() {
   const { organization } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(false);

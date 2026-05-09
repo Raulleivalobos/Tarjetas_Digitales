@@ -22,6 +22,11 @@ import {
 import Link from 'next/link';
 import { Beneficiary, CertificateType } from '@/lib/types';
 import { sendCertificateNotification } from '@/app/actions/email';
+import dynamic from 'next/dynamic';
+const CanvasPreview = dynamic(
+  () => import('@/components/designer/CanvasPreview').then(m => m.CanvasPreview),
+  { ssr: false, loading: () => <div className="w-full h-full animate-pulse bg-white/5 rounded-lg" /> }
+);
 
 const REASONS = [
   'Certificación de Domicilio',
@@ -45,6 +50,7 @@ export default function IssueCertificatePage() {
   const [selectedDesignId, setSelectedDesignId] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
 
   // Use custom reasons from organization settings if available
   const availableReasons = organization?.settings?.reasons || REASONS;

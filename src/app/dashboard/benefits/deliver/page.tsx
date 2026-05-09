@@ -10,7 +10,8 @@ import QRScanner from '@/components/scanner/QRScanner';
 
 export default function DeliverBenefitPage() {
   const { user, organization } = useAuth();
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const [scannedBeneficiary, setScannedBeneficiary] = useState<any>(null);
   const [pendingAssignments, setPendingAssignments] = useState<any[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string } | null>(null);

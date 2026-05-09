@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { Html5QrcodeScanner } from 'html5-qrcode';
@@ -10,7 +10,7 @@ import { DigitalCardView } from '@/components/cards/DigitalCardView';
 import { formatDate } from '@/lib/utils';
 import Image from 'next/image';
 import { SuccessStamp } from '@/components/ui/SuccessStamp';
-import { motion, AnimatePresence } from 'framer-motion';
+// framer-motion removed — not used in this component
 
 export default function ScannerPage() {
   const { user, organization } = useAuth();
@@ -20,7 +20,8 @@ export default function ScannerPage() {
   const [processingBenefit, setProcessingBenefit] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isGlitching, setIsGlitching] = useState(false);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   const logValidation = async (
     action: string,

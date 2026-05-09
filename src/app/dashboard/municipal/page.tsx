@@ -30,7 +30,8 @@ export default function MunicipalDashboard() {
     totalAttendance: 0,
   });
   const [jjvvList, setJJVVList] = useState<any[]>([]);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   useEffect(() => {
     if (!authLoading && organization) {

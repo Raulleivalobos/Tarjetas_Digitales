@@ -13,7 +13,8 @@ import { exportReportToPDF } from '@/lib/pdfGenerator';
 export default function MeetingDetailPage() {
   const { id } = useParams() as { id: string };
   const { user, organization } = useAuth();
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const [meeting, setMeeting] = useState<any>(null);
   const [attendances, setAttendances] = useState<any[]>([]);
   const [totalBeneficiaries, setTotalBeneficiaries] = useState(0);

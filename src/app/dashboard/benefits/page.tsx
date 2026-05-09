@@ -10,7 +10,8 @@ import { formatDate } from '@/lib/utils';
 
 export default function BenefitsPage() {
   const { organization, loading: authLoading } = useAuth();
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const [benefits, setBenefits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

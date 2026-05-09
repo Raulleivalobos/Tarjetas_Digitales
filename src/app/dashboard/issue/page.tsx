@@ -5,12 +5,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { validateRut, formatRut, generateCardNumber } from '@/lib/utils';
 import { BulkUploadRow, BulkUploadResult } from '@/lib/types';
-import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
+// xlsx (~200KB) and papaparse (~30KB) loaded dynamically when needed
+import type PapaType from 'papaparse';
+import type * as XLSXType from 'xlsx';
 import { Upload, FileText, AlertTriangle, Download, UserPlus, Users, Palette, Check, LayoutTemplate, Globe, Shield } from 'lucide-react';
 import { CardDesign } from '@/lib/cardDesignTypes';
 import { Modal } from '@/components/ui/Modal';
-import { CanvasPreview } from '@/components/designer/CanvasPreview';
+import dynamic from 'next/dynamic';
+const CanvasPreview = dynamic(
+  () => import('@/components/designer/CanvasPreview').then(m => m.CanvasPreview),
+  { ssr: false, loading: () => <div className="w-full h-full animate-pulse bg-white/5 rounded-lg" /> }
+);
 import { useSearchParams } from 'next/navigation';
 import { sendCertificateNotification } from '@/app/actions/email';
 
@@ -431,7 +436,7 @@ export default function IssuePage() {
   };
 
   // -- Bulk Logic --
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
 
@@ -440,6 +445,7 @@ export default function IssuePage() {
 
     const ext = selected.name.split('.').pop()?.toLowerCase();
     if (ext === 'csv') {
+      const Papa = (await import('papaparse')).default;
       Papa.parse<BulkUploadRow>(selected, {
         header: true,
         skipEmptyLines: true,
@@ -448,6 +454,7 @@ export default function IssuePage() {
         },
       });
     } else if (ext === 'xlsx' || ext === 'xls') {
+      const XLSX = await import('xlsx');
       const reader = new FileReader();
       reader.onload = (e) => {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
@@ -495,10 +502,12 @@ export default function IssuePage() {
     let dataToProcess: BulkUploadRow[] = [];
 
     if (ext === 'csv') {
+      const Papa = (await import('papaparse')).default;
       const text = await file.text();
       const parsed = Papa.parse<BulkUploadRow>(text, { header: true, skipEmptyLines: true });
       dataToProcess = fixExcelDates(parsed.data);
     } else {
+      const XLSX = await import('xlsx');
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array', cellDates: false });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -674,7 +683,7 @@ export default function IssuePage() {
     return { headers, examples };
   };
 
-  const downloadTemplate = (format: 'csv' | 'xlsx') => {
+  const downloadTemplate = async (format: 'csv' | 'xlsx') => {
     if (!organization) return;
     const { headers, examples } = getTemplateColumns();
     const data = [headers, examples];
@@ -692,6 +701,7 @@ export default function IssuePage() {
       a.click();
       URL.revokeObjectURL(url);
     } else {
+      const XLSX = await import('xlsx');
       const ws = XLSX.utils.aoa_to_sheet(data);
       // Set column widths for readability
       ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 5, 20) }));

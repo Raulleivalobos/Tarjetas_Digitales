@@ -34,7 +34,8 @@ export default function SettingsPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [municipalities, setMunicipalities] = useState<any[]>([]);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   
   const [formData, setFormData] = useState({
     name: organization?.name || '',

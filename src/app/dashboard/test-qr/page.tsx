@@ -8,7 +8,8 @@ import { CreditCard, Smartphone, Wifi, ArrowRight, Copy, CheckCircle, QrCode } f
 
 export default function TestQRPage() {
   const { organization } = useAuth();
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);

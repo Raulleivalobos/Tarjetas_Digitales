@@ -42,7 +42,8 @@ export default function CardsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   useEffect(() => {
     const fetchCards = async () => {

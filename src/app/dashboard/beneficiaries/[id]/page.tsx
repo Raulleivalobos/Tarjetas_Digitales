@@ -29,7 +29,8 @@ export default function BeneficiaryDetailPage() {
   const [card, setCard] = useState<DigitalCard | null>(null);
   const [assignments, setAssignments] = useState<BenefitAssignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   useEffect(() => {
     const fetchData = async () => {

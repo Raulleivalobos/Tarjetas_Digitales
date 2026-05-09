@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { Organization, OrgMember } from '@/lib/types';
@@ -30,7 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [membership, setMembership] = useState<OrgMember | null>(null);
   const [memberships, setMemberships] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   const fetchOrganization = async (userId: string, preferredOrgId?: string) => {
     try {
