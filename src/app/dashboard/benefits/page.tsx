@@ -58,7 +58,7 @@ export default function BenefitsPage() {
       start_date: form.start_date || null, end_date: form.end_date || null, status: 'active'
     }).select().single();
 
-    if (error || !newBenefit) { setSaving(false); alert('Error al crear beneficio'); return; }
+    if (error || !newBenefit) { setSaving(false); console.error('Error al crear beneficio:', error); return; }
 
     // Assign
     const targets = assignMode === 'all' ? beneficiaries.map(b => b.id) : selectedBens;

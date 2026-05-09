@@ -48,7 +48,7 @@ export default function AttendancePage() {
       org_id: organization.id, name: form.name, description: form.description || null,
       meeting_date: form.meeting_date, status: 'active', created_by: user?.id
     });
-    if (error) { alert('Error al crear reunión'); setSaving(false); return; }
+    if (error) { console.error('Error al crear reunión:', error); setSaving(false); return; }
     setForm({ name: '', description: '', meeting_date: '' });
     setShowCreate(false);
     setSaving(false);

@@ -156,11 +156,11 @@ export default function CardsPage() {
         setSelectedCard(null); // in case we deleted the selected one
       } else {
         console.error(error);
-        alert(`No se pudo eliminar la tarjeta. Es probable que esté siendo referenciada por un registro de asistencia o escaneo. Error: ${error.message}`);
+        console.error('Error eliminando tarjeta:', error.message);
       }
     } catch (error: any) {
       console.error(error);
-      alert(`Error inesperado al eliminar: ${error?.message || 'Desconocido'}`);
+      console.error('Error inesperado al eliminar:', error?.message);
     } finally {
       setIsUpdating(false);
     }

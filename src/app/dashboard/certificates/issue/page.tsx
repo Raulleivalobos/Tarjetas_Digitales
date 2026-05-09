@@ -239,7 +239,7 @@ export default function IssueCertificatePage() {
       router.push('/dashboard/certificates');
     } catch (err) {
       console.error('Error issuing certificate:', err);
-      alert('Error al emitir. Verifica que la tabla tenga la columna design_id.');
+      setFormError('Error al emitir. Verifica la conexión e intenta de nuevo.');
     } finally {
       setLoading(false);
     }

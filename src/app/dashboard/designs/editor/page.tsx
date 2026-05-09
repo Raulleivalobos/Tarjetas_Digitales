@@ -1208,7 +1208,7 @@ export default function CardDesignEditorPage() {
       }, 2000);
     } catch (err) {
       console.error('Error saving design:', err);
-      alert('Error al guardar el diseño. Por favor, verifica tu conexión a internet.');
+      console.error('Error al guardar el diseño');
     } finally {
       setIsSaving(false);
     }

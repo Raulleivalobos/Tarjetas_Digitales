@@ -31,6 +31,7 @@ export default function CertificatesPage() {
   const { organization, loading: authLoading } = useAuth();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [showReport, setShowReport] = useState(false);
@@ -42,6 +43,7 @@ export default function CertificatesPage() {
   const fetchCertificates = useCallback(async () => {
     if (!organization) return;
     setLoading(true);
+    setError('');
 
     try {
       let query = supabase
@@ -54,13 +56,17 @@ export default function CertificatesPage() {
         query = query.eq('type', typeFilter);
       }
 
-      const { data, error } = await query;
+      const { data, error: queryError } = await query;
 
-      if (!error && data) {
-        setCertificates(data);
+      if (queryError) {
+        console.error('Supabase error:', queryError);
+        setError('Error al cargar certificados. Intenta de nuevo.');
+      } else {
+        setCertificates(data || []);
       }
     } catch (err) {
       console.error('Error fetching certificates:', err);
+      setError('Error de conexión. Verifica tu internet e intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -110,6 +116,21 @@ export default function CertificatesPage() {
     }
   };
 
+  // Safety timeout: if loading takes >10s, stop and show content
+  useEffect(() => {
+    if (!loading) return;
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Certificate loading timeout — forcing display');
+        setLoading(false);
+        if (certificates.length === 0) {
+          setError('La carga tardó demasiado. Haz clic en "Reintentar" para volver a cargar.');
+        }
+      }
+    }, 10000);
+    return () => clearTimeout(timeout);
+  }, [loading, certificates.length]);
+
   useEffect(() => {
     if (organization) {
       fetchCertificates();
@@ -126,6 +147,25 @@ export default function CertificatesPage() {
   });
 
   if (loading) return <PageSkeleton />;
+
+  // Error state with retry
+  if (error && certificates.length === 0) {
+    return (
+      <div className="max-w-md mx-auto mt-20 text-center space-y-4 animate-fade-in">
+        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto">
+          <AlertCircle className="w-8 h-8 text-red-400" />
+        </div>
+        <h2 className="text-lg font-bold text-white">No se pudieron cargar los certificados</h2>
+        <p className="text-sm text-slate-400">{error}</p>
+        <button 
+          onClick={fetchCertificates}
+          className="btn-primary px-6 py-2.5 text-sm font-bold"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
