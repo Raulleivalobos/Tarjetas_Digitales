@@ -6,8 +6,6 @@ import { createClient } from '@/lib/supabase/client';
 import { validateRut, formatRut, generateCardNumber } from '@/lib/utils';
 import { BulkUploadRow, BulkUploadResult } from '@/lib/types';
 // xlsx (~200KB) and papaparse (~30KB) loaded dynamically when needed
-import type PapaType from 'papaparse';
-import type * as XLSXType from 'xlsx';
 import { Upload, FileText, AlertTriangle, Download, UserPlus, Users, Palette, Check, LayoutTemplate, Globe, Shield } from 'lucide-react';
 import { CardDesign } from '@/lib/cardDesignTypes';
 import { Modal } from '@/components/ui/Modal';
