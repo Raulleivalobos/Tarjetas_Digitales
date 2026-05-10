@@ -17,8 +17,10 @@ import {
   Building,
   UserPlus,
   Eye,
-  X
+  X,
+  Check
 } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
 import Link from 'next/link';
 import { Beneficiary, CertificateType } from '@/lib/types';
 import { sendCertificateNotification } from '@/app/actions/email';
@@ -412,26 +414,12 @@ export default function IssueCertificatePage() {
         {/* Sidebar */}
         <div className="space-y-6">
           <div className="glass-card p-6 sticky top-6">
-            <h2 className="text-lg font-semibold text-white mb-6">Vista Previa</h2>
+            <h2 className="text-lg font-semibold text-white mb-6">Resumen</h2>
             
-            {/* Live Preview Canvas */}
-            <div className="aspect-[1/1.4] w-full bg-white rounded-lg mb-6 overflow-hidden relative shadow-2xl border border-white/10 group cursor-zoom-in" onClick={() => setPreviewModalOpen(true)}>
-              {populatedDesign ? (
-                <div className="scale-[0.28] origin-top-left w-[1000%] h-[1000%]">
-                   <CanvasPreview 
-                    design={populatedDesign as any} 
-                    elements={populatedDesign.elements} 
-                    onElementSelect={() => {}}
-                  />
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-xs">
-                  Selecciona un modelo
-                </div>
-              )}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <Eye className="w-8 h-8 text-white drop-shadow-lg" />
-              </div>
+            <div className="aspect-[1/1.4] w-full bg-white/5 border border-white/10 border-dashed rounded-lg mb-6 flex flex-col items-center justify-center p-6 text-center">
+              <FileText className="w-12 h-12 text-slate-500 mb-3" />
+              <p className="text-sm font-medium text-slate-300">Haz clic en Revisar y Emitir</p>
+              <p className="text-xs text-slate-500 mt-1">Podrás visualizar el certificado final antes de confirmar la emisión.</p>
             </div>
 
             <div className="space-y-4 mb-8">
@@ -456,100 +444,87 @@ export default function IssueCertificatePage() {
         </div>
     </div>
 
-    {/* Confirmation Preview Modal */}
-    {showConfirm && (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-        <div className="glass-card-solid w-full max-w-lg mx-4 p-6 space-y-5 border border-brand-500/20 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-brand-400" />
-              Confirmar Emisión
-            </h2>
-            <button onClick={() => setShowConfirm(false)} className="p-1 text-slate-400 hover:text-white">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="space-y-3 bg-surface-950/60 rounded-xl p-4 border border-white/5">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Destinatario:</span>
-              <span className="text-white font-bold">{recipientName}</span>
-            </div>
-            {recipientRut && (
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">RUT:</span>
-                <span className="text-white font-mono">{recipientRut}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Tipo:</span>
-              <span className="text-white font-bold capitalize">{formData.type.replace('_', ' ')}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Motivo:</span>
-              <span className="text-white">{formData.reason}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Modelo:</span>
-              <span className="text-brand-400 font-bold">{designs.find((d: any) => d.id === selectedDesignId)?.name}</span>
-            </div>
-            <div className="border-t border-white/10 pt-3 mt-3">
-              <div className="flex justify-between text-base">
-                <span className="text-slate-400 font-bold">Cobro:</span>
-                <span className="text-emerald-400 font-black text-lg">${formData.cost.toLocaleString('es-CL')}</span>
+    {/* Full Screen Confirmation & Preview Modal */}
+    {showConfirm && populatedDesign && (
+      <Modal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        title="Verificación de Certificado"
+        size="xl"
+      >
+        <div className="flex flex-col xl:flex-row gap-8 items-start">
+          {/* Left Side: Preview */}
+          <div className="flex-1 w-full space-y-4">
+            <h3 className="text-sm font-semibold text-brand-400 uppercase tracking-wider">Vista Previa</h3>
+            <div className="p-4 bg-surface-950/60 rounded-3xl border border-white/5 shadow-inner">
+              <div className="relative overflow-auto flex justify-center bg-[#050810] rounded-2xl shadow-2xl border border-brand-500/30 p-2 md:p-8 min-h-[350px]">
+                <div className="scale-[0.5] md:scale-[0.65] origin-top mb-[-30%] md:mb-[-15%]">
+                  <CanvasPreview 
+                    design={populatedDesign as any} 
+                    elements={populatedDesign.elements} 
+                    onElementSelect={() => {}}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
-            <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-200 leading-relaxed">
-              Al confirmar, se generará el certificado con folio correlativo y se enviará por correo. Esta acción no se puede deshacer.
+            <p className="text-xs text-slate-500 text-center italic">
+              Esta es una representación exacta del certificado que se enviará.
             </p>
           </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowConfirm(false)}
-              className="flex-1 py-3 text-sm font-bold text-slate-300 border border-white/10 rounded-xl hover:bg-white/5 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleIssue}
-              disabled={loading}
-              className="flex-1 btn-primary py-3 flex items-center justify-center gap-2 font-bold text-sm"
-            >
-              {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Save className="w-5 h-5" />Confirmar y Emitir</>}
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
+          {/* Right Side: Data Summary */}
+          <div className="w-full xl:w-80 space-y-6 bg-white/5 p-6 rounded-2xl border border-white/10">
+            <h3 className="text-sm font-semibold text-brand-400 uppercase tracking-wider">Datos de Emisión</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] text-slate-500 uppercase">Destinatario</label>
+                <p className="text-white font-medium">{recipientName}</p>
+              </div>
+              {recipientRut && (
+                <div>
+                  <label className="block text-[10px] text-slate-500 uppercase">RUT</label>
+                  <p className="text-white font-medium">{recipientRut}</p>
+                </div>
+              )}
+              <div>
+                <label className="block text-[10px] text-slate-500 uppercase">Tipo</label>
+                <p className="text-white font-medium capitalize">{formData.type.replace('_', ' ')}</p>
+              </div>
+              <div>
+                <label className="block text-[10px] text-slate-500 uppercase">Motivo</label>
+                <p className="text-white font-medium">{formData.reason}</p>
+              </div>
+              <div>
+                <label className="block text-[10px] text-slate-500 uppercase">Modelo</label>
+                <p className="text-brand-400 font-medium">{designs.find((d: any) => d.id === selectedDesignId)?.name}</p>
+              </div>
+              <div className="pt-4 border-t border-white/10">
+                <div className="flex justify-between items-center">
+                  <label className="block text-[10px] text-slate-500 uppercase m-0">Cobro Final</label>
+                  <span className="text-emerald-400 font-black text-lg">${formData.cost.toLocaleString('es-CL')}</span>
+                </div>
+              </div>
+            </div>
 
-    {/* Full Screen Preview Modal */}
-    {previewModalOpen && populatedDesign && (
-      <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in p-4 md:p-8">
-        <div className="relative w-full max-w-5xl h-full flex flex-col">
-          <div className="flex justify-end mb-4">
-            <button 
-              onClick={() => setPreviewModalOpen(false)}
-              className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all shadow-xl border border-white/10"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          <div className="flex-1 bg-white rounded-2xl shadow-2xl overflow-auto p-4 md:p-12 flex justify-center items-start">
-            <div className="scale-[0.5] md:scale-[0.85] origin-top">
-              <CanvasPreview 
-                design={populatedDesign as any} 
-                elements={populatedDesign.elements} 
-                onElementSelect={() => {}}
-              />
+            <div className="pt-6 space-y-3">
+              <button
+                onClick={handleIssue}
+                disabled={loading}
+                className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20"
+              >
+                {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Check className="w-5 h-5" />Confirmar y Emitir</>}
+              </button>
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="w-full py-2 text-sm text-slate-500 hover:text-white transition-colors"
+              >
+                Volver y Corregir
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </Modal>
     )}
   </div>
   );
