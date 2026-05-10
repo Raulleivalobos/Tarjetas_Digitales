@@ -35,17 +35,23 @@ export default function BenefitsPage() {
   async function loadData() {
     if (!organization) return;
     setLoading(true);
-    const { data: bens } = await supabase.from('benefits').select('*').eq('org_id', organization!.id).order('created_at', { ascending: false });
-    // Get assignment counts
-    const enriched = await Promise.all((bens || []).map(async (b: any) => {
-      const { count: total } = await supabase.from('benefit_assignments').select('*', { count: 'exact', head: true }).eq('benefit_id', b.id);
-      const { count: delivered } = await supabase.from('benefit_assignments').select('*', { count: 'exact', head: true }).eq('benefit_id', b.id).eq('status', 'used');
-      return { ...b, assignedCount: total || 0, deliveredCount: delivered || 0 };
-    }));
-    setBenefits(enriched);
-    const { data: benList } = await supabase.from('beneficiaries').select('id, full_name, rut').eq('org_id', organization!.id).eq('status', 'active');
-    setBeneficiaries(benList || []);
-    setLoading(false);
+    try {
+      const { data: bens } = await supabase.from('benefits').select('*').eq('org_id', organization!.id).order('created_at', { ascending: false });
+      // Get assignment counts
+      const enriched = await Promise.all((bens || []).map(async (b: any) => {
+        const { count: total } = await supabase.from('benefit_assignments').select('*', { count: 'exact', head: true }).eq('benefit_id', b.id);
+        const { count: delivered } = await supabase.from('benefit_assignments').select('*', { count: 'exact', head: true }).eq('benefit_id', b.id).eq('status', 'used');
+        return { ...b, assignedCount: total || 0, deliveredCount: delivered || 0 };
+      }));
+      setBenefits(enriched);
+      const { data: benList } = await supabase.from('beneficiaries').select('id, full_name, rut').eq('org_id', organization!.id).eq('status', 'active');
+      setBeneficiaries(benList || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+
   }
 
   async function handleCreate() {

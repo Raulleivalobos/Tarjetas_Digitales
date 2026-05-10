@@ -29,16 +29,22 @@ export default function AttendancePage() {
   async function loadData() {
     if (!organization) return;
     setLoading(true);
-    const { data: mList } = await supabase.from('meetings').select('*').eq('org_id', organization!.id).order('meeting_date', { ascending: false });
-    const { count } = await supabase.from('beneficiaries').select('*', { count: 'exact', head: true }).eq('org_id', organization!.id).eq('status', 'active');
-    setTotalBeneficiaries(count || 0);
+    try {
+      const { data: mList } = await supabase.from('meetings').select('*').eq('org_id', organization!.id).order('meeting_date', { ascending: false });
+      const { count } = await supabase.from('beneficiaries').select('*', { count: 'exact', head: true }).eq('org_id', organization!.id).eq('status', 'active');
+      setTotalBeneficiaries(count || 0);
+  
+      const enriched = await Promise.all((mList || []).map(async (m: any) => {
+        const { count: attendees } = await supabase.from('meeting_attendances').select('*', { count: 'exact', head: true }).eq('meeting_id', m.id);
+        return { ...m, attendeeCount: attendees || 0 };
+      }));
+      setMeetings(enriched);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
 
-    const enriched = await Promise.all((mList || []).map(async (m: any) => {
-      const { count: attendees } = await supabase.from('meeting_attendances').select('*', { count: 'exact', head: true }).eq('meeting_id', m.id);
-      return { ...m, attendeeCount: attendees || 0 };
-    }));
-    setMeetings(enriched);
-    setLoading(false);
   }
 
   async function handleCreate() {

@@ -26,19 +26,25 @@ export default function MeetingDetailPage() {
 
   async function loadData() {
     setLoading(true);
-    const { data: m } = await supabase.from('meetings').select('*').eq('id', id).single();
-    setMeeting(m);
-    const { data: atts } = await supabase
-      .from('meeting_attendances')
-      .select('*, beneficiary:beneficiaries(full_name, rut, email)')
-      .eq('meeting_id', id)
-      .order('registered_at', { ascending: false });
-    setAttendances(atts || []);
-    if (m) {
-      const { count } = await supabase.from('beneficiaries').select('*', { count: 'exact', head: true }).eq('org_id', m.org_id).eq('status', 'active');
-      setTotalBeneficiaries(count || 0);
+    try {
+      const { data: m } = await supabase.from('meetings').select('*').eq('id', id).single();
+      setMeeting(m);
+      const { data: atts } = await supabase
+        .from('meeting_attendances')
+        .select('*, beneficiary:beneficiaries(full_name, rut, email)')
+        .eq('meeting_id', id)
+        .order('registered_at', { ascending: false });
+      setAttendances(atts || []);
+      if (m) {
+        const { count } = await supabase.from('beneficiaries').select('*', { count: 'exact', head: true }).eq('org_id', m.org_id).eq('status', 'active');
+        setTotalBeneficiaries(count || 0);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+
   }
 
   async function handleScan(cardId: string) {

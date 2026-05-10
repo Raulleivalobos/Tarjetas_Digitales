@@ -25,11 +25,17 @@ export default function BenefitDetailPage() {
 
   async function loadDetail() {
     setLoading(true);
-    const { data: b } = await supabase.from('benefits').select('*').eq('id', id).single();
-    setBenefit(b);
-    const { data: assigns } = await supabase.from('benefit_assignments').select('*, beneficiary:beneficiaries(full_name, rut, email)').eq('benefit_id', id).order('assigned_at', { ascending: false });
-    setAssignments(assigns || []);
-    setLoading(false);
+    try {
+      const { data: b } = await supabase.from('benefits').select('*').eq('id', id).single();
+      setBenefit(b);
+      const { data: assigns } = await supabase.from('benefit_assignments').select('*, beneficiary:beneficiaries(full_name, rut, email)').eq('benefit_id', id).order('assigned_at', { ascending: false });
+      setAssignments(assigns || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+
   }
 
   async function handleScan(cardId: string) {
