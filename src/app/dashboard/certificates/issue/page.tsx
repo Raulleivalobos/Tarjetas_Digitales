@@ -188,6 +188,23 @@ export default function IssueCertificatePage() {
     setShowConfirm(true);
   };
 
+  const handleDirectIssue = () => {
+    setFormError('');
+    if (!organization || !selectedDesignId) {
+      setFormError('Debes seleccionar un modelo de certificado antes de emitir.');
+      return;
+    }
+    if (formData.type === 'residente' && !formData.resident_data.full_name) {
+      setFormError('Debes ingresar el nombre del residente.');
+      return;
+    }
+    if (formData.type !== 'residente' && !selectedBeneficiary) {
+      setFormError('Debes seleccionar un socio de la lista de resultados de búsqueda.');
+      return;
+    }
+    handleIssue();
+  };
+
   const handleIssue = async () => {
     if (!organization || !selectedDesignId) return;
     setLoading(true);
@@ -476,13 +493,24 @@ export default function IssueCertificatePage() {
                 {formError}
               </div>
             )}
-            <button
-              onClick={handleConfirm}
-              disabled={loading}
-              className="btn-primary w-full py-3 flex items-center justify-center gap-2 font-bold disabled:opacity-50"
-            >
-              {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Eye className="w-5 h-5" />Revisar y Emitir</>}
-            </button>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleConfirm}
+                disabled={loading}
+                className="w-full py-3 flex items-center justify-center gap-2 font-bold text-brand-400 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 rounded-xl transition-all disabled:opacity-50"
+              >
+                <Eye className="w-5 h-5" />
+                Visualizar Previa
+              </button>
+              
+              <button
+                onClick={handleDirectIssue}
+                disabled={loading}
+                className="btn-primary w-full py-3 flex items-center justify-center gap-2 font-bold disabled:opacity-50"
+              >
+                {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Check className="w-5 h-5" />Generar Certificado</>}
+              </button>
+            </div>
           </div>
         </div>
     </div>
