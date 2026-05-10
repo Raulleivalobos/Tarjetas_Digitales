@@ -44,12 +44,15 @@ export interface OrgMember {
 export interface Beneficiary {
   id: string;
   org_id: string;
+  first_name: string | null;
+  last_name: string | null;
   full_name: string;
   rut: string;
   email: string | null;
   phone: string | null;
   photo_url: string | null;
   address: string | null;
+  comuna: string | null;
   date_of_birth: string | null;
   custom_fields: Record<string, unknown>;
   status: 'active' | 'inactive' | 'blocked';
