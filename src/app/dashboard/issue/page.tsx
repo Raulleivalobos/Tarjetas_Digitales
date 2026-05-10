@@ -78,14 +78,18 @@ export default function IssuePage() {
       try {
         const { data, error } = await supabase
           .from('card_designs')
-          .select('id, name, description, background, design_type, attributes, additional_info')
+          .select('id, name, description, background, attributes, additional_info, width, height, format, elements, thumbnail')
           .eq('org_id', organization.id)
           .order('created_at', { ascending: false });
           
+        if (error) {
+          console.error('Error loading designs:', error);
+        }
+          
         if (!error && data) {
-          // Filter out explicitly certificates
+          // Filter out certificates by name (design_type column may not exist yet)
           const cardDesigns = data.filter((d: any) => 
-            d.design_type !== 'certificate' && !d.name.toLowerCase().includes('certificado')
+            !d.name.toLowerCase().includes('certificado')
           );
 
           const mapped = cardDesigns.map(d => ({

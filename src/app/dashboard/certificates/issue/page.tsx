@@ -92,11 +92,11 @@ export default function IssueCertificatePage() {
         additionalInfo: d.additional_info || []
       })) as any[];
 
-      // Filter specifically for certificates
+      // Filter specifically for certificates (design_type column may not exist)
       const certificateDesigns = results.filter((d: any) => 
-        d.design_type === 'certificate' || 
         d.name.toLowerCase().includes('certificado') || 
-        d.name.toLowerCase().includes('residencia')
+        d.name.toLowerCase().includes('residencia') ||
+        (d.design_type && d.design_type === 'certificate')
       );
 
       setDesigns(certificateDesigns);

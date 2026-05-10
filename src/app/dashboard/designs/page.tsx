@@ -161,7 +161,6 @@ export default function DesignsPage() {
         attributes: design.attributes,
         additional_info: design.additionalInfo || design.additional_info,
         thumbnail: design.thumbnail,
-        design_type: design.design_type || 'card',
         is_default: false
       };
       const { data, error } = await supabase.from('card_designs').insert(duplicate).select().single();

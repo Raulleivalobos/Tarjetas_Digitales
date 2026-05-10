@@ -1162,10 +1162,8 @@ export default function CardDesignEditorPage() {
       if (isNew) {
         const { id, ...insertData } = designToSave;
         insertData.org_id = organization.id;
-        // Ensure design_type is properly set based on the type fallback
-        if (!insertData.design_type) {
-           insertData.design_type = (insertData.name.toLowerCase().includes('certificado') || designTypeParam === 'certificate') ? 'certificate' : 'card';
-        }
+        // Remove design_type if column doesn't exist in DB yet
+        delete (insertData as any).design_type;
         
         const { data, error } = await supabase
           .from('card_designs')
