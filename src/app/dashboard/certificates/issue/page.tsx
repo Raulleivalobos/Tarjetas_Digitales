@@ -259,31 +259,69 @@ export default function IssueCertificatePage() {
         ...selectedDesign,
         elements: elements.map((el: any) => {
           if (!el.data) return el;
-          if (el.type === 'text' && el.data.isAttribute) {
-            const attrKey = el.data.attributeKey?.trim().toUpperCase();
-            if (!attrKey) return el;
-            
+          
+          if (el.type === 'text') {
             let val = el.data.content || '';
-            if (attrKey === 'NOMBRE RECEPTOR' || attrKey === 'NOMBRE') val = recipientName || val;
-            else if (attrKey === 'NOMBRE INSTITUCIÓN' || attrKey === 'ORGANIZACION') val = organization?.name || val;
-            else if (attrKey === 'RUT') val = recipientRut || val;
-            else if (attrKey === 'FECHA') val = previewDate;
-            else if (attrKey === 'MOTIVO') val = formData.reason || val;
-            else if (attrKey === 'COMUNA') val = organization?.settings?.commune || val;
             
-            return { ...el, data: { ...el.data, content: val } };
+            // Handle explicit attributes first
+            if (el.data.isAttribute) {
+              const attrKey = el.data.attributeKey?.trim().toUpperCase();
+              if (attrKey) {
+                if (attrKey === 'NOMBRE RECEPTOR' || attrKey === 'NOMBRE') val = recipientName || val;
+                else if (attrKey === 'NOMBRE INSTITUCIÓN' || attrKey === 'ORGANIZACION') val = organization?.name || val;
+                else if (attrKey === 'RUT') val = recipientRut || val;
+                else if (attrKey === 'FECHA') val = previewDate;
+                else if (attrKey === 'MOTIVO') val = formData.reason || val;
+                else if (attrKey === 'COMUNA') val = organization?.settings?.commune || val;
+              }
+            }
+            
+            // Replace inline [Placeholders]
+            const formattedRut = recipientRut ? (recipientRut.length > 1 ? `${recipientRut.replace(/[^0-9kK]/g, '').slice(0, -1)}-${recipientRut.slice(-1)}` : recipientRut) : '';
+            const replacements: Record<string, string> = {
+              '\\[Nombre receptor\\]': recipientName || '',
+              '\\[RUT receptor\\]': formattedRut,
+              '\\[Dirección receptor\\]': formData.type === 'residente' ? formData.resident_data.address : (selectedBeneficiary?.address || ''),
+              '\\[Villa receptor\\]': formData.type === 'residente' ? formData.resident_data.villa : ((selectedBeneficiary?.custom_fields as any)?.villa || ''),
+              '\\[Comuna\\]': organization?.settings?.commune || organization?.commune || '',
+              '\\[Provincia\\]': organization?.settings?.province || '',
+              '\\[Región\\]': organization?.settings?.region || organization?.region || '',
+              '\\[Motivo\\]': formData.reason || '',
+              '\\[Fecha\\]': previewDate,
+              '\\[Tipo\\]': formData.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+              '\\[Valor\\]': formData.cost.toLocaleString('es-CL'),
+              '\\[Folio\\]': '000123'
+            };
+
+            let replacedContent = val;
+            Object.entries(replacements).forEach(([key, replacement]) => {
+              if (replacement !== undefined) {
+                replacedContent = replacedContent.replace(new RegExp(key, 'gi'), replacement);
+              }
+            });
+
+            return { ...el, data: { ...el.data, content: replacedContent } };
           }
-          if (el.type === 'image' && el.data.isAttribute) {
-            const attrKey = el.data.attributeKey?.trim().toUpperCase();
+          
+          if (el.type === 'image') {
             let src = el.data.src;
-            if (attrKey === 'LOGO INSTITUCIÓN' || attrKey === 'LOGO') {
+            if (el.data.isAttribute) {
+              const attrKey = el.data.attributeKey?.trim().toUpperCase();
+              if (attrKey === 'LOGO INSTITUCIÓN' || attrKey === 'LOGO') {
+                src = organization?.logo_url || src;
+              }
+            }
+            // Fallback for placeholder images
+            if (!src || src.includes('placeholder')) {
               src = organization?.logo_url || src;
             }
             return { ...el, data: { ...el.data, src } };
           }
+          
           if (el.type === 'qr') {
             return { ...el, data: { ...el.data, content: 'PREVIEW-QR' } };
           }
+          
           return el;
         }),
       };
