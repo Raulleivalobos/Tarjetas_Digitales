@@ -541,6 +541,9 @@ export default function IssueCertificatePage() {
             <p className="text-xs text-slate-500 text-center italic">
               Esta es una representación exacta del certificado que se enviará.
             </p>
+            <p className="text-[10px] text-slate-600 text-center italic mt-1">
+              El folio es solo referencial, se asigna definitivamente al momento de la emisión.
+            </p>
           </div>
 
           {/* Right Side: Data Summary */}
