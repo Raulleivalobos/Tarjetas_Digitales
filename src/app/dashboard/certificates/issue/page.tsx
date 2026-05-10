@@ -160,7 +160,7 @@ export default function IssueCertificatePage() {
         b.rut.toLowerCase() === val.toLowerCase()
       );
       if (exactMatch) {
-        selectBeneficiary(exactMatch);
+        setSelectedBeneficiary(exactMatch);
       }
     } catch (err) {
       console.error('Search error:', err);
@@ -357,7 +357,7 @@ export default function IssueCertificatePage() {
               {searchResults.length > 0 && !selectedBeneficiary && (
                 <div className="border border-white/5 rounded-xl overflow-hidden divide-y divide-white/5">
                   {searchResults.map((b: any) => (
-                    <button key={b.id} onClick={() => selectBeneficiary(b)} className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left">
+                    <button key={b.id} onClick={() => setSelectedBeneficiary(b)} className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left">
                       <div><p className="text-white font-bold">{b.full_name}</p><p className="text-xs text-slate-400 font-mono">{b.rut}</p></div>
                       <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${b.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>{b.status}</span>
                     </button>
