@@ -48,21 +48,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      setMemberships(allMemberships);
+      setMemberships(prev => {
+        return JSON.stringify(prev) === JSON.stringify(allMemberships) ? prev : allMemberships;
+      });
 
       // Determinar cuál organización activar
       const lastOrgId = preferredOrgId || localStorage.getItem('last_org_id');
       const activeMember = allMemberships.find(m => m.org_id === lastOrgId) || allMemberships[0];
 
       if (activeMember) {
-        setMembership({
-          id: activeMember.id,
-          org_id: activeMember.org_id,
-          user_id: activeMember.user_id,
-          role: activeMember.role,
-          created_at: activeMember.created_at,
+        setMembership(prev => {
+          const next = {
+            id: activeMember.id,
+            org_id: activeMember.org_id,
+            user_id: activeMember.user_id,
+            role: activeMember.role,
+            created_at: activeMember.created_at,
+          };
+          return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
         });
-        setOrganization(activeMember.organizations);
+        setOrganization(prev => {
+          return JSON.stringify(prev) === JSON.stringify(activeMember.organizations) ? prev : activeMember.organizations;
+        });
         localStorage.setItem('last_org_id', activeMember.org_id);
       }
     } catch (error) {

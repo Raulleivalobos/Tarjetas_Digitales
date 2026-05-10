@@ -97,6 +97,7 @@ export default function DashboardPage() {
         return;
       }
 
+      setLoading(true);
       try {
         const [
           { count: totalBeneficiaries },
