@@ -174,6 +174,12 @@ export default function DesignsPage() {
     setMenuOpen(null);
   };
 
+  const isCertificateDesign = (d: CardDesign) => {
+    if (d.design_type) return d.design_type === 'certificate';
+    const nameLower = (d.name || '').toLowerCase();
+    return nameLower.includes('certificado') || nameLower.includes('residencia');
+  };
+
   const filteredDesigns = designs.filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -271,8 +277,8 @@ export default function DesignsPage() {
         <>
           {filteredDesigns.filter(d => 
             activeTab === 'my-cards' 
-              ? (d.design_type === 'card' || !d.design_type) 
-              : d.design_type === 'certificate'
+              ? !isCertificateDesign(d)
+              : isCertificateDesign(d)
           ).length === 0 ? (
             <div className="glass-card">
               <EmptyState
@@ -285,8 +291,8 @@ export default function DesignsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredDesigns.filter(d => 
                 activeTab === 'my-cards' 
-                  ? (d.design_type === 'card' || !d.design_type) 
-                  : d.design_type === 'certificate'
+                  ? !isCertificateDesign(d)
+                  : isCertificateDesign(d)
               ).map((design) => (
                 <div
                   key={design.id}
