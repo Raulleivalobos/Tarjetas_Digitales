@@ -281,8 +281,8 @@ export default function IssueCertificatePage() {
             const replacements: Record<string, string> = {
               '\\[Nombre receptor\\]': recipientName || '',
               '\\[RUT receptor\\]': formattedRut,
-              '\\[Dirección receptor\\]': formData.type === 'residente' ? formData.resident_data.address : (selectedBeneficiary?.address || ''),
-              '\\[Villa receptor\\]': formData.type === 'residente' ? formData.resident_data.villa : ((selectedBeneficiary?.custom_fields as any)?.villa || ''),
+              '\\[Dirección receptor\\]': formData.type === 'residente' ? formData.resident_data.address : (selectedBeneficiary?.address || (selectedBeneficiary?.custom_fields as any)?.address || 'No registrado'),
+              '\\[Villa receptor\\]': organization?.villa || organization?.settings?.villa || organization?.name || '',
               '\\[Comuna\\]': organization?.settings?.commune || organization?.commune || '',
               '\\[Provincia\\]': organization?.settings?.province || '',
               '\\[Región\\]': organization?.settings?.region || organization?.region || '',
@@ -308,12 +308,12 @@ export default function IssueCertificatePage() {
             if (el.data.isAttribute) {
               const attrKey = el.data.attributeKey?.trim().toUpperCase();
               if (attrKey === 'LOGO INSTITUCIÓN' || attrKey === 'LOGO') {
-                src = organization?.logo_url || src;
+                src = organization?.logo_url || 'https://placehold.co/300x300/e2e8f0/64748b?text=Logo+Organizacion';
               }
             }
             // Fallback for placeholder images
-            if (!src || src.includes('placeholder')) {
-              src = organization?.logo_url || src;
+            if (!src || src.includes('placeholder') || src === 'https://via.placeholder.com/150') {
+              src = organization?.logo_url || 'https://placehold.co/300x300/e2e8f0/64748b?text=Logo+Organizacion';
             }
             return { ...el, data: { ...el.data, src } };
           }
