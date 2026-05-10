@@ -116,20 +116,6 @@ export default function CertificatesPage() {
     }
   };
 
-  // Safety timeout: if loading takes >10s, stop and show content
-  useEffect(() => {
-    if (!loading) return;
-    const timeout = setTimeout(() => {
-      if (loading) {
-        console.warn('Certificate loading timeout — forcing display');
-        setLoading(false);
-        if (certificates.length === 0) {
-          setError('La carga tardó demasiado. Haz clic en "Reintentar" para volver a cargar.');
-        }
-      }
-    }, 10000);
-    return () => clearTimeout(timeout);
-  }, [loading, certificates.length]);
 
   useEffect(() => {
     if (organization) {
@@ -143,7 +129,7 @@ export default function CertificatesPage() {
     const searchLower = search.toLowerCase();
     const name = c.resident_data?.full_name || (c as any).beneficiaries?.full_name || '';
     const rut = c.resident_data?.rut || (c as any).beneficiaries?.rut || '';
-    return name.toLowerCase().includes(searchLower) || rut.includes(searchLower) || c.folio.toString().includes(searchLower);
+    return name.toLowerCase().includes(searchLower) || rut.includes(searchLower) || (c.folio && c.folio.toString().includes(searchLower));
   });
 
   if (loading) return <PageSkeleton />;
