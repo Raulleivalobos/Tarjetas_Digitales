@@ -281,7 +281,7 @@ export default function IssueCertificatePage() {
             const replacements: Record<string, string> = {
               '\\[Nombre receptor\\]': recipientName || '',
               '\\[RUT receptor\\]': formattedRut,
-              '\\[Dirección receptor\\]': formData.type === 'residente' ? formData.resident_data.address : (selectedBeneficiary?.address || (selectedBeneficiary?.custom_fields as any)?.address || 'No registrado'),
+              '\\[Dirección receptor\\]': formData.type === 'residente' ? formData.resident_data.address : (selectedBeneficiary?.address || (selectedBeneficiary?.custom_fields as any)?.['Dirección'] || (selectedBeneficiary?.custom_fields as any)?.address || 'No registrado'),
               '\\[Villa receptor\\]': organization?.villa || organization?.settings?.villa || organization?.name || '',
               '\\[Comuna\\]': organization?.settings?.commune || organization?.commune || '',
               '\\[Provincia\\]': organization?.settings?.province || '',
@@ -311,8 +311,8 @@ export default function IssueCertificatePage() {
                 src = organization?.logo_url || 'https://placehold.co/300x300/e2e8f0/64748b?text=Logo+Organizacion';
               }
             }
-            // Fallback for placeholder images
-            if (!src || src.includes('placeholder') || src === 'https://via.placeholder.com/150') {
+            // Fallback for placeholder images or empty frames (base64 < 500 chars)
+            if (!src || src.includes('placeholder') || src === 'https://via.placeholder.com/150' || (src.startsWith('data:image') && src.length < 500)) {
               src = organization?.logo_url || 'https://placehold.co/300x300/e2e8f0/64748b?text=Logo+Organizacion';
             }
             return { ...el, data: { ...el.data, src } };
@@ -490,7 +490,7 @@ export default function IssueCertificatePage() {
         title="Verificación de Certificado"
         size="xl"
       >
-        <div className="flex flex-col xl:flex-row gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
           {/* Left Side: Preview */}
           <div className="flex-1 w-full space-y-4">
             <h3 className="text-sm font-semibold text-brand-400 uppercase tracking-wider">Vista Previa</h3>
@@ -511,7 +511,7 @@ export default function IssueCertificatePage() {
           </div>
 
           {/* Right Side: Data Summary */}
-          <div className="w-full xl:w-80 space-y-6 bg-white/5 p-6 rounded-2xl border border-white/10">
+          <div className="w-full lg:w-80 space-y-6 bg-white/5 p-6 rounded-2xl border border-white/10 shrink-0 lg:sticky lg:top-0">
             <h3 className="text-sm font-semibold text-brand-400 uppercase tracking-wider">Datos de Emisión</h3>
             
             <div className="space-y-4">
