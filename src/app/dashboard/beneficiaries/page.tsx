@@ -300,6 +300,13 @@ export default function BeneficiariesPage() {
                         <div className="flex flex-col gap-0.5">
                           <span className="text-white text-xs font-medium">{person.email || '-'}</span>
                           <span className="text-slate-500 font-mono text-[10px] tracking-widest">{person.phone || 'NO_PHONE'}</span>
+                          {(person.comuna || person.address) && (
+                            <span className="text-slate-500 font-mono text-[10px] tracking-widest truncate max-w-[200px]">
+                              {person.address ? `${person.address}` : ''}
+                              {person.address && person.comuna ? ', ' : ''}
+                              {person.comuna ? person.comuna : ''}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4"><StatusBadge status={person.status} size="sm" /></td>

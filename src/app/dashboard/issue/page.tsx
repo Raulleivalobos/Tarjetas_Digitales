@@ -32,9 +32,13 @@ export default function IssuePage() {
 
   // Manual State
   const [manualForm, setManualForm] = useState({ 
+    first_name: '',
+    last_name: '',
     full_name: '', 
     rut: '', 
     email: '',
+    phone: '',
+    comuna: '',
     type: 'basic', // basic or blockchain
     language: 'es',
     status: 'active',
@@ -127,8 +131,12 @@ export default function IssuePage() {
           if (data && !error) {
             setManualForm(prev => ({
               ...prev,
+              first_name: data.first_name || prev.first_name,
+              last_name: data.last_name || prev.last_name,
               full_name: data.full_name || prev.full_name,
               email: data.email || prev.email,
+              phone: data.phone || prev.phone,
+              comuna: data.comuna || prev.comuna,
               status: data.status || prev.status,
               customFields: { ...prev.customFields, ...(data.custom_fields || {}) }
             }));
@@ -210,9 +218,13 @@ export default function IssuePage() {
           .from('beneficiaries')
           .insert({
             org_id: organization.id,
+            first_name: manualForm.first_name,
+            last_name: manualForm.last_name,
             full_name: manualForm.full_name,
             rut: cleanRut,
             email: manualForm.email || null,
+            phone: manualForm.phone || null,
+            comuna: manualForm.comuna || null,
             photo_url: finalPhotoUrl,
             custom_fields: { ...manualForm.customFields },
             status: manualForm.status === 'inactive' ? 'inactive' : 'active'
@@ -226,8 +238,12 @@ export default function IssuePage() {
         const { error: updateError } = await supabase
           .from('beneficiaries')
           .update({
+            first_name: manualForm.first_name,
+            last_name: manualForm.last_name,
             full_name: manualForm.full_name,
             email: manualForm.email || null,
+            phone: manualForm.phone || null,
+            comuna: manualForm.comuna || null,
             photo_url: finalPhotoUrl || undefined,
             custom_fields: { ...manualForm.customFields },
             status: manualForm.status === 'inactive' ? 'inactive' : 'active'
@@ -808,14 +824,31 @@ export default function IssuePage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Nombre Completo *</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Nombres *</label>
                   <input
                     type="text"
                     required
-                    value={manualForm.full_name || ''}
-                    onChange={e => setManualForm({...manualForm, full_name: e.target.value})}
+                    value={manualForm.first_name || ''}
+                    onChange={e => {
+                      const newFirst = e.target.value;
+                      setManualForm({...manualForm, first_name: newFirst, full_name: `${newFirst} ${manualForm.last_name}`.trim()});
+                    }}
                     className="glass-input w-full px-4 py-2"
-                    placeholder="Ej. Juan Pérez"
+                    placeholder="Ej. Juan Andrés"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Apellidos *</label>
+                  <input
+                    type="text"
+                    required
+                    value={manualForm.last_name || ''}
+                    onChange={e => {
+                      const newLast = e.target.value;
+                      setManualForm({...manualForm, last_name: newLast, full_name: `${manualForm.first_name} ${newLast}`.trim()});
+                    }}
+                    className="glass-input w-full px-4 py-2"
+                    placeholder="Ej. Pérez Silva"
                   />
                 </div>
                 <div>
@@ -838,6 +871,26 @@ export default function IssuePage() {
                     onChange={e => setManualForm({...manualForm, email: e.target.value})}
                     className="glass-input w-full px-4 py-2"
                     placeholder="correo@ejemplo.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Nro de Celular</label>
+                  <input
+                    type="tel"
+                    value={manualForm.phone || ''}
+                    onChange={e => setManualForm({...manualForm, phone: e.target.value})}
+                    className="glass-input w-full px-4 py-2"
+                    placeholder="+56912345678"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Comuna</label>
+                  <input
+                    type="text"
+                    value={manualForm.comuna || ''}
+                    onChange={e => setManualForm({...manualForm, comuna: e.target.value})}
+                    className="glass-input w-full px-4 py-2"
+                    placeholder="Ej. Providencia"
                   />
                 </div>
                 <div>

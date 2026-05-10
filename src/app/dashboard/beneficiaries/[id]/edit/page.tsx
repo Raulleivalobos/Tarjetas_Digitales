@@ -3,8 +3,8 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
-import { validateRut, formatRut, generateCardNumber, generateQRData } from '@/lib/utils';
+import { useRouter, useParams } from 'next/navigation';
+import { validateRut, formatRut } from '@/lib/utils';
 import {
   ArrowLeft,
   Save,
@@ -16,12 +16,16 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function NewBeneficiaryPage() {
+export default function EditBeneficiaryPage() {
   const { organization } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [loadingData, setLoadingData] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -45,6 +49,54 @@ export default function NewBeneficiaryPage() {
     custom_field_2_name: '',
     custom_field_2_value: '',
   });
+
+  useEffect(() => {
+    async function loadData() {
+      if (!organization || !id) return;
+      try {
+        const { data, error } = await supabase
+          .from('beneficiaries')
+          .select('*')
+          .eq('org_id', organization.id)
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          const customFields = data.custom_fields || {};
+          const keys = Object.keys(customFields);
+          
+          setForm({
+            first_name: data.first_name || '',
+            last_name: data.last_name || '',
+            full_name: data.full_name || '',
+            rut: data.rut || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            address: data.address || '',
+            comuna: data.comuna || '',
+            date_of_birth: data.date_of_birth ? new Date(data.date_of_birth).toISOString().split('T')[0] : '',
+            status: data.status,
+            notes: data.notes || '',
+            custom_field_1_name: keys[0] || '',
+            custom_field_1_value: customFields[keys[0]] || '',
+            custom_field_2_name: keys[1] || '',
+            custom_field_2_value: customFields[keys[1]] || '',
+          });
+          
+          if (data.photo_url) {
+             setPhotoPreview(data.photo_url);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading beneficiary', err);
+        setError('No se pudo cargar la información del beneficiario');
+      } finally {
+        setLoadingData(false);
+      }
+    }
+    loadData();
+  }, [organization, id, supabase]);
 
   const [rutError, setRutError] = useState('');
 
@@ -122,11 +174,10 @@ export default function NewBeneficiaryPage() {
         customFields[form.custom_field_2_name] = form.custom_field_2_value;
       }
 
-      // Create beneficiary
-      const { data: beneficiary, error: createError } = await supabase
+      // Update beneficiary
+      const { error: updateError } = await supabase
         .from('beneficiaries')
-        .insert({
-          org_id: organization.id,
+        .update({
           first_name: form.first_name || null,
           last_name: form.last_name || null,
           full_name: form.full_name || `${form.first_name} ${form.last_name}`.trim(),
@@ -136,39 +187,22 @@ export default function NewBeneficiaryPage() {
           address: form.address || null,
           comuna: form.comuna || null,
           date_of_birth: form.date_of_birth || null,
-          photo_url: photoUrl,
+          photo_url: photoUrl !== null ? photoUrl : photoPreview,
           custom_fields: customFields,
           status: form.status,
           notes: form.notes || null,
         })
-        .select()
-        .single();
+        .eq('id', id)
+        .eq('org_id', organization.id);
 
-      if (createError) {
-        if (createError.code === '23505') {
+      if (updateError) {
+        if (updateError.code === '23505') {
           setError('Ya existe un beneficiario con este RUT en tu organización');
         } else {
-          setError(createError.message);
+          setError(updateError.message);
         }
         setLoading(false);
         return;
-      }
-
-      // Auto-create digital card
-      if (beneficiary) {
-        const cardNumber = generateCardNumber();
-        const qrCode = `${organization.slug}-${beneficiary.id}`;
-        const expiresAt = new Date();
-        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-
-        await supabase.from('digital_cards').insert({
-          beneficiary_id: beneficiary.id,
-          org_id: organization.id,
-          card_number: cardNumber,
-          qr_code: qrCode,
-          status: 'active',
-          expires_at: expiresAt.toISOString(),
-        });
       }
 
       router.push('/dashboard/beneficiaries');
@@ -190,9 +224,9 @@ export default function NewBeneficiaryPage() {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Nuevo Beneficiario</h1>
+          <h1 className="text-2xl font-bold text-white">Editar Beneficiario</h1>
           <p className="text-slate-400 text-sm mt-1">
-            Completa la información del nuevo miembro
+            Modifica la información de {form.full_name || 'este miembro'}
           </p>
         </div>
       </div>
@@ -204,6 +238,11 @@ export default function NewBeneficiaryPage() {
         </div>
       )}
 
+      {loadingData ? (
+        <div className="flex justify-center py-12">
+           <div className="w-8 h-8 rounded-full border-2 border-brand-500/30 border-t-brand-500 animate-spin" />
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Photo Section */}
         <div className="glass-card p-6">
@@ -473,12 +512,13 @@ export default function NewBeneficiaryPage() {
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                <span>Guardar Beneficiario</span>
+                <span>Guardar Cambios</span>
               </>
             )}
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }
