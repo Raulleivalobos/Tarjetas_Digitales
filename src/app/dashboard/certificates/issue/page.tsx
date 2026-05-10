@@ -174,15 +174,15 @@ export default function IssueCertificatePage() {
   const handleConfirm = () => {
     setFormError('');
     if (!organization || !selectedDesignId) {
-      setFormError('Debes seleccionar un diseño antes de emitir.');
+      setFormError('Debes seleccionar un modelo de certificado antes de emitir.');
       return;
     }
-    if (formData.type === 'residente' && (!formData.resident_data.full_name || !formData.resident_data.email)) {
-      setFormError('Debes ingresar el nombre y el correo del residente.');
+    if (formData.type === 'residente' && !formData.resident_data.full_name) {
+      setFormError('Debes ingresar el nombre del residente.');
       return;
     }
-    if (formData.type !== 'residente' && (!selectedBeneficiary || !selectedBeneficiary.email)) {
-      setFormError('El socio seleccionado no tiene correo electrónico registrado. Actualiza sus datos en la sección Beneficiarios primero.');
+    if (formData.type !== 'residente' && !selectedBeneficiary) {
+      setFormError('Debes seleccionar un socio de la lista de resultados de búsqueda.');
       return;
     }
     setShowConfirm(true);
@@ -435,7 +435,7 @@ export default function IssueCertificatePage() {
             )}
             <button
               onClick={handleConfirm}
-              disabled={loading || (formData.type === 'residente' ? !formData.resident_data.full_name : !selectedBeneficiary) || !selectedDesignId}
+              disabled={loading}
               className="btn-primary w-full py-3 flex items-center justify-center gap-2 font-bold disabled:opacity-50"
             >
               {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Eye className="w-5 h-5" />Revisar y Emitir</>}
