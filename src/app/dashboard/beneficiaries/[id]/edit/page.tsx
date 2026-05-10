@@ -167,13 +167,21 @@ export default function EditBeneficiaryPage() {
       let photoUrl = null;
 
       if (photoFile) {
+        // Limit to 2MB to prevent hangs and database bloat
+        if (photoFile.size > 2 * 1024 * 1024) {
+          throw new Error('La fotografía es demasiado grande. El límite es 2MB.');
+        }
+
         const fileExt = photoFile.name.split('.').pop();
         const fileName = `${organization.id}/${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from('photos').upload(fileName, photoFile);
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from('photos').getPublicUrl(fileName);
-          photoUrl = urlData.publicUrl;
+        
+        if (uploadError) {
+          throw new Error('Error al subir la fotografía: ' + uploadError.message);
         }
+
+        const { data: urlData } = supabase.storage.from('photos').getPublicUrl(fileName);
+        photoUrl = urlData.publicUrl;
       }
 
       const customFields: Record<string, string> = {};
@@ -198,7 +206,7 @@ export default function EditBeneficiaryPage() {
           address: form.address || null,
           comuna: form.comuna || null,
           date_of_birth: form.date_of_birth || null,
-          photo_url: photoUrl !== null ? photoUrl : photoPreview,
+          photo_url: photoUrl || (photoPreview?.startsWith('http') ? photoPreview : null),
           custom_fields: customFields,
           status: form.status,
           notes: form.notes || null,
