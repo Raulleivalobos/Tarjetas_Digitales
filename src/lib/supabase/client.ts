@@ -26,7 +26,9 @@ export const createClient = () => {
         persistSession: true,
         detectSessionInUrl: true,
         flowType: 'pkce',
-
+        lock: async (name: string, acquireTimeout: number, fn: () => Promise<any>) => {
+          return fn();
+        }
       }
     }
   );
