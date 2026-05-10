@@ -277,7 +277,12 @@ export default function IssueCertificatePage() {
             }
             
             // Replace inline [Placeholders]
-            const formattedRut = recipientRut ? (recipientRut.length > 1 ? `${recipientRut.replace(/[^0-9kK]/g, '').slice(0, -1)}-${recipientRut.slice(-1)}` : recipientRut) : '';
+            let formattedRut = recipientRut ? recipientRut.replace(/[^0-9kK]/g, '') : '';
+            if (formattedRut.length > 1) {
+              const body = formattedRut.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+              const dv = formattedRut.slice(-1).toUpperCase();
+              formattedRut = `${body}-${dv}`;
+            }
             const replacements: Record<string, string> = {
               '\\[Nombre receptor\\]': recipientName || '',
               '\\[RUT receptor\\]': formattedRut,
@@ -308,12 +313,12 @@ export default function IssueCertificatePage() {
             if (el.data.isAttribute) {
               const attrKey = el.data.attributeKey?.trim().toUpperCase();
               if (attrKey === 'LOGO INSTITUCIÓN' || attrKey === 'LOGO') {
-                src = organization?.logo_url || 'https://placehold.co/300x300/e2e8f0/64748b?text=Logo+Organizacion';
+                src = organization?.logo_url ? `/api/proxy-image?url=${encodeURIComponent(organization.logo_url)}` : 'https://placehold.co/300x300/e2e8f0/64748b?text=Logo+Organizacion';
               }
             }
             // Fallback for placeholder images or empty frames (base64 < 500 chars)
             if (!src || src.includes('placeholder') || src === 'https://via.placeholder.com/150' || (src.startsWith('data:image') && src.length < 500)) {
-              src = organization?.logo_url || 'https://placehold.co/300x300/e2e8f0/64748b?text=Logo+Organizacion';
+              src = organization?.logo_url ? `/api/proxy-image?url=${encodeURIComponent(organization.logo_url)}` : 'https://placehold.co/300x300/e2e8f0/64748b?text=Logo+Organizacion';
             }
             return { ...el, data: { ...el.data, src } };
           }
@@ -490,7 +495,7 @@ export default function IssueCertificatePage() {
         title="Verificación de Certificado"
         size="xl"
       >
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <div className="flex flex-col md:flex-row gap-8 items-start">
           {/* Left Side: Preview */}
           <div className="flex-1 w-full space-y-4">
             <h3 className="text-sm font-semibold text-brand-400 uppercase tracking-wider">Vista Previa</h3>
@@ -511,7 +516,7 @@ export default function IssueCertificatePage() {
           </div>
 
           {/* Right Side: Data Summary */}
-          <div className="w-full lg:w-80 space-y-6 bg-white/5 p-6 rounded-2xl border border-white/10 shrink-0 lg:sticky lg:top-0">
+          <div className="w-full md:w-80 space-y-6 bg-white/5 p-6 rounded-2xl border border-white/10 shrink-0 md:sticky md:top-0">
             <h3 className="text-sm font-semibold text-brand-400 uppercase tracking-wider">Datos de Emisión</h3>
             
             <div className="space-y-4">
