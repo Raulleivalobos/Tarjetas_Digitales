@@ -825,110 +825,160 @@ export default function IssuePage() {
                 <h2 className="text-lg font-medium text-white">2. Datos del Receptor</h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Nombres *</label>
-                  <input
-                    type="text"
-                    required
-                    value={manualForm.first_name || ''}
-                    onChange={e => {
-                      const newFirst = e.target.value;
-                      setManualForm({...manualForm, first_name: newFirst, full_name: `${newFirst} ${manualForm.last_name}`.trim()});
-                    }}
-                    className="glass-input w-full px-4 py-2"
-                    placeholder="Ej. Juan Andrés"
-                  />
+              <div className="space-y-10 animate-fade-in-up">
+              {/* Identity & Core Info */}
+              <div className="glass-card-solid p-6 md:p-8 border-brand-500/10 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-12 h-12 border-t border-l border-brand-500/20 pointer-events-none" />
+                <div className="absolute bottom-0 right-0 w-12 h-12 border-b border-r border-brand-500/20 pointer-events-none" />
+                
+                <div className="flex items-center gap-3 mb-6">
+                  <Fingerprint className="w-5 h-5 text-brand-400" />
+                  <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] font-mono">Identidad del Receptor</h3>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Apellidos *</label>
-                  <input
-                    type="text"
-                    required
-                    value={manualForm.last_name || ''}
-                    onChange={e => {
-                      const newLast = e.target.value;
-                      setManualForm({...manualForm, last_name: newLast, full_name: `${manualForm.first_name} ${newLast}`.trim()});
-                    }}
-                    className="glass-input w-full px-4 py-2"
-                    placeholder="Ej. Pérez Silva"
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono flex items-center gap-2">Nombres *</label>
+                    <input
+                      type="text"
+                      required
+                      value={manualForm.first_name || ''}
+                      onChange={e => {
+                        const newFirst = e.target.value;
+                        setManualForm({...manualForm, first_name: newFirst, full_name: `${newFirst} ${manualForm.last_name}`.trim()});
+                      }}
+                      className="glass-input w-full px-4 py-3 text-sm font-medium"
+                      placeholder="Juan Andrés"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Apellidos *</label>
+                    <input
+                      type="text"
+                      required
+                      value={manualForm.last_name || ''}
+                      onChange={e => {
+                        const newLast = e.target.value;
+                        setManualForm({...manualForm, last_name: newLast, full_name: `${manualForm.first_name} ${newLast}`.trim()});
+                      }}
+                      className="glass-input w-full px-4 py-3 text-sm font-medium"
+                      placeholder="Pérez González"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono flex items-center gap-2">
+                      <Hash className="w-3 h-3" /> RUT *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={manualForm.rut || ''}
+                      onChange={e => setManualForm({...manualForm, rut: formatRut(e.target.value)})}
+                      className="glass-input w-full px-4 py-3 text-sm font-mono font-bold text-brand-400 tracking-wider"
+                      placeholder="12.345.678-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono flex items-center gap-2">
+                      <Mail className="w-3 h-3" /> Email *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={manualForm.email || ''}
+                      onChange={e => setManualForm({...manualForm, email: e.target.value})}
+                      className="glass-input w-full px-4 py-3 text-sm"
+                      placeholder="correo@ejemplo.com"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">RUT *</label>
-                  <input
-                    type="text"
-                    required
-                    value={manualForm.rut || ''}
-                    onChange={e => setManualForm({...manualForm, rut: formatRut(e.target.value)})}
-                    className="glass-input w-full px-4 py-2"
-                    placeholder="12.345.678-9"
-                  />
+              </div>
+
+              {/* Secondary Info & Location */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="glass-card-solid p-6 border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Phone className="w-4 h-4 text-slate-500" />
+                    <h3 className="text-[10px] font-black text-white uppercase tracking-widest font-mono">Comunicación</h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Celular</label>
+                    <input
+                      type="tel"
+                      value={manualForm.phone || ''}
+                      onChange={e => setManualForm({...manualForm, phone: e.target.value})}
+                      className="glass-input w-full px-4 py-2.5 text-xs font-mono"
+                      placeholder="+56912345678"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Email *</label>
-                  <input
-                    type="email"
-                    required
-                    value={manualForm.email || ''}
-                    onChange={e => setManualForm({...manualForm, email: e.target.value})}
-                    className="glass-input w-full px-4 py-2"
-                    placeholder="correo@ejemplo.com"
-                  />
+
+                <div className="glass-card-solid p-6 border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <MapPin className="w-4 h-4 text-slate-500" />
+                    <h3 className="text-[10px] font-black text-white uppercase tracking-widest font-mono">Ubicación</h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Comuna</label>
+                    <input
+                      type="text"
+                      value={manualForm.comuna || ''}
+                      onChange={e => setManualForm({...manualForm, comuna: e.target.value})}
+                      className="glass-input w-full px-4 py-2.5 text-xs"
+                      placeholder="Ej. Puente Alto"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Nro de Celular</label>
-                  <input
-                    type="tel"
-                    value={manualForm.phone || ''}
-                    onChange={e => setManualForm({...manualForm, phone: e.target.value})}
-                    className="glass-input w-full px-4 py-2"
-                    placeholder="+56912345678"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Comuna</label>
-                  <input
-                    type="text"
-                    value={manualForm.comuna || ''}
-                    onChange={e => setManualForm({...manualForm, comuna: e.target.value})}
-                    className="glass-input w-full px-4 py-2"
-                    placeholder="Ej. Providencia"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Fecha de Expiración (Opcional)</label>
-                  <input
-                    type="date"
-                    value={manualForm.expiryDate || ''}
-                    onChange={e => setManualForm({...manualForm, expiryDate: e.target.value})}
-                    className="glass-input w-full px-4 py-2"
-                  />
-                  <p className="text-[10px] text-slate-500 mt-1">Si se deja vacío, la tarjeta no tendrá fecha de expiración.</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Foto (Opcional)</label>
+              </div>
+
+              {/* Photos & Expiry */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="glass-card-solid p-6 border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Camera className="w-4 h-4 text-slate-500" />
+                    <h3 className="text-[10px] font-black text-white uppercase tracking-widest font-mono">Fotografía</h3>
+                  </div>
                   <div className="flex items-center gap-4">
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handlePhotoChange}
-                      className="glass-input w-full px-4 py-2 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-500/10 file:text-brand-400 hover:file:bg-brand-500/20"
+                      className="glass-input w-full px-4 py-2 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-brand-500/10 file:text-brand-400 hover:file:bg-brand-500/20 transition-all font-mono"
                     />
                     {photoPreview && (
-                      <div className="w-10 h-10 shrink-0 rounded-lg overflow-hidden border border-brand-500/30">
+                      <div className="w-12 h-12 shrink-0 rounded-xl overflow-hidden border-2 border-brand-500/20 shadow-lg">
                         <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                       </div>
                     )}
+                  </div>
+                </div>
+
+                <div className="glass-card-solid p-6 border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Calendar className="w-4 h-4 text-slate-500" />
+                    <h3 className="text-[10px] font-black text-white uppercase tracking-widest font-mono">Vigencia</h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Fecha Expiración</label>
+                    <input
+                      type="date"
+                      value={manualForm.expiryDate || ''}
+                      onChange={e => setManualForm({...manualForm, expiryDate: e.target.value})}
+                      className="glass-input w-full px-4 py-2.5 text-xs font-mono"
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Atributos dinámicos del diseño seleccionado */}
               {selectedDesign && (selectedDesign.attributes || []).filter(a => a.active).length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-sm font-medium text-slate-300 mb-3">Atributos Personalizados (del diseño)</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl border border-brand-500/10 bg-surface-900/50">
+                <div className="space-y-4 pt-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <FileText className="w-4 h-4 text-brand-400" />
+                    <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] font-mono">Atributos del Diseño</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 rounded-3xl border border-brand-500/10 bg-brand-500/[0.02] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/5 blur-3xl pointer-events-none" />
                     {selectedDesign.attributes
                       .filter(attr => attr.active)
                       .map(attr => {
@@ -938,33 +988,31 @@ export default function IssuePage() {
 
                         if (keyUpper === 'NOMBRE RECEPTOR' || keyUpper === 'NOMBRE') {
                           placeholder = manualForm.full_name || 'Autocompletado...';
-                          hint = 'Se autocompleta con el Nombre Completo superior';
+                          hint = 'Auto-sync con Identidad';
                         } else if (keyUpper === 'RUT') {
                           placeholder = formatRut(manualForm.rut) || 'Autocompletado...';
-                          hint = 'Se autocompleta con el RUT superior';
+                          hint = 'Auto-sync con RUT';
                         } else if (keyUpper === 'ID SOCIO') {
                           placeholder = 'Ej. 1234';
-                          hint = 'Número correlativo único del libro de socios';
+                          hint = 'Nº correlativo único';
                         } else if (keyUpper === 'FECHA') {
                           placeholder = 'DD-MM-AAAA';
-                          hint = 'Se autocompleta con la fecha actual';
+                          hint = 'Fecha de emisión';
                         } else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO') {
                           const defaultStatus = manualForm.status === 'inactive' ? 'Inactivo' : 'Activo';
                           placeholder = defaultStatus;
-                          hint = `Se autocompleta como ${defaultStatus}`;
+                          hint = `Estado: ${defaultStatus}`;
                         } else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') {
                           placeholder = manualForm.email || 'Autocompletado...';
-                          hint = 'Se autocompleta con el Email superior';
+                          hint = 'Auto-sync con Email';
                         } else if (keyUpper === 'FOTO') {
-                          placeholder = photoFile ? 'Foto seleccionada arriba' : 'URL de foto o usar selector arriba';
-                          hint = 'Usa el selector de Foto superior o pega un link aquí';
-                        } else if (keyUpper === 'DIRECCIÓN' || keyUpper === 'DIRECCION') {
-                          hint = 'Campo de dirección del receptor';
+                          placeholder = photoFile ? 'Foto cargada' : 'URL o Foto arriba';
+                          hint = 'Usa el selector superior';
                         }
 
                         return (
-                          <div key={attr.id}>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">
+                          <div key={attr.id} className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
                               {attr.label}
                             </label>
                             <input
@@ -974,17 +1022,18 @@ export default function IssuePage() {
                                 ...manualForm, 
                                 customFields: { ...manualForm.customFields, [attr.label]: e.target.value }
                               })}
-                              className="glass-input w-full px-4 py-2"
+                              className="glass-input w-full px-4 py-2.5 text-xs focus:ring-1 focus:ring-brand-500/30 transition-all font-medium"
                               placeholder={placeholder}
                               autoComplete="off"
                             />
-                            {hint && <p className="text-[10px] text-brand-400/70 mt-1">{hint}</p>}
+                            {hint && <p className="text-[9px] font-bold text-brand-500/50 uppercase tracking-tighter font-mono">{hint}</p>}
                           </div>
                         );
                       })}
                   </div>
                 </div>
               )}
+            </div>
             </div>
 
             {/* Step 6, 7 & 8: Opciones Adicionales */}
