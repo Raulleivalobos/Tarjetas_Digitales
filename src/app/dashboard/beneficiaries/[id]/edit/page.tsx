@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
@@ -42,6 +42,7 @@ export default function EditBeneficiaryPage() {
     address: '',
     comuna: '',
     date_of_birth: '',
+    id_socio: '', // Dedicated field for ID Socio
     status: 'active' as 'active' | 'inactive' | 'blocked',
     notes: '',
     custom_field_1_name: '',
@@ -64,24 +65,34 @@ export default function EditBeneficiaryPage() {
         if (error) throw error;
         if (data) {
           const customFields = data.custom_fields || {};
-          const keys = Object.keys(customFields);
+          const idSocio = customFields['ID Socio'] || '';
+          const address = data.address || customFields['Dirección'] || '';
+          
+          // Remove ID Socio and Dirección from generic custom fields list for the form
+          const remainingCustomFields = { ...customFields };
+          delete remainingCustomFields['ID Socio'];
+          delete remainingCustomFields['Dirección'];
+          delete remainingCustomFields['Foto']; // Also hide Foto if it's there
+          
+          const keys = Object.keys(remainingCustomFields);
           
           setForm({
             first_name: data.first_name || '',
             last_name: data.last_name || '',
             full_name: data.full_name || '',
-            rut: data.rut || '',
+            rut: data.rut ? formatRut(data.rut) : '', // Format RUT on load
             email: data.email || '',
             phone: data.phone || '',
-            address: data.address || '',
+            address: address,
             comuna: data.comuna || '',
+            id_socio: idSocio,
             date_of_birth: data.date_of_birth ? new Date(data.date_of_birth).toISOString().split('T')[0] : '',
             status: data.status,
             notes: data.notes || '',
             custom_field_1_name: keys[0] || '',
-            custom_field_1_value: customFields[keys[0]] || '',
+            custom_field_1_value: remainingCustomFields[keys[0]] || '',
             custom_field_2_name: keys[1] || '',
-            custom_field_2_value: customFields[keys[1]] || '',
+            custom_field_2_value: remainingCustomFields[keys[1]] || '',
           });
           
           if (data.photo_url) {
@@ -167,6 +178,15 @@ export default function EditBeneficiaryPage() {
 
       // Build custom fields
       const customFields: Record<string, string> = {};
+      
+      // Preserve existing important fields if they were there
+      if (form.id_socio) {
+        customFields['ID Socio'] = form.id_socio;
+      }
+      if (form.address) {
+        customFields['Dirección'] = form.address;
+      }
+
       if (form.custom_field_1_name && form.custom_field_1_value) {
         customFields[form.custom_field_1_name] = form.custom_field_1_value;
       }
@@ -351,6 +371,19 @@ export default function EditBeneficiaryPage() {
               {rutError && (
                 <p className="text-red-400 text-xs mt-1">{rutError}</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                ID Socio
+              </label>
+              <input
+                type="text"
+                value={form.id_socio}
+                onChange={(e) => setForm((prev) => ({ ...prev, id_socio: e.target.value }))}
+                placeholder="Ej: 177"
+                className="glass-input w-full px-4 py-3 text-sm"
+              />
             </div>
 
             <div>

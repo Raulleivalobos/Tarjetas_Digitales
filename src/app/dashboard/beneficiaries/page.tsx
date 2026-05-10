@@ -354,8 +354,8 @@ export default function BeneficiariesPage() {
                         </div>
                       </td>
                       <td className="px-3 py-3">
-                        <span className="text-[10px] font-mono font-bold text-slate-400 tracking-widest">
-                          {person.id.substring(0, 8).toUpperCase()}
+                        <span className="text-xs font-mono font-bold text-brand-400 tracking-wider">
+                          {(person.custom_fields as any)?.['ID Socio'] || '-'}
                         </span>
                       </td>
                       <td className="px-3 py-3">
@@ -375,7 +375,7 @@ export default function BeneficiariesPage() {
                       </td>
                       <td className="px-3 py-3">
                         <span className="text-slate-400 text-xs truncate max-w-[150px] block">
-                          {person.address || '-'}
+                          {person.address || (person.custom_fields as any)?.['Dirección'] || '-'}
                         </span>
                       </td>
                       <td className="px-3 py-3">
