@@ -6,7 +6,17 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Shield, CheckCircle, XCircle, Calendar, Contact, Info, Mail, Hash, User, RefreshCw } from 'lucide-react';
 import { formatDate, formatRut } from '@/lib/utils';
-import { DigitalCardView } from '@/components/cards/DigitalCardView';
+import dynamic from 'next/dynamic';
+
+const DigitalCardView = dynamic(
+  () => import('@/components/cards/DigitalCardView').then(m => m.DigitalCardView),
+  { ssr: false, loading: () => (
+    <div className="w-full aspect-[1.6/1] animate-pulse bg-white/5 rounded-[2.5rem] flex items-center justify-center">
+      <RefreshCw className="w-8 h-8 text-slate-700 animate-spin" />
+    </div>
+  )}
+);
+
 import { exportElementToPDF } from '@/lib/pdfGenerator';
 import { Download } from 'lucide-react';
 
@@ -45,7 +55,7 @@ export default function ValidationPage() {
           return;
         }
 
-        // Extraer los datos relacionales para mantener la estructura existente
+        // Extraer los datos relacionales
         const { beneficiaries: benRes, organizations: orgRes, ...card } = cardRaw as any;
 
         if (isMounted) {
@@ -56,7 +66,7 @@ export default function ValidationPage() {
           });
         }
 
-        // Diseño
+        // Diseño (Fetch in parallel or right after if we need designId from card)
         const designId = card.metadata?.design_id;
         if (designId) {
           const { data: des } = await supabase

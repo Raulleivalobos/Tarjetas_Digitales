@@ -4,7 +4,17 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Shield, CheckCircle, XCircle, Calendar, FileText, User, RefreshCw, Printer, Download } from 'lucide-react';
-import { CanvasPreview } from '@/components/designer/CanvasPreview';
+import dynamic from 'next/dynamic';
+
+const CanvasPreview = dynamic(
+  () => import('@/components/designer/CanvasPreview').then(m => m.CanvasPreview),
+  { ssr: false, loading: () => (
+    <div className="w-full aspect-[0.7] animate-pulse bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center">
+      <RefreshCw className="w-8 h-8 text-slate-700 animate-spin" />
+    </div>
+  )}
+);
+
 import { exportElementToPDF } from '@/lib/pdfGenerator';
 
 export default function CertificateValidationPage() {
@@ -28,7 +38,7 @@ export default function CertificateValidationPage() {
 
     async function loadData() {
       try {
-        // 1. Fetch certificate with organization and beneficiary
+        // 1. Fetch certificate with organization and beneficiary (Parallel start)
         const { data: cert, error: certErr } = await supabase
           .from('certificates')
           .select('*, beneficiaries(*), organizations(*)')
@@ -69,19 +79,32 @@ export default function CertificateValidationPage() {
     return () => { isMounted = false; };
   }, [id]);
 
+  // Optimized resize handler with requestAnimationFrame
   useEffect(() => {
+    if (!populatedDesign) return;
+
+    let rafId: number;
     const updateScale = () => {
-      const container = document.getElementById('cert-scroll-container');
-      if (container && populatedDesign) {
-        const availableWidth = container.offsetWidth - 32;
-        const scale = Math.min(1, availableWidth / populatedDesign.width);
-        setContainerScale(scale);
-      }
+      rafId = requestAnimationFrame(() => {
+        const container = document.getElementById('cert-scroll-container');
+        if (container && populatedDesign) {
+          const availableWidth = container.offsetWidth - 32;
+          const scale = Math.min(1, availableWidth / populatedDesign.width);
+          setContainerScale(scale);
+        }
+      });
     };
 
     updateScale();
     window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
+    // Extra trigger for mobile browsers that might report wrong widths initially
+    const timer = setTimeout(updateScale, 500);
+
+    return () => {
+      window.removeEventListener('resize', updateScale);
+      cancelAnimationFrame(rafId);
+      clearTimeout(timer);
+    };
   }, [populatedDesign]);
 
   const formatRUT = (rut: string) => {
@@ -133,7 +156,7 @@ export default function CertificateValidationPage() {
       }
       
       if (el.type === 'image') {
-        const timestamp = new Date().getTime();
+        const hourlyTimestamp = Math.floor(Date.now() / 3600000);
         let src = el.data.src;
         const attrKey = (el.data.attributeKey || '').toLowerCase();
         const originalSrc = (el.data.src || '').toLowerCase();
@@ -141,7 +164,7 @@ export default function CertificateValidationPage() {
 
         if (attrKey.includes('logo') || originalSrc.includes('logo') || dataType === 'logo') {
           const rawUrl = org.logo_url || settings.logo_url;
-          if (rawUrl) src = `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${timestamp}`;
+          if (rawUrl) src = `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${hourlyTimestamp}`;
         } 
         else if (attrKey.includes('firma') || attrKey.includes('signature') || dataType === 'signature' || originalSrc.includes('sig')) {
           let sigUrl = null;
@@ -157,7 +180,7 @@ export default function CertificateValidationPage() {
               ? (sigs.president?.signature_url || settings.president_signature_url)
               : (sigs.secretary?.signature_url || settings.secretary_signature_url);
           }
-          if (sigUrl) src = `${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${timestamp}`;
+          if (sigUrl) src = `${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${hourlyTimestamp}`;
         }
         return { ...el, data: { ...el.data, src: src || el.data.src } };
       }
