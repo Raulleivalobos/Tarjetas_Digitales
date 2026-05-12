@@ -59,11 +59,11 @@ export function generateQRData(cardId: string, orgSlug: string): string {
 // Format date
 export function formatDate(date: string | null): string {
   if (!date) return '-';
-  return new Intl.DateTimeFormat('es-CL', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(date));
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
 }
 
 // Format date with time

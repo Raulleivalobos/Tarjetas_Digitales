@@ -135,6 +135,16 @@ export async function exportReportToPDF(options: ReportOptions): Promise<boolean
     pdf.rect(margin, y, contentWidth, 1.5, 'F');
     y += 6;
 
+    // Logo on the right
+    if (options.logoUrl) {
+      try {
+        const logoSize = 15;
+        pdf.addImage(options.logoUrl, 'PNG', pageWidth - margin - logoSize, y - 4, logoSize, logoSize);
+      } catch (err) {
+        console.warn('Could not add logo to PDF:', err);
+      }
+    }
+
     // Organization name
     if (options.orgName) {
       pdf.setFontSize(9);
@@ -156,7 +166,7 @@ export async function exportReportToPDF(options: ReportOptions): Promise<boolean
     pdf.setFont('helvetica', 'normal');
     const dateText = options.dateRange 
       ? `Período: ${options.dateRange.start} — ${options.dateRange.end}`
-      : `Generado: ${formatDateCL(new Date())}`;
+      : `Generado: ${formatDateTimeCL(new Date())}`;
     pdf.text(options.subtitle ? `${options.subtitle} • ${dateText}` : dateText, margin, y);
     y += 8;
 

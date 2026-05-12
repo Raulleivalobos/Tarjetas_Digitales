@@ -134,32 +134,37 @@ export default function BeneficiariesPage() {
     setExportingPDF(true);
     try {
       const activeCount = beneficiaries.filter(b => b.status === 'active').length;
+      const inactiveCount = beneficiaries.filter(b => b.status === 'inactive').length;
+      const residentCount = beneficiaries.filter(b => {
+        const customFields = b.custom_fields || {};
+        const tipo = String(customFields['Tipo'] || customFields['tipo'] || '').toLowerCase();
+        return tipo.includes('residente');
+      }).length;
+
       await exportReportToPDF({
         filename: `Directorio_Socios_${organization?.slug || 'export'}`,
         title: 'Directorio Oficial de Socios',
         subtitle: 'Listado completo de beneficiarios registrados',
         orgName: organization?.name,
+        logoUrl: organization?.logo_url || undefined,
         summary: [
           { label: 'Total Registrados', value: beneficiaries.length.toString() },
           { label: 'Socios Activos', value: activeCount.toString() },
-          { label: 'Inactivos/Otros', value: (beneficiaries.length - activeCount).toString() }
+          { label: 'Socios Inactivos', value: inactiveCount.toString() },
+          { label: 'Residentes', value: residentCount.toString() }
         ],
         columns: [
-          { header: 'RUT', key: 'rut', width: 14 },
-          { header: 'Nombre', key: 'name', width: 22 },
-          { header: 'Email', key: 'email', width: 20 },
-          { header: 'Teléfono', key: 'phone', width: 14 },
-          { header: 'Comuna', key: 'comuna', width: 15 },
-          { header: 'Estado', key: 'status', width: 10 },
-          { header: 'Registro', key: 'date', width: 10 }
+          { header: 'RUT', key: 'rut', width: 18 },
+          { header: 'Nombre', key: 'name', width: 28 },
+          { header: 'Email', key: 'email', width: 25 },
+          { header: 'Teléfono', key: 'phone', width: 15 },
+          { header: 'Fecha Registro', key: 'date', width: 14 }
         ],
         data: beneficiaries.map(b => ({
           rut: formatRut(b.rut),
           name: b.full_name,
           email: b.email || 'N/A',
           phone: b.phone || '-',
-          comuna: b.comuna || '-',
-          status: b.status.toUpperCase(),
           date: formatDate(b.created_at)
         }))
       });
