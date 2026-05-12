@@ -115,26 +115,27 @@ export default function MeetingDetailPage() {
 
     await exportReportToPDF({
       filename: `acta_${meeting.name.replace(/\s/g, '_')}`,
-      title: 'ACTA DE ASISTENCIA',
-      subtitle: `${meeting.name} - Fecha: ${formatDate(meeting.meeting_date)}`,
+      title: 'ACTA OFICIAL DE ASISTENCIA',
+      subtitle: `Sesión: ${meeting.name} — Fecha: ${formatDate(meeting.meeting_date)}`,
       orgName: organization?.name,
+      logoUrl: organization?.logo_url || undefined,
       orientation: 'portrait',
       summary: [
-        { label: 'Total Socios', value: totalBeneficiaries.toString() },
-        { label: 'Presentes', value: attendances.length.toString() },
-        { label: 'Asistencia', value: `${pct}%` },
+        { label: 'Socios Inscritos', value: totalBeneficiaries.toString() },
+        { label: 'Socios Presentes', value: attendances.length.toString() },
+        { label: 'Porcentaje', value: `${pct}%` },
         { label: 'Quórum', value: quorum ? 'ALCANZADO' : 'NO ALCANZADO' }
       ],
       columns: [
         { header: 'N°', key: 'num', width: 10 },
-        { header: 'Nombre', key: 'name', width: 45 },
+        { header: 'Nombre Completo', key: 'name', width: 45 },
         { header: 'RUT', key: 'rut', width: 25 },
         { header: 'Hora de Registro', key: 'time', width: 20 }
       ],
       data: attendances.map((a, i) => ({
         num: (i + 1).toString(),
         name: a.beneficiary?.full_name || 'N/A',
-        rut: a.beneficiary?.rut || 'N/A',
+        rut: formatRut(a.beneficiary?.rut) || 'N/A',
         time: new Date(a.registered_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
       }))
     });
