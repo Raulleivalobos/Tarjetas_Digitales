@@ -29,6 +29,8 @@ export interface ReportOptions extends PDFOptions {
   data: Record<string, unknown>[];
   summary?: { label: string; value: string }[];
   dateRange?: { start: string; end: string };
+  logoUrl?: string;
+  footerSummary?: { type: string; count: number; total: number }[];
 }
 
 // ─── Helpers ───────────────────────────────────────────────
@@ -104,6 +106,7 @@ export async function exportElementToPDF(
     pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
     pdf.save(`${options.filename}.pdf`);
     return true;
+    return true;
   } catch (err) {
     console.error('Error generating PDF:', err);
     return false;
@@ -150,7 +153,7 @@ export async function exportReportToPDF(options: ReportOptions): Promise<boolean
       pdf.setFontSize(9);
       pdf.setTextColor(120, 120, 140);
       pdf.text(options.orgName.toUpperCase(), margin, y);
-      y += 5;
+      y += 8; // Increased spacing
     }
 
     // Title
@@ -158,17 +161,32 @@ export async function exportReportToPDF(options: ReportOptions): Promise<boolean
     pdf.setTextColor(30, 30, 50);
     pdf.setFont('helvetica', 'bold');
     pdf.text(options.title, margin, y);
-    y += 7;
+    y += 8;
 
     // Subtitle / Date
     pdf.setFontSize(9);
     pdf.setTextColor(120, 120, 140);
     pdf.setFont('helvetica', 'normal');
+    
+    // Format date range if provided in YYYY-MM-DD
+    let dateRangeText = '';
+    if (options.dateRange) {
+      const formatInputDate = (dStr: string) => {
+        if (!dStr) return '-';
+        if (dStr.includes('-') && dStr.length === 10) {
+          const [y, m, d] = dStr.split('-');
+          return `${d}-${m}-${y}`;
+        }
+        return dStr;
+      };
+      dateRangeText = `Período: ${formatInputDate(options.dateRange.start)} — ${formatInputDate(options.dateRange.end)}`;
+    }
+
     const dateText = options.dateRange 
-      ? `Período: ${options.dateRange.start} — ${options.dateRange.end}`
+      ? dateRangeText
       : `Generado: ${formatDateTimeCL(new Date())}`;
     pdf.text(options.subtitle ? `${options.subtitle} • ${dateText}` : dateText, margin, y);
-    y += 8;
+    y += 10;
 
     // Separator
     pdf.setDrawColor(220, 220, 230);
@@ -286,9 +304,46 @@ export async function exportReportToPDF(options: ReportOptions): Promise<boolean
       y += rowHeight;
     });
 
+    // ── Footer Summary ──
+    if (options.footerSummary && options.footerSummary.length > 0) {
+      // Check if we need a new page for the summary
+      if (y + 40 > pageHeight - margin) {
+        addPageFooter(pdf, pageWidth, pageHeight, margin, options.orgName || '');
+        pdf.addPage();
+        y = margin + 10;
+      } else {
+        y += 15;
+      }
+      
+      pdf.setFontSize(11);
+      pdf.setTextColor(30, 30, 50);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('RESUMEN DE RECAUDACIÓN POR TIPO', margin, y);
+      y += 5;
+
+      const { default: autoTable } = await import('jspdf-autotable');
+      (autoTable as any)(pdf, {
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [['Tipo de Certificado', 'Cantidad', 'Monto Recaudado']],
+        body: options.footerSummary.map(item => [
+          item.type,
+          item.count.toString(),
+          `$${item.total.toLocaleString('es-CL')}`
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [50, 50, 70], fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: {
+          1: { halign: 'center' },
+          2: { halign: 'right' }
+        }
+      });
+    }
+
     // Bottom line
     pdf.setDrawColor(220, 220, 230);
-    pdf.line(margin, y, pageWidth - margin, y);
+    pdf.line(margin, pageHeight - margin - 2, pageWidth - margin, pageHeight - margin - 2);
 
     // Footer
     addPageFooter(pdf, pageWidth, pageHeight, margin, options.orgName || '');

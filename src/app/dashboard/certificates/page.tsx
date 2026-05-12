@@ -84,6 +84,24 @@ export default function CertificatesPage() {
         fecha: new Date(c.issued_at).toLocaleDateString('es-CL')
       }));
 
+      const footerSummary = [
+        { 
+          type: 'Socio Activo', 
+          count: certificates.filter(c => c.type === 'socio_activo').length,
+          total: certificates.filter(c => c.type === 'socio_activo').reduce((acc, c) => acc + c.cost, 0)
+        },
+        { 
+          type: 'Socio Inactivo', 
+          count: certificates.filter(c => c.type === 'socio_inactivo').length,
+          total: certificates.filter(c => c.type === 'socio_inactivo').reduce((acc, c) => acc + c.cost, 0)
+        },
+        { 
+          type: 'Residente', 
+          count: certificates.filter(c => c.type === 'residente').length,
+          total: certificates.filter(c => c.type === 'residente').reduce((acc, c) => acc + c.cost, 0)
+        }
+      ].filter(item => item.count > 0);
+
       await exportReportToPDF({
         filename: `Reporte_Certificados_${organization?.slug || 'export'}`,
         title: 'Reporte de Certificados Emitidos',
@@ -98,6 +116,7 @@ export default function CertificatesPage() {
           { label: 'Residentes', value: certificates.filter(c => c.type === 'residente').length.toString() },
           { label: 'Recaudación', value: `$${certificates.reduce((acc, curr) => acc + curr.cost, 0).toLocaleString('es-CL')}` }
         ],
+        footerSummary,
         columns: [
           { header: 'Folio', key: 'folio', width: 12 },
           { header: 'Beneficiario / Residente', key: 'receptor', width: 40 },
