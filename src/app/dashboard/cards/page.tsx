@@ -175,7 +175,7 @@ export default function CardsPage() {
     setResending(card.id);
     try {
       const baseUrl = window.location.origin;
-      const cardUrl = `${baseUrl}/card/${card.id}`;
+      const cardUrl = `${baseUrl}/validate/${organization?.slug}/${card.id}`;
       
       const { success, error } = await sendCertificateNotification({
         to: card.beneficiary.email,
