@@ -22,7 +22,7 @@ import {
   AlertTriangle,
   Download,
   Mail,
-  Ban
+  ShieldAlert
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { exportElementToPDF } from '@/lib/pdfGenerator';
@@ -287,7 +287,7 @@ export default function CardsPage() {
               disabled={isUpdating}
               className="px-3 py-1 flex items-center gap-1 text-xs bg-red-900/40 text-red-400 hover:bg-red-900/60 rounded-md border border-red-900/50 transition-colors disabled:opacity-50"
             >
-              <Ban className="w-3 h-3" />
+              <ShieldAlert className="w-3 h-3" />
               Anular
             </button>
           </div>
@@ -457,7 +457,7 @@ export default function CardsPage() {
                     disabled={isUpdating}
                     className="px-4 py-2.5 flex items-center gap-2 text-sm font-bold bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl border border-red-500/20 transition-all disabled:opacity-50"
                   >
-                    <Ban className="w-4 h-4" />
+                    <ShieldAlert className="w-4 h-4" />
                     Anular Tarjeta
                   </button>
                 )}

@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { validateRut, formatRut, generateCardNumber } from '@/lib/utils';
 import { BulkUploadRow, BulkUploadResult } from '@/lib/types';
 // xlsx (~200KB) and papaparse (~30KB) loaded dynamically when needed
-import { Upload, FileText, AlertTriangle, Download, UserPlus, Users, Palette, Check, LayoutTemplate, Globe, Shield, ChevronDown, Phone, Mail, MapPin, Camera, Calendar } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, Download, UserPlus, Users, Palette, Check, LayoutTemplate, Globe, Shield, ChevronDown, Phone, Mail, MapPin, Camera, Calendar, Fingerprint, ShieldAlert } from 'lucide-react';
 import { CardDesign } from '@/lib/cardDesignTypes';
 import { Modal } from '@/components/ui/Modal';
 import dynamic from 'next/dynamic';
@@ -89,7 +89,7 @@ function IssuePageContent() {
         if (!error && data) {
           // Filter out certificates by name (design_type column may not exist yet)
           const cardDesigns = data.filter((d: any) => 
-            !d.name.toLowerCase().includes('certificado')
+            d.name && !d.name.toLowerCase().includes('certificado')
           );
 
           const mapped = cardDesigns.map(d => ({
@@ -323,9 +323,13 @@ function IssuePageContent() {
         
         setManualSuccess(true);
         setManualForm({ 
+          first_name: '',
+          last_name: '',
           full_name: '', 
           rut: '', 
           email: '', 
+          phone: '',
+          comuna: '',
           type: manualForm.type, 
           language: manualForm.language, 
           status: 'active',
@@ -867,7 +871,7 @@ function IssuePageContent() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono flex items-center gap-2">
-                      <Hash className="w-3 h-3" /> RUT *
+                      <ShieldAlert className="w-3 h-3" /> RUT *
                     </label>
                     <input
                       type="text"
