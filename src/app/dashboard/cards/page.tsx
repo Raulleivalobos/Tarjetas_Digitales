@@ -20,14 +20,17 @@ import {
   CheckSquare,
   Square,
   AlertTriangle,
-  Download
+  Download,
+  Mail,
+  Ban
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { exportElementToPDF } from '@/lib/pdfGenerator';
+import { sendCertificateNotification } from '@/app/actions/email';
 
 interface CardWithBeneficiary extends DigitalCard {
   beneficiary: Beneficiary;
-  design?: any; // any to avoid complex type issues here, or we can use CardDesign
+  design?: any; 
 }
 
 export default function CardsPage() {
@@ -35,6 +38,7 @@ export default function CardsPage() {
   const isAdmin = membership?.role === 'admin' || membership?.role === 'owner';
   const [cards, setCards] = useState<CardWithBeneficiary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resending, setResending] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -71,9 +75,7 @@ export default function CardsPage() {
           .eq('org_id', organization.id);
 
         if (!error && data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           let mapped = data.map((c: any) => {
-            // Find design
             const design = designs?.find((d: any) => d.id === c.metadata?.design_id);
             return {
               ...c,
@@ -140,29 +142,61 @@ export default function CardsPage() {
     }
   };
 
-  const handleDeleteCards = async (ids: string[]) => {
+  const handleRevokeCards = async (ids: string[]) => {
     if (!isAdmin || ids.length === 0) return;
-    if (!confirm(`¿Estás seguro de que deseas eliminar ${ids.length} tarjeta(s)? Esta acción no se puede deshacer y las tarjetas quedarán anuladas.`)) return;
+    if (!confirm(`¿Estás seguro de que deseas anular ${ids.length} tarjeta(s)? Esto mantendrá el registro pero la tarjeta quedará invalidada para su uso.`)) return;
     setIsUpdating(true);
     try {
       const { error } = await supabase
         .from('digital_cards')
-        .delete()
+        .update({ status: 'revoked' })
         .in('id', ids);
         
       if (!error) {
-        setCards(cards.filter(c => !ids.includes(c.id)));
+        setCards(cards.map(c => ids.includes(c.id) ? { ...c, status: 'revoked' } : c));
         setSelectedIds(selectedIds.filter(selId => !ids.includes(selId)));
-        setSelectedCard(null); // in case we deleted the selected one
-      } else {
-        console.error(error);
-        console.error('Error eliminando tarjeta:', error.message);
+        if (selectedCard && ids.includes(selectedCard.id)) {
+          setSelectedCard({ ...selectedCard, status: 'revoked' });
+        }
       }
     } catch (error: any) {
       console.error(error);
-      console.error('Error inesperado al eliminar:', error?.message);
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleResendEmail = async (card: CardWithBeneficiary) => {
+    if (!card.beneficiary?.email) {
+      alert('El beneficiario no tiene un correo electrónico registrado.');
+      return;
+    }
+    
+    setResending(card.id);
+    try {
+      const baseUrl = window.location.origin;
+      const cardUrl = `${baseUrl}/card/${card.id}`;
+      
+      const { success, error } = await sendCertificateNotification({
+        to: card.beneficiary.email,
+        name: card.beneficiary.full_name,
+        type: 'Tarjeta Digital',
+        folio: card.card_number || card.id.split('-')[0],
+        rut: card.beneficiary.rut,
+        orgName: organization?.name || 'SkardKey',
+        url: cardUrl
+      });
+
+      if (success) {
+        alert('Correo de la tarjeta reenviado correctamente.');
+      } else {
+        alert(`Error al enviar correo: ${error || 'Desconocido'}`);
+      }
+    } catch (err) {
+      console.error('Error resending email:', err);
+      alert('Error inesperado al intentar enviar el correo.');
+    } finally {
+      setResending(null);
     }
   };
 
@@ -222,7 +256,7 @@ export default function CardsPage() {
         </div>
       </div>
 
-      {/* Stats and Bulk Actions */}
+      {/* Bulk Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="text-sm text-slate-400">
           {cards.length} tarjeta{cards.length !== 1 ? 's' : ''} encontrada{cards.length !== 1 ? 's' : ''}
@@ -233,20 +267,13 @@ export default function CardsPage() {
         
         {isAdmin && selectedIds.length > 0 && (
           <div className="flex items-center gap-2 animate-fade-in bg-surface-900 border border-brand-500/20 p-2 rounded-xl">
-            <span className="text-sm text-slate-400 mr-2 ml-2">Cambiar estado a:</span>
+            <span className="text-sm text-slate-400 mr-2 ml-2 text-[10px] uppercase tracking-wider font-bold">Acciones:</span>
             <button
               onClick={() => handleBulkStatusChange('active')}
               disabled={isUpdating}
               className="px-3 py-1 text-xs bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-md border border-emerald-500/20 transition-colors disabled:opacity-50"
             >
-              Activa
-            </button>
-            <button
-              onClick={() => handleBulkStatusChange('draft')}
-              disabled={isUpdating}
-              className="px-3 py-1 text-xs bg-slate-500/10 text-slate-300 hover:bg-slate-500/20 rounded-md border border-slate-500/20 transition-colors disabled:opacity-50"
-            >
-              Pendiente
+              Activar
             </button>
             <button
               onClick={() => handleBulkStatusChange('inactive')}
@@ -256,20 +283,12 @@ export default function CardsPage() {
               Inactivar
             </button>
             <button
-              onClick={() => handleBulkStatusChange('revoked')}
-              disabled={isUpdating}
-              className="px-3 py-1 text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-md border border-red-500/20 transition-colors disabled:opacity-50"
-            >
-              Revocar
-            </button>
-            <div className="w-px h-6 bg-slate-700 mx-2"></div>
-            <button
-              onClick={() => handleDeleteCards(selectedIds)}
+              onClick={() => handleRevokeCards(selectedIds)}
               disabled={isUpdating}
               className="px-3 py-1 flex items-center gap-1 text-xs bg-red-900/40 text-red-400 hover:bg-red-900/60 rounded-md border border-red-900/50 transition-colors disabled:opacity-50"
             >
-              <Trash2 className="w-3 h-3" />
-              Eliminar
+              <Ban className="w-3 h-3" />
+              Anular
             </button>
           </div>
         )}
@@ -325,7 +344,7 @@ export default function CardsPage() {
         </div>
       ) : (
         <div className="glass-card overflow-hidden">
-          <table className="data-table">
+          <table className="data-table text-sm">
             <thead>
               <tr>
                 {isAdmin && (
@@ -348,7 +367,7 @@ export default function CardsPage() {
             </thead>
             <tbody>
               {cards.map((c) => (
-                <tr key={c.id}>
+                <tr key={c.id} className="hover:bg-white/[0.02]">
                   {isAdmin && (
                     <td>
                       <button onClick={() => toggleSelectCard(c.id)}>
@@ -364,26 +383,28 @@ export default function CardsPage() {
                   <td className="font-mono text-xs text-slate-400">{c.card_number}</td>
                   <td><StatusBadge status={c.status} size="sm" /></td>
                   <td className="text-xs text-slate-400">{formatDate(c.issued_at)}</td>
-                  <td className="text-right flex items-center justify-end gap-2">
-                    {c.status === 'draft' && (
+                  <td className="text-right">
+                    <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={async () => {
-                          const { error } = await supabase.from('digital_cards').update({ status: 'active' }).eq('id', c.id);
-                          if (!error) {
-                            setCards(cards.map(card => card.id === c.id ? { ...card, status: 'active' } : card));
-                          }
-                        }}
-                        className="px-2 py-1 text-xs bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-md border border-emerald-500/20"
+                        onClick={() => handleResendEmail(c)}
+                        disabled={resending === c.id}
+                        title="Reenviar E-mail"
+                        className="p-2 rounded-lg text-slate-400 hover:text-brand-400 hover:bg-brand-500/10 transition-all"
                       >
-                        Aprobar
+                        {resending === c.id ? (
+                          <div className="w-4 h-4 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+                        ) : (
+                          <Mail className="w-4 h-4" />
+                        )}
                       </button>
-                    )}
-                    <button
-                      onClick={() => setSelectedCard(c)}
-                      className="p-2 rounded-lg btn-ghost"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
+                      <button
+                        onClick={() => setSelectedCard(c)}
+                        title="Vista Previa"
+                        className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -409,51 +430,48 @@ export default function CardsPage() {
                 design={selectedCard.design}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-sm bg-surface-900/30 p-4 rounded-xl border border-white/5">
               <div>
-                <p className="text-slate-500">Número de tarjeta</p>
-                <p className="text-white font-mono">{selectedCard.card_number}</p>
+                <p className="text-slate-500 text-xs uppercase tracking-wider">Número de tarjeta</p>
+                <p className="text-white font-mono mt-1">{selectedCard.card_number || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-slate-500">Código QR</p>
-                <p className="text-white font-mono text-xs">{selectedCard.qr_code}</p>
+                <p className="text-slate-500 text-xs uppercase tracking-wider">Código QR (ID)</p>
+                <p className="text-white font-mono text-[10px] mt-1 break-all">{selectedCard.qr_code}</p>
               </div>
               <div>
-                <p className="text-slate-500">Fecha emisión</p>
-                <p className="text-white">{formatDate(selectedCard.issued_at)}</p>
+                <p className="text-slate-500 text-xs uppercase tracking-wider">Fecha emisión</p>
+                <p className="text-white mt-1">{formatDate(selectedCard.issued_at)}</p>
               </div>
               <div>
-                <p className="text-slate-500">Fecha expiración</p>
-                <p className="text-white">{formatDate(selectedCard.expires_at)}</p>
+                <p className="text-slate-500 text-xs uppercase tracking-wider">Estado Actual</p>
+                <div className="mt-1"><StatusBadge status={selectedCard.status} size="sm" /></div>
               </div>
             </div>
-            <div className="pt-4 border-t border-brand-500/10 flex justify-between items-center">
-              {isAdmin ? (
+            
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/5">
+              <div className="flex gap-2">
+                {isAdmin && selectedCard.status !== 'revoked' && (
+                  <button
+                    onClick={() => handleRevokeCards([selectedCard.id])}
+                    disabled={isUpdating}
+                    className="px-4 py-2.5 flex items-center gap-2 text-sm font-bold bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl border border-red-500/20 transition-all disabled:opacity-50"
+                  >
+                    <Ban className="w-4 h-4" />
+                    Anular Tarjeta
+                  </button>
+                )}
+                
                 <button
-                  onClick={() => handleDeleteCards([selectedCard.id])}
-                  disabled={isUpdating}
-                  className="px-4 py-2 flex items-center gap-2 text-sm bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-lg transition-colors disabled:opacity-50"
+                  onClick={() => handleResendEmail(selectedCard)}
+                  disabled={resending === selectedCard.id}
+                  className="px-4 py-2.5 flex items-center gap-2 text-sm font-bold bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 rounded-xl border border-brand-500/20 transition-all disabled:opacity-50"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  Eliminar Tarjeta
+                  <Mail className="w-4 h-4" />
+                  {resending === selectedCard.id ? 'Enviando...' : 'Reenviar E-mail'}
                 </button>
-              ) : <div></div>}
-              
-              {selectedCard.status === 'draft' && (
-                <button
-                  onClick={async () => {
-                    const { error } = await supabase.from('digital_cards').update({ status: 'active' }).eq('id', selectedCard.id);
-                    if (!error) {
-                      setCards(cards.map(card => card.id === selectedCard.id ? { ...card, status: 'active' } : card));
-                      setSelectedCard({ ...selectedCard, status: 'active' });
-                    }
-                  }}
-                  className="btn-primary px-6 py-2"
-                >
-                  Aprobar y Emitir
-                </button>
-              )}
-              
+              </div>
+
               <button
                 onClick={async () => {
                   setExporting(true);
@@ -467,10 +485,10 @@ export default function CardsPage() {
                   setExporting(false);
                 }}
                 disabled={exporting}
-                className="btn-secondary px-4 py-2 flex items-center gap-2 text-sm disabled:opacity-50"
+                className="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl flex items-center gap-2 transition-all disabled:opacity-50"
               >
                 {exporting ? (
-                  <><div className="w-4 h-4 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" /> Generando...</>
+                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Generando...</>
                 ) : (
                   <><Download className="w-4 h-4" /> Descargar PDF</>
                 )}
