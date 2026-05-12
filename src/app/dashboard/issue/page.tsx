@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { validateRut, formatRut, generateCardNumber } from '@/lib/utils';
@@ -17,7 +17,7 @@ const CanvasPreview = dynamic(
 import { useSearchParams } from 'next/navigation';
 import { sendCertificateNotification } from '@/app/actions/email';
 
-export default function IssuePage() {
+function IssuePageContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
   const { organization, loading: authLoading } = useAuth();
@@ -1450,5 +1450,18 @@ export default function IssuePage() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+export default function IssuePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <div className="w-12 h-12 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+        <p className="text-slate-400 text-sm">Cargando módulo de emisión...</p>
+      </div>
+    }>
+      <IssuePageContent />
+    </Suspense>
   );
 }

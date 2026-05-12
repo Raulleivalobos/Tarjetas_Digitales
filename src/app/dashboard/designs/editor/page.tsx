@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -607,7 +607,7 @@ function createDefaultDesign(orgId: string, name: string, type: 'card' | 'certif
   };
 }
 
-export default function CardDesignEditorPage() {
+function CardDesignEditorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { organization } = useAuth();
@@ -1786,5 +1786,18 @@ export default function CardDesignEditorPage() {
       {/* Global Delight Components */}
       <SuccessStamp isVisible={showSuccess} message="DISEÑO RESGUARDADO" />
     </div>
+  );
+}
+
+export default function CardDesignEditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <div className="w-12 h-12 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+        <p className="text-slate-400 text-sm">Cargando editor de diseño...</p>
+      </div>
+    }>
+      <CardDesignEditorContent />
+    </Suspense>
   );
 }
