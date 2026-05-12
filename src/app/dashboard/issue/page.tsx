@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { validateRut, formatRut, generateCardNumber } from '@/lib/utils';
 import { BulkUploadRow, BulkUploadResult } from '@/lib/types';
 // xlsx (~200KB) and papaparse (~30KB) loaded dynamically when needed
-import { Upload, FileText, AlertTriangle, Download, UserPlus, Users, Palette, Check, LayoutTemplate, Globe, Shield } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, Download, UserPlus, Users, Palette, Check, LayoutTemplate, Globe, Shield, ChevronDown } from 'lucide-react';
 import { CardDesign } from '@/lib/cardDesignTypes';
 import { Modal } from '@/components/ui/Modal';
 import dynamic from 'next/dynamic';
@@ -903,13 +903,28 @@ export default function IssuePage() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Celular</label>
-                    <input
-                      type="tel"
-                      value={manualForm.phone || ''}
-                      onChange={e => setManualForm({...manualForm, phone: e.target.value})}
-                      className="glass-input w-full px-4 py-2.5 text-xs font-mono"
-                      placeholder="+56912345678"
-                    />
+                    <div className="flex gap-2">
+                      <div className="w-20 shrink-0 relative group">
+                        <label className="absolute -top-1.5 left-2 px-1 bg-surface-950 text-[8px] font-bold text-slate-500 uppercase tracking-tighter z-10">País</label>
+                        <div className="glass-input px-2 py-2 text-xs font-mono flex items-center justify-between cursor-default bg-brand-500/5">
+                          <span className="text-white">CL +56</span>
+                          <ChevronDown className="w-2.5 h-2.5 text-slate-500" />
+                        </div>
+                      </div>
+                      <div className="flex-1 relative group">
+                        <label className="absolute -top-1.5 left-2 px-1 bg-surface-950 text-[8px] font-bold text-slate-500 uppercase tracking-tighter z-10">Teléfono</label>
+                        <input
+                          type="tel"
+                          value={(manualForm.phone || '').replace('+56', '').trim()}
+                          onChange={e => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            setManualForm({...manualForm, phone: `+56 ${val}`});
+                          }}
+                          className="glass-input w-full px-3 py-2 text-xs font-mono text-brand-400"
+                          placeholder="9 6236 9084"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 

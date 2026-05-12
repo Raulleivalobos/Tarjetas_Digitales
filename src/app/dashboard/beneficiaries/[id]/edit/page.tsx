@@ -21,6 +21,7 @@ import {
   FileText,
   CheckCircle2,
   MoreVertical,
+  ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -404,14 +405,29 @@ export default function EditBeneficiaryPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Teléfono / Celular</label>
-                   <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-                    placeholder="+56 9 1234 5678"
-                    className="glass-input w-full px-4 py-3 text-sm font-mono"
-                  />
+                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Celular</label>
+                   <div className="flex gap-2">
+                     <div className="w-24 shrink-0 relative group">
+                        <label className="absolute -top-1.5 left-2 px-1 bg-surface-950 text-[9px] font-bold text-slate-500 uppercase tracking-tighter z-10">País</label>
+                        <div className="glass-input px-3 py-3 text-sm font-mono flex items-center justify-between cursor-default bg-brand-500/5">
+                          <span className="text-white">CL +56</span>
+                          <ChevronDown className="w-3 h-3 text-slate-500" />
+                        </div>
+                     </div>
+                     <div className="flex-1 relative group">
+                        <label className="absolute -top-1.5 left-2 px-1 bg-surface-950 text-[9px] font-bold text-slate-500 uppercase tracking-tighter z-10">Teléfono</label>
+                        <input
+                          type="tel"
+                          value={form.phone.replace('+56', '').trim()}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            setForm((prev) => ({ ...prev, phone: `+56 ${val}` }));
+                          }}
+                          placeholder="9 6236 9084"
+                          className="glass-input w-full px-4 py-3 text-sm font-mono text-brand-400"
+                        />
+                     </div>
+                   </div>
                 </div>
               </div>
             </div>
