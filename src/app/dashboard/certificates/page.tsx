@@ -78,33 +78,31 @@ export default function CertificatesPage() {
     try {
       const reportData = certificates.map(c => ({
         folio: c.folio?.toString().padStart(6, '0') || '-',
-        receptor: c.beneficiaries?.full_name || 'Desconocido',
-        rut: c.beneficiaries?.rut || '-',
-        tipo: c.type.replace('_', ' ').toUpperCase(),
-        estado: c.status === 'active' ? 'ACTIVO' : 'ANULADO',
+        receptor: c.resident_data?.full_name || c.beneficiaries?.full_name || 'Desconocido',
+        tipo: c.type === 'socio_activo' ? 'Socio Activo' : c.type === 'socio_inactivo' ? 'Socio Inactivo' : 'Residente',
         costo: `$${c.cost.toLocaleString('es-CL')}`,
         fecha: new Date(c.issued_at).toLocaleDateString('es-CL')
       }));
 
       await exportReportToPDF({
-        filename: `Reporte_Certificados_${new Date().getTime()}`,
+        filename: `Reporte_Certificados_${organization?.slug || 'export'}`,
         title: 'Reporte de Certificados Emitidos',
-        subtitle: 'Desglose detallado de emisiones',
+        subtitle: 'Desglose detallado por categoría y folio',
         orgName: organization?.name,
+        logoUrl: organization?.logo_url || undefined,
         dateRange: dateRange.start || dateRange.end ? dateRange : undefined,
         summary: [
           { label: 'Total Emitidos', value: certificates.length.toString() },
-          { label: 'Recaudación', value: `$${certificates.reduce((acc, curr) => acc + curr.cost, 0).toLocaleString('es-CL')}` },
-          { label: 'Vigentes', value: certificates.filter(c => c.status === 'active').length.toString() }
+          { label: 'Socios Activos', value: certificates.filter(c => c.type === 'socio_activo').length.toString() },
+          { label: 'Socios Inactivos', value: certificates.filter(c => c.type === 'socio_inactivo').length.toString() },
+          { label: 'Residentes', value: certificates.filter(c => c.type === 'residente').length.toString() }
         ],
         columns: [
-          { header: 'Folio', key: 'folio', width: 10 },
-          { header: 'Receptor', key: 'receptor', width: 30 },
-          { header: 'RUT', key: 'rut', width: 15 },
-          { header: 'Tipo', key: 'tipo', width: 15 },
-          { header: 'Estado', key: 'estado', width: 10 },
-          { header: 'Fecha', key: 'fecha', width: 10 },
-          { header: 'Costo', key: 'costo', width: 10, align: 'right' }
+          { header: 'Folio', key: 'folio', width: 12 },
+          { header: 'Beneficiario / Residente', key: 'receptor', width: 40 },
+          { header: 'Tipo', key: 'tipo', width: 18 },
+          { header: 'Fecha Emisión', key: 'fecha', width: 15 },
+          { header: 'Costo', key: 'costo', width: 15, align: 'right' }
         ],
         data: reportData
       });
