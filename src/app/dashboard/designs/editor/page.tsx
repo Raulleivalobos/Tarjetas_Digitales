@@ -1633,6 +1633,7 @@ function CardDesignEditorContent() {
                 onSelectElement={setSelectedElementId}
                 onUpdateElement={handleUpdateElement}
                 scale={scale}
+                organization={organization}
               />
               
               {/* Scanline animation during save */}
@@ -1770,6 +1771,7 @@ function CardDesignEditorContent() {
               onSelectElement={() => {}}
               onUpdateElement={() => {}}
               scale={Math.min(1, 400 / design.width)} // Scale to fit nicely in modal
+              organization={organization}
             />
           </div>
 

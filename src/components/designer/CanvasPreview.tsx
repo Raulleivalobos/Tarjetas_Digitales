@@ -12,6 +12,7 @@ interface CanvasPreviewProps {
   onUpdateElement?: (id: string, updates: Record<string, any>) => void;
   scale?: number;
   readOnly?: boolean;
+  organization?: any; // Optional for live preview population
 }
 
 function getBackgroundStyle(design: CardDesign): React.CSSProperties {
@@ -390,6 +391,66 @@ const proxyImageUrl = (url: string | undefined | null) => {
   return `/api/proxy-image?url=${encodeURIComponent(url)}`;
 };
 
+function populateElement(element: DesignElement, organization: any): DesignElement {
+  if (!organization) return element;
+  
+  const settings = typeof organization.settings === 'string' ? JSON.parse(organization.settings) : (organization.settings || {});
+  const sigs = settings.signatures || organization.signatures || {};
+  const timestamp = new Date().getTime();
+
+  // Handle Text Elements
+  if (element.type === 'text') {
+    const d = element.data;
+    if (!d.isAttribute) return element;
+
+    const attrKey = (d.attributeKey || '').toLowerCase();
+    let content = d.content;
+
+    if (attrKey.includes('institución') || attrKey.includes('organizacion')) {
+      content = organization.name || content;
+    } else if (attrKey.includes('presidente')) {
+      content = sigs.president?.name || content;
+    } else if (attrKey.includes('secretario')) {
+      content = sigs.secretary?.name || content;
+    } else if (attrKey.includes('comuna')) {
+      content = settings.commune || content;
+    }
+
+    return { ...element, data: { ...d, content } };
+  }
+
+  // Handle Image Elements
+  if (element.type === 'image') {
+    const d = element.data;
+    if (!d.isAttribute) return element;
+
+    const attrKey = (d.attributeKey || '').toLowerCase();
+    const originalSrc = (d.src || '').toLowerCase();
+    const dataType = (d.type || '').toLowerCase();
+    let src = d.src;
+
+    // LOGO
+    if (attrKey.includes('logo') || originalSrc.includes('logo') || dataType === 'logo') {
+      const logoUrl = organization.logo_url || settings.logo_url;
+      if (logoUrl) src = `${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${timestamp}`;
+    } 
+    // SIGNATURES
+    else if (attrKey.includes('firma') || attrKey.includes('signature') || dataType === 'signature' || originalSrc.includes('sig')) {
+      let sigUrl = null;
+      if (attrKey.includes('presi') || originalSrc.includes('presi')) {
+        sigUrl = sigs.president?.signature_url || settings.president_signature_url;
+      } else if (attrKey.includes('secre') || originalSrc.includes('secre')) {
+        sigUrl = sigs.secretary?.signature_url || settings.secretary_signature_url;
+      }
+      if (sigUrl) src = `${sigUrl}${sigUrl.includes('?') ? '&' : '?'}t=${timestamp}`;
+    }
+
+    return { ...element, data: { ...d, src } };
+  }
+
+  return element;
+}
+
 function ImageElementBody({ element, scale = 1 }: { element: ImageElement; scale?: number }) {
   const safeSrc = proxyImageUrl(element.src);
 
@@ -546,6 +607,7 @@ export function CanvasPreview({
   onUpdateElement,
   scale = 1,
   readOnly = false,
+  organization,
 }: CanvasPreviewProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -600,7 +662,8 @@ export function CanvasPreview({
           )}
 
         {/* Render Elements — background images first (z:1), then others (z:10+) */}
-        {design.elements.map((element, idx) => {
+        {design.elements.map((rawElement, idx) => {
+          const element = organization ? populateElement(rawElement, organization) : rawElement;
           const key = element.data.id;
           const isSelected = selectedElementId === key;
 

@@ -1388,6 +1388,7 @@ function IssuePageContent() {
                     selectedElementId={null}
                     scale={1.0}
                     readOnly={true}
+                    organization={organization}
                   />
                 )}
               </div>

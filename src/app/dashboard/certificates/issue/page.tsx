@@ -532,8 +532,9 @@ export default function IssueCertificatePage() {
                 <div className="scale-[0.5] md:scale-[0.65] origin-top mb-[-30%] md:mb-[-15%]">
                   <CanvasPreview 
                     design={populatedDesign as any} 
-                    elements={populatedDesign.elements} 
-                    onElementSelect={() => {}}
+                    selectedElementId={null}
+                    readOnly={true}
+                    organization={organization}
                   />
                 </div>
               </div>
