@@ -95,7 +95,8 @@ export default function CertificatesPage() {
           { label: 'Total Emitidos', value: certificates.length.toString() },
           { label: 'Socios Activos', value: certificates.filter(c => c.type === 'socio_activo').length.toString() },
           { label: 'Socios Inactivos', value: certificates.filter(c => c.type === 'socio_inactivo').length.toString() },
-          { label: 'Residentes', value: certificates.filter(c => c.type === 'residente').length.toString() }
+          { label: 'Residentes', value: certificates.filter(c => c.type === 'residente').length.toString() },
+          { label: 'Recaudación', value: `$${certificates.reduce((acc, curr) => acc + curr.cost, 0).toLocaleString('es-CL')}` }
         ],
         columns: [
           { header: 'Folio', key: 'folio', width: 12 },
