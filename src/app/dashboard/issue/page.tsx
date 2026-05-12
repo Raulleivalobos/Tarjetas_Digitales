@@ -624,7 +624,7 @@ function IssuePageContent() {
           const qrCode = `${organization.slug}-${beneficiaryId}-${Math.random().toString(36).substring(2, 7)}`;
           const expiresAt = null; 
 
-          await supabase.from('digital_cards').insert({
+          const { error: cardError } = await supabase.from('digital_cards').insert({
             beneficiary_id: beneficiaryId,
             org_id: organization.id,
             card_number: cardNumber,
@@ -636,7 +636,11 @@ function IssuePageContent() {
             }
           });
 
-          currentResult.success++;
+          if (cardError) {
+            currentResult.errors.push({ row: rowNum, field: 'card', message: `Error emitiendo tarjeta: ${cardError.message}` });
+          } else {
+            currentResult.success++;
+          }
         }
       } catch (err) {
         const error = err as Error;

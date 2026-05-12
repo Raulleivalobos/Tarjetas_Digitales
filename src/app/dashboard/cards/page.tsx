@@ -77,9 +77,11 @@ export default function CardsPage() {
         if (!error && data) {
           let mapped = data.map((c: any) => {
             const design = designs?.find((d: any) => d.id === c.metadata?.design_id);
+            // Handle cases where beneficiaries might be an array or an object
+            const benData = Array.isArray(c.beneficiaries) ? c.beneficiaries[0] : c.beneficiaries;
             return {
               ...c,
-              beneficiary: c.beneficiaries,
+              beneficiary: benData,
               design
             };
           });
