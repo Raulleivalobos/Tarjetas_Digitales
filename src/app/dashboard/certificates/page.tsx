@@ -365,8 +365,8 @@ export default function CertificatesPage() {
 
       {/* Report Modal */}
       {showReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="glass-card w-full max-w-lg p-6 space-y-6 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 md:pt-24 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+          <div className="glass-card w-full max-w-lg p-6 space-y-6 animate-in slide-in-from-top-8 duration-300 my-8">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 <FileDown className="w-5 h-5 text-brand-400" />
