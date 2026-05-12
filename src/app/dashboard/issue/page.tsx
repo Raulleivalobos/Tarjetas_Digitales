@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { validateRut, formatRut, generateCardNumber } from '@/lib/utils';
 import { BulkUploadRow, BulkUploadResult } from '@/lib/types';
 // xlsx (~200KB) and papaparse (~30KB) loaded dynamically when needed
-import { Upload, FileText, AlertTriangle, Download, UserPlus, Users, Palette, Check, LayoutTemplate, Globe, Shield, ChevronDown } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, Download, UserPlus, Users, Palette, Check, LayoutTemplate, Globe, Shield, ChevronDown, Phone, Mail, MapPin, Camera, Calendar } from 'lucide-react';
 import { CardDesign } from '@/lib/cardDesignTypes';
 import { Modal } from '@/components/ui/Modal';
 import dynamic from 'next/dynamic';
