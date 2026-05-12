@@ -307,7 +307,7 @@ export async function exportReportToPDF(options: ReportOptions): Promise<boolean
     // ── Footer Summary ──
     if (options.footerSummary && options.footerSummary.length > 0) {
       // Check if we need a new page for the summary
-      if (y + 40 > pageHeight - margin) {
+      if (y + 45 > pageHeight - margin) {
         addPageFooter(pdf, pageWidth, pageHeight, margin, options.orgName || '');
         pdf.addPage();
         y = margin + 10;
@@ -315,17 +315,21 @@ export async function exportReportToPDF(options: ReportOptions): Promise<boolean
         y += 15;
       }
       
-      pdf.setFontSize(11);
+      const summaryTableWidth = contentWidth / 2.5; // Slightly more than 1/3 for readability
+      const summaryX = pageWidth - margin - summaryTableWidth;
+
+      pdf.setFontSize(10);
       pdf.setTextColor(30, 30, 50);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('RESUMEN DE RECAUDACIÓN POR TIPO', margin, y);
+      pdf.text('RESUMEN DE RECAUDACIÓN', summaryX, y);
       y += 5;
 
       const { default: autoTable } = await import('jspdf-autotable');
       (autoTable as any)(pdf, {
         startY: y,
-        margin: { left: margin, right: margin },
-        head: [['Tipo de Certificado', 'Cantidad', 'Monto Recaudado']],
+        margin: { left: summaryX },
+        tableWidth: summaryTableWidth,
+        head: [['Tipo', 'Cant.', 'Total']],
         body: options.footerSummary.map(item => [
           item.type,
           item.count.toString(),
