@@ -148,7 +148,24 @@ export async function exportReportToPDF(options: ReportOptions): Promise<boolean
     if (options.logoUrl) {
       try {
         const logoSize = 15;
-        pdf.addImage(options.logoUrl, 'PNG', pageWidth - margin - logoSize, y - 4, logoSize, logoSize);
+        // Attempt to pre-load image to avoid async issues with jsPDF addImage
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = options.logoUrl!;
+        });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0);
+        const imgData = canvas.toDataURL('image/png');
+        
+        pdf.addImage(imgData, 'PNG', pageWidth - margin - logoSize, y - 4, logoSize, logoSize);
       } catch (err) {
         console.warn('Could not add logo to PDF:', err);
       }
