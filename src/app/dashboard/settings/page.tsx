@@ -148,6 +148,42 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>, role: 'president' | 'secretary') => {
+    const file = e.target.files?.[0];
+    if (!file || !organization) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${organization.id}/signature-${role}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ 
+        ...prev, 
+        signatures: { 
+          ...prev.signatures, 
+          [role]: { ...prev.signatures[role], signature_url: publicUrl } 
+        } 
+      }));
+      
+      setMessage({ text: 'Firma subida correctamente. Haz clic en Guardar Configuración para finalizar.', type: 'success' });
+    } catch (err) {
+      console.error('Error uploading signature:', err);
+      setMessage({ text: 'Error al subir la firma', type: 'error' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!organization) return;
@@ -576,11 +612,20 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div className="flex gap-4">
-                        <div className="w-24 h-24 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden relative">
+                        <div className="w-24 h-24 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden relative group">
                           {formData.signatures.president.signature_url ? (
                             <img src={formData.signatures.president.signature_url} className="w-full h-full object-contain" alt="Firma" />
                           ) : (
                             <div className="text-[10px] text-slate-600 text-center px-2">Sin firma</div>
+                          )}
+                          <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                            <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'president')} accept="image/*" />
+                            <span className="text-[9px] font-bold text-white uppercase tracking-tighter text-center px-1">Cambiar Firma</span>
+                          </label>
+                          {uploading && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent animate-spin rounded-full" />
+                            </div>
                           )}
                         </div>
                         <div className="flex-1 space-y-3">
@@ -591,6 +636,11 @@ export default function SettingsPage() {
                             className="glass-input w-full px-3 py-2 text-sm"
                             placeholder="Nombre completo"
                           />
+                          <label className="w-full py-2 px-3 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer border border-brand-500/20 transition-all">
+                            <Upload className="w-3.5 h-3.5" />
+                            Subir Firma
+                            <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'president')} accept="image/*" />
+                          </label>
                         </div>
                       </div>
                     </div>
@@ -607,11 +657,20 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div className="flex gap-4">
-                        <div className="w-24 h-24 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden relative">
+                        <div className="w-24 h-24 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden relative group">
                           {formData.signatures.secretary.signature_url ? (
                             <img src={formData.signatures.secretary.signature_url} className="w-full h-full object-contain" alt="Firma" />
                           ) : (
                             <div className="text-[10px] text-slate-600 text-center px-2">Sin firma</div>
+                          )}
+                          <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                            <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'secretary')} accept="image/*" />
+                            <span className="text-[9px] font-bold text-white uppercase tracking-tighter text-center px-1">Cambiar Firma</span>
+                          </label>
+                          {uploading && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent animate-spin rounded-full" />
+                            </div>
                           )}
                         </div>
                         <div className="flex-1 space-y-3">
@@ -622,6 +681,11 @@ export default function SettingsPage() {
                             className="glass-input w-full px-3 py-2 text-sm"
                             placeholder="Nombre completo"
                           />
+                          <label className="w-full py-2 px-3 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer border border-brand-500/20 transition-all">
+                            <Upload className="w-3.5 h-3.5" />
+                            Subir Firma
+                            <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'secretary')} accept="image/*" />
+                          </label>
                         </div>
                       </div>
                     </div>
