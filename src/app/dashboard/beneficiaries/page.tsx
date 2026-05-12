@@ -296,7 +296,7 @@ export default function BeneficiariesPage() {
             <div className="absolute top-0 left-0 w-12 h-12 border-t border-l border-brand-500/20 pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-12 h-12 border-b border-r border-brand-500/20 pointer-events-none" />
             
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-surface-950/50 border-b border-white/5">
@@ -309,17 +309,17 @@ export default function BeneficiariesPage() {
                         )}
                       </button>
                     </th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono">Foto</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono">ID Socio</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono">RUT</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono">Nombres</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono">Apellidos</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono">Dirección</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono">Comuna</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono">Correo</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono">Celular</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono">Estado</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono text-right">Acciones</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono w-14">Foto</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono w-20">ID Socio</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono w-32">RUT</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono min-w-[120px]">Nombres</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono min-w-[120px]">Apellidos</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono min-w-[160px]">Dirección</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono w-28">Comuna</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono min-w-[160px]">Correo</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono w-32">Celular</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono w-24">Estado</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono text-right w-24">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -336,65 +336,65 @@ export default function BeneficiariesPage() {
                           )}
                         </button>
                       </td>
-                      <td className="px-3 py-3">
-                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-surface-900 border border-brand-500/10 flex-shrink-0">
+                      <td className="px-3 py-4">
+                        <div className="w-12 h-12 rounded-2xl overflow-hidden bg-surface-900 border-2 border-brand-500/20 shadow-lg flex-shrink-0 group-hover:border-brand-500/40 transition-all duration-300">
                           {person.photo_url ? (
                             <Image
                               src={person.photo_url}
                               alt={person.full_name}
-                              width={40}
-                              height={40}
+                              width={48}
+                              height={48}
                               className="w-full h-full object-cover"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-brand-500/5">
-                              <User className="w-5 h-5 text-brand-400 opacity-50" />
+                              <User className="w-6 h-6 text-brand-400 opacity-50" />
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-3">
-                        <span className="text-xs font-mono font-bold text-brand-400 tracking-wider">
+                      <td className="px-3 py-4">
+                        <span className="text-[11px] font-mono font-bold text-brand-400 tracking-wider bg-brand-500/5 px-2 py-1 rounded border border-brand-500/10">
                           {(person.custom_fields as any)?.['ID Socio'] || '-'}
                         </span>
                       </td>
-                      <td className="px-3 py-3">
-                        <span className="font-mono text-brand-400 text-xs font-bold tracking-wider bg-brand-500/5 px-1.5 py-0.5 rounded border border-brand-500/10">
+                      <td className="px-3 py-4">
+                        <span className="font-mono text-brand-300 text-[11px] font-bold bg-brand-500/10 px-2 py-1 rounded border border-brand-500/20 whitespace-nowrap shadow-sm">
                           {formatRut(person.rut)}
                         </span>
                       </td>
-                      <td className="px-3 py-3">
-                        <span className="text-white text-sm font-medium">
+                      <td className="px-3 py-4">
+                        <span className="text-white text-sm font-bold tracking-tight">
                           {person.first_name || person.full_name.split(' ')[0] || '-'}
                         </span>
                       </td>
-                      <td className="px-3 py-3">
-                        <span className="text-white text-sm font-medium">
+                      <td className="px-3 py-4">
+                        <span className="text-white text-sm font-bold tracking-tight">
                           {person.last_name || person.full_name.split(' ').slice(1).join(' ') || '-'}
                         </span>
                       </td>
-                      <td className="px-3 py-3">
-                        <span className="text-slate-400 text-xs truncate max-w-[150px] block">
+                      <td className="px-3 py-4">
+                        <span className="text-slate-400 text-[11px] font-medium truncate max-w-[180px] block leading-tight">
                           {person.address || (person.custom_fields as any)?.['Dirección'] || '-'}
                         </span>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-4">
                         <span className="text-slate-400 text-xs">
                           {person.comuna || '-'}
                         </span>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-4">
                         <span className="text-slate-300 text-xs truncate max-w-[150px] block">
                           {person.email || '-'}
                         </span>
                       </td>
-                      <td className="px-3 py-3">
-                        <span className="text-slate-400 text-xs font-mono">
+                      <td className="px-3 py-4">
+                        <span className="text-slate-400 text-[11px] font-mono whitespace-nowrap bg-white/5 px-2 py-1 rounded border border-white/5">
                           {person.phone || '-'}
                         </span>
                       </td>
-                      <td className="px-3 py-3"><StatusBadge status={person.status} size="sm" /></td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-4"><StatusBadge status={person.status} size="sm" /></td>
+                      <td className="px-3 py-4">
                         <div className="flex items-center justify-end gap-1">
                           <Link
                             href={`/dashboard/beneficiaries/${person.id}/edit`}
