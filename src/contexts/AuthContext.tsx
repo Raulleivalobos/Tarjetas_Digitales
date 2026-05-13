@@ -124,7 +124,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
-          setLoading(true);
+          // Solo mostrar pantalla de carga si no tenemos un usuario aún
+          if (!user && !newSession?.user) {
+            setLoading(true);
+          }
+          
           setSession(newSession);
           setUser(newSession?.user ?? null);
           
