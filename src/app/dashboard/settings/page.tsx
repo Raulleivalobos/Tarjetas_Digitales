@@ -7,6 +7,7 @@ import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCi
 import { CHILE_DATA } from '@/lib/chile-data';
 
 import { inviteUserToOrg } from '@/app/actions/invite';
+import { getOrgMembers } from '@/app/actions/org';
 
 type Tab = 'general' | 'members' | 'certificates' | 'security';
 type Role = 'owner' | 'admin' | 'validator' | 'viewer' | 'auditor' | 'municipal_admin' | 'municipal_viewer';
@@ -100,19 +101,19 @@ export default function SettingsPage() {
   const fetchMembers = async () => {
     if (!organization) return;
     setLoadingMembers(true);
-    const { data, error } = await supabase
-      .from('org_members')
-      .select('*')
-      .eq('org_id', organization.id);
     
-    if (!error && data) {
-      const enrichedMembers = data.map((m: any) => ({
-        ...m,
-        email: m.user_id === currentUser?.id ? currentUser?.email : `usuario-${m.user_id.substring(0,4)}@ejemplo.com`
-      }));
-      setMembers(enrichedMembers);
+    try {
+      const result = await getOrgMembers(organization.id);
+      if (result.success && result.data) {
+        setMembers(result.data);
+      } else {
+        console.error('Error fetching enriched members:', result.error);
+      }
+    } catch (err) {
+      console.error('Failed to fetch members:', err);
+    } finally {
+      setLoadingMembers(false);
     }
-    setLoadingMembers(false);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
