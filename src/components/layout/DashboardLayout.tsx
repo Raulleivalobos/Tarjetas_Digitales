@@ -65,12 +65,15 @@ export default function DashboardLayout({
     if (!loading) {
       if (!user) {
         router.push('/login');
-      } else if (isMunicipal && (pathname === '/dashboard' || !['/dashboard/municipal', '/dashboard/settings'].includes(pathname))) {
-        // Redirigir a perfiles municipales a su panel específico si intentan entrar a áreas JJVV o al dashboard base
+      } else if (!organization && memberships.length > 0 && pathname !== '/dashboard/select') {
+        // Si hay membresías pero ninguna activa (ej: recién logueado con múltiples orgs), ir a selección
+        router.push('/dashboard/select');
+      } else if (isMunicipal && (pathname === '/dashboard' || !['/dashboard/municipal', '/dashboard/settings', '/dashboard/select'].includes(pathname))) {
+        // Redirigir a perfiles municipales a su panel específico
         router.push('/dashboard/municipal');
       }
     }
-  }, [user, loading, router, isMunicipal, pathname]);
+  }, [user, loading, router, isMunicipal, pathname, organization, memberships.length]);
 
   if (loading) {
     return (

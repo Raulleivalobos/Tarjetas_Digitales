@@ -236,12 +236,33 @@ export default function SettingsPage() {
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!organization) return;
+    
     setLoading(true);
-    setTimeout(() => {
-      setMessage({ text: `Invitación enviada a ${inviteEmail}`, type: 'success' });
-      setInviteEmail('');
+    setMessage({ text: '', type: '' });
+    
+    try {
+      const { inviteUserToOrg } = await import('@/app/actions/invite');
+      const result = await inviteUserToOrg({
+        email: inviteEmail,
+        role: inviteRole,
+        orgId: organization.id,
+        orgName: organization.name,
+        accessCode: formData.access_code
+      });
+
+      if (result.success) {
+        setMessage({ text: `Invitación enviada a ${inviteEmail}. El usuario recibirá un correo para unirse.`, type: 'success' });
+        setInviteEmail('');
+      } else {
+        setMessage({ text: `Error al invitar: ${result.error}`, type: 'error' });
+      }
+    } catch (err) {
+      console.error('Invite error:', err);
+      setMessage({ text: 'Error de conexión al enviar invitación', type: 'error' });
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   if (!organization) return null;

@@ -54,23 +54,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Determinar cuál organización activar
       const lastOrgId = preferredOrgId || localStorage.getItem('last_org_id');
-      const activeMember = allMemberships.find(m => m.org_id === lastOrgId) || allMemberships[0];
+      const activeMember = allMemberships.find(m => m.org_id === lastOrgId);
 
       if (activeMember) {
-        setMembership(prev => {
-          const next = {
-            id: activeMember.id,
-            org_id: activeMember.org_id,
-            user_id: activeMember.user_id,
-            role: activeMember.role,
-            created_at: activeMember.created_at,
-          };
-          return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+        setMembership({
+          id: activeMember.id,
+          org_id: activeMember.org_id,
+          user_id: activeMember.user_id,
+          role: activeMember.role,
+          created_at: activeMember.created_at,
         });
-        setOrganization(prev => {
-          return JSON.stringify(prev) === JSON.stringify(activeMember.organizations) ? prev : activeMember.organizations;
-        });
+        setOrganization(activeMember.organizations);
         localStorage.setItem('last_org_id', activeMember.org_id);
+      } else {
+        // No hay organización activa por defecto si hay múltiples y no hay preferencia
+        setOrganization(null);
+        setMembership(null);
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);
