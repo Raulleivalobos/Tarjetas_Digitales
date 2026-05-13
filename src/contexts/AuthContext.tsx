@@ -54,7 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Determinar cuál organización activar
       const lastOrgId = preferredOrgId || localStorage.getItem('last_org_id');
-      const activeMember = allMemberships.find(m => m.org_id === lastOrgId);
+      
+      // 1. Si hay una preferencia guardada, buscarla
+      let activeMember = lastOrgId ? allMemberships.find(m => m.org_id === lastOrgId) : null;
+      
+      // 2. Si no hay preferencia pero solo tiene UNA organización, entrar directo (flujo para usuarios normales)
+      if (!activeMember && allMemberships.length === 1) {
+        activeMember = allMemberships[0];
+      }
 
       if (activeMember) {
         setMembership({
@@ -67,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setOrganization(activeMember.organizations);
         localStorage.setItem('last_org_id', activeMember.org_id);
       } else {
-        // No hay organización activa por defecto si hay múltiples y no hay preferencia
+        // Si tiene múltiples y no hay preferencia, obligar a seleccionar
         setOrganization(null);
         setMembership(null);
       }

@@ -221,28 +221,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {!isSignUp && (
-              <div className="animate-fade-in">
-                <label className="block text-sm font-medium text-slate-300 mb-2 flex justify-between">
-                  <span>Clave Institucional (Opcional)</span>
-                  <span className="text-[10px] text-slate-500 uppercase tracking-widest">Master Key</span>
-                </label>
-                <div className="relative">
-                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                  <input
-                    type="text"
-                    value={accessCode}
-                    onChange={(e) => setAccessCode(e.target.value)}
-                    placeholder="Ej: VECINOS-2024"
-                    className="glass-input w-full pl-12 pr-4 py-3.5 text-sm uppercase font-mono tracking-wider text-brand-400 border-brand-500/20"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-500 mt-2 ml-1">
-                  Ingresa tu clave para entrar directo a una organización específica.
-                </p>
-              </div>
-            )}
-
             <div className="flex justify-end">
               <Link 
                 href="/forgot-password" 
