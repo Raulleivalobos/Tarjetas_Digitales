@@ -135,29 +135,32 @@ export function PublicNavbar() {
             ))}
           </div>
 
-          {/* Desktop CTA */}
-          <div className="hidden lg:flex items-center gap-3">
+          {/* Actions */}
+          <div className="flex items-center gap-1 sm:gap-3">
+            {/* Login button - Visible on all screens */}
             <Link
               href="/login"
-              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              className="px-3 lg:px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
             >
               Acceder
             </Link>
+
+            {/* CTA - Only desktop */}
             <Link
               href="/contacto"
-              className="btn-primary px-5 py-2.5 text-sm flex items-center gap-2"
+              className="hidden lg:flex btn-primary px-5 py-2.5 text-sm items-center gap-2"
             >
               <span className="relative z-10">Solicitar Demo</span>
             </Link>
-          </div>
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2 text-slate-300 hover:text-white transition-colors"
-          >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="lg:hidden p-2 text-slate-300 hover:text-white transition-colors"
+            >
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
 
