@@ -549,6 +549,7 @@ function IssuePageContent() {
         const fullName = rowData.full_name || (firstName ? `${firstName} ${lastName}`.trim() : null) || rowData['Nombre Completo'] || rowData['nombre completo'] || rowData['Nombre Receptor'] || rowData.recipient_name;
         const rut = rowData.rut || rowData.documento || rowData.recipient_rut || rowData.RUT;
         const email = rowData.email || rowData.correo || rowData['Email'] || rowData['Correo'];
+        const phone = rowData.phone || rowData.telefono || rowData.celular || rowData['Teléfono'] || rowData['Celular'];
         const comuna = rowData.comuna || rowData.city || rowData.ciudad || rowData['Comuna'];
         
         // Normalize phone number to +56 9... format
