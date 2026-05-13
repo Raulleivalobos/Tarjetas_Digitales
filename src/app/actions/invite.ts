@@ -21,6 +21,8 @@ export async function inviteUserToOrg({
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  const targetEmail = email.trim();
+
   try {
     // Aseguramos que la clave temporal tenga al menos 6 caracteres (requisito de Supabase)
     const tempPassword = accessCode.length >= 6 ? accessCode : accessCode.padEnd(6, '0');
@@ -29,7 +31,7 @@ export async function inviteUserToOrg({
     let userId: string | undefined;
     
     const { data: userData, error: createError } = await supabase.auth.admin.createUser({
-      email: email,
+      email: targetEmail,
       password: tempPassword,
       email_confirm: true,
       user_metadata: {
@@ -41,31 +43,50 @@ export async function inviteUserToOrg({
 
     if (createError && createError.message === 'User already registered') {
       try {
-        // Buscamos al usuario de forma segura
-        const { data: listData, error: listError } = await supabase.auth.admin.listUsers({ perPage: 200 });
-        
-        if (listError) throw listError;
-
-        const existingUser = listData.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-        
-        if (existingUser) {
-          userId = existingUser.id;
-          const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
-            password: tempPassword,
-            user_metadata: {
-              force_password_change: true,
-              invited_to_org: orgId,
-              invited_role: role
-            }
+        // Buscamos al usuario en todas las páginas posibles
+        let found = false;
+        let page = 1;
+        while (!found && page <= 5) { // Buscamos en las primeras 5 páginas (1000 usuarios)
+          const { data: listData, error: listError } = await supabase.auth.admin.listUsers({ 
+            perPage: 200,
+            page: page
           });
-          if (updateError) console.error('Update Error:', updateError);
+          
+          if (listError) break;
+
+          const existingUser = listData.users.find(u => u.email?.toLowerCase() === targetEmail.toLowerCase());
+          
+          if (existingUser) {
+            userId = existingUser.id;
+            const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+              password: tempPassword,
+              user_metadata: {
+                force_password_change: true,
+                invited_to_org: orgId,
+                invited_role: role
+              }
+            });
+            if (updateError) console.error('Update Error:', updateError);
+            found = true;
+          }
+          
+          if (listData.users.length < 200) break;
+          page++;
         }
       } catch (listErr) {
         console.error('List Users Error:', listErr);
-        // No bloqueamos todo el proceso si esto falla
       }
     } else if (userData?.user) {
       userId = userData.user.id;
+    }
+
+    // 2. Asegurar que esté en la organización (por si acaso no se agregó en el metadata)
+    if (userId) {
+      await supabase.from('org_members').upsert({
+        org_id: orgId,
+        user_id: userId,
+        role: role
+      }, { onConflict: 'org_id,user_id' });
     }
 
     const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://skardkey.cl'}/login`;
