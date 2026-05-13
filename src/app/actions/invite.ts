@@ -40,22 +40,29 @@ export async function inviteUserToOrg({
     });
 
     if (createError && createError.message === 'User already registered') {
-      // Si ya existe, lo buscamos para actualizar su clave y flag
-      // Aumentamos el límite para asegurarnos de encontrarlo
-      const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-      const existingUser = listData.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-      
-      if (existingUser) {
-        userId = existingUser.id;
-        const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
-          password: tempPassword,
-          user_metadata: {
-            force_password_change: true,
-            invited_to_org: orgId,
-            invited_role: role
-          }
-        });
-        if (updateError) console.error('Error updating existing user:', updateError);
+      try {
+        // Buscamos al usuario de forma segura
+        const { data: listData, error: listError } = await supabase.auth.admin.listUsers({ perPage: 200 });
+        
+        if (listError) throw listError;
+
+        const existingUser = listData.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        
+        if (existingUser) {
+          userId = existingUser.id;
+          const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+            password: tempPassword,
+            user_metadata: {
+              force_password_change: true,
+              invited_to_org: orgId,
+              invited_role: role
+            }
+          });
+          if (updateError) console.error('Update Error:', updateError);
+        }
+      } catch (listErr) {
+        console.error('List Users Error:', listErr);
+        // No bloqueamos todo el proceso si esto falla
       }
     } else if (userData?.user) {
       userId = userData.user.id;
