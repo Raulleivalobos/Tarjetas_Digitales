@@ -43,16 +43,18 @@ export async function inviteUserToOrg({
 
     if (createError && createError.message === 'User already registered') {
       try {
-        // Buscamos al usuario en todas las páginas posibles
         let found = false;
         let page = 1;
-        while (!found && page <= 5) { // Buscamos en las primeras 5 páginas (1000 usuarios)
+        while (!found && page <= 10) { // Buscamos en las primeras 10 páginas (2000 usuarios)
           const { data: listData, error: listError } = await supabase.auth.admin.listUsers({ 
             perPage: 200,
             page: page
           });
           
-          if (listError) break;
+          if (listError) {
+            console.error('List Users Error at page', page, listError);
+            break;
+          }
 
           const existingUser = listData.users.find(u => u.email?.toLowerCase() === targetEmail.toLowerCase());
           
@@ -66,28 +68,39 @@ export async function inviteUserToOrg({
                 invited_role: role
               }
             });
-            if (updateError) console.error('Update Error:', updateError);
+            
+            if (updateError) {
+              return { success: false, error: `Error al actualizar clave: ${updateError.message}` };
+            }
             found = true;
           }
           
           if (listData.users.length < 200) break;
           page++;
         }
-      } catch (listErr) {
-        console.error('List Users Error:', listErr);
+        
+        if (!found) {
+          return { success: false, error: 'El usuario ya existe pero no pudimos localizarlo para resetear su clave. Por favor, que use su clave habitual o la recupere.' };
+        }
+      } catch (listErr: any) {
+        return { success: false, error: `Error de búsqueda: ${listErr.message}` };
       }
     } else if (userData?.user) {
       userId = userData.user.id;
+    } else if (createError) {
+      return { success: false, error: `Error de creación: ${createError.message}` };
     }
 
-    // 2. Asegurar que esté en la organización (por si acaso no se agregó en el metadata)
-    if (userId) {
-      await supabase.from('org_members').upsert({
-        org_id: orgId,
-        user_id: userId,
-        role: role
-      }, { onConflict: 'org_id,user_id' });
+    if (!userId) {
+      return { success: false, error: 'No se pudo obtener el ID del usuario para la invitación.' };
     }
+
+    // 2. Asegurar que esté en la organización
+    await supabase.from('org_members').upsert({
+      org_id: orgId,
+      user_id: userId,
+      role: role
+    }, { onConflict: 'org_id,user_id' });
 
     const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://skardkey.cl'}/login`;
 
