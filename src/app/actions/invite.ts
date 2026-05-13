@@ -24,7 +24,7 @@ export async function inviteUserToOrg({
   try {
     // 1. Invitar al usuario via Supabase Auth
     const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://skardkey.cl'}/login`,
       data: {
         invited_to_org: orgId,
         invited_role: role
@@ -56,7 +56,7 @@ export async function inviteUserToOrg({
         message: `Has sido invitado a colaborar con la institución "${orgName}" en la plataforma SkardKey.`,
         details: `Información de tu acceso:\n• Institución: ${orgName}\n• Rol asignado: ${roleNames[role] || role}\n• Código de Acceso: ${accessCode}\n\nPuedes ingresar usando tu correo y este código de acceso en el portal administrativo.`,
         button_text: 'Aceptar Invitación e Ingresar',
-        url: `${process.env.NEXT_PUBLIC_SITE_URL}/login`
+        url: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://skardkey.cl'}/login`
       }
     });
 
