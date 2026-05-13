@@ -52,10 +52,11 @@ export async function inviteUserToOrg({
       subject: `Invitación a colaborar en ${orgName}`,
       templateId: 1, // ID de plantilla en Brevo (ej: Invitación)
       params: {
-        org_name: orgName,
-        role_name: roleNames[role] || role,
-        access_code: accessCode,
-        login_url: `${process.env.NEXT_PUBLIC_SITE_URL}/login`
+        name: email.split('@')[0], // Usamos la parte del correo como nombre temporal
+        message: `Has sido invitado a colaborar con la institución "${orgName}" en la plataforma SkardKey.`,
+        details: `Información de tu acceso:\n• Institución: ${orgName}\n• Rol asignado: ${roleNames[role] || role}\n• Código de Acceso: ${accessCode}\n\nPuedes ingresar usando tu correo y este código de acceso en el portal administrativo.`,
+        button_text: 'Aceptar Invitación e Ingresar',
+        url: `${process.env.NEXT_PUBLIC_SITE_URL}/login`
       }
     });
 
