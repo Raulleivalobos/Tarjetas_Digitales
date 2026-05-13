@@ -32,7 +32,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export default function BeneficiariesPage() {
-  const { organization, loading: authLoading } = useAuth();
+  const { organization, loading: authLoading, membership } = useAuth();
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -41,6 +41,8 @@ export default function BeneficiariesPage() {
   const [actionMenu, setActionMenu] = useState<string | null>(null);
   const [exportingPDF, setExportingPDF] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  
+  const isReadOnly = !['owner', 'admin'].includes(membership?.role || '');
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -78,6 +80,7 @@ export default function BeneficiariesPage() {
   }, [organization, authLoading, fetchBeneficiaries]);
 
   const handleDelete = async (id: string) => {
+    if (isReadOnly) return;
     const { error } = await supabase.from('beneficiaries').delete().eq('id', id);
     if (!error) {
       setBeneficiaries((prev) => prev.filter((b) => b.id !== id));
@@ -218,7 +221,7 @@ export default function BeneficiariesPage() {
           </div>
 
           {/* Modify selected button */}
-          {selectedIds.size === 1 && (
+          {selectedIds.size === 1 && !isReadOnly && (
             <Link
               href={`/dashboard/beneficiaries/${Array.from(selectedIds)[0]}/edit`}
               className="btn-primary px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest font-mono flex items-center gap-2 shadow-[0_0_20px_rgba(99,102,241,0.2)]"
@@ -401,13 +404,15 @@ export default function BeneficiariesPage() {
                       <td className="px-3 py-4"><StatusBadge status={person.status} size="sm" /></td>
                       <td className="px-3 py-4">
                         <div className="flex items-center justify-end gap-1">
-                          <Link
-                            href={`/dashboard/beneficiaries/${person.id}/edit`}
-                            className="p-2 rounded-lg btn-ghost hover:bg-white/5 transition-all"
-                            title="Modificar datos"
-                          >
-                            <Edit className="w-3.5 h-3.5 text-brand-400" />
-                          </Link>
+                          {!isReadOnly && (
+                            <Link
+                              href={`/dashboard/beneficiaries/${person.id}/edit`}
+                              className="p-2 rounded-lg btn-ghost hover:bg-white/5 transition-all"
+                              title="Modificar datos"
+                            >
+                              <Edit className="w-3.5 h-3.5 text-brand-400" />
+                            </Link>
+                          )}
                           <Link
                             href={`/dashboard/beneficiaries/${person.id}`}
                             className="p-2 rounded-lg btn-ghost hover:bg-white/5 transition-all"
@@ -415,13 +420,15 @@ export default function BeneficiariesPage() {
                           >
                             <Eye className="w-3.5 h-3.5 text-slate-400" />
                           </Link>
-                          <button
-                            onClick={() => setDeleteModal(person.id)}
-                            className="p-2 rounded-lg btn-ghost hover:bg-red-500/10 transition-all"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-slate-500 hover:text-red-400" />
-                          </button>
+                          {!isReadOnly && (
+                            <button
+                              onClick={() => setDeleteModal(person.id)}
+                              className="p-2 rounded-lg btn-ghost hover:bg-red-500/10 transition-all"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-slate-500 hover:text-red-400" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -499,24 +506,28 @@ export default function BeneficiariesPage() {
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setActionMenu(null)} />
                         <div className="absolute right-0 top-full mt-2 w-52 glass-card-solid rounded-2xl p-2 z-20 animate-scale-in border-brand-500/30 shadow-2xl">
-                          <Link
-                            href={`/dashboard/beneficiaries/${person.id}/edit`}
-                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-300 hover:bg-brand-500/10 transition-colors"
-                          >
-                            <Edit className="w-4 h-4 text-brand-400" /> Modificar Datos
-                          </Link>
+                          {!isReadOnly && (
+                            <Link
+                              href={`/dashboard/beneficiaries/${person.id}/edit`}
+                              className="flex items-center gap-3 px-4 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-300 hover:bg-brand-500/10 transition-colors"
+                            >
+                              <Edit className="w-4 h-4 text-brand-400" /> Modificar Datos
+                            </Link>
+                          )}
                           <Link
                             href={`/dashboard/beneficiaries/${person.id}`}
                             className="flex items-center gap-3 px-4 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-slate-300 hover:bg-brand-500/10 transition-colors"
                           >
                             <Eye className="w-4 h-4 text-slate-400" /> Ver Perfil
                           </Link>
-                          <button
-                            onClick={() => { setDeleteModal(person.id); setActionMenu(null); }}
-                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-red-400 hover:bg-red-500/10 w-full text-left"
-                          >
-                            <Trash2 className="w-4 h-4" /> Eliminar
-                          </button>
+                          {!isReadOnly && (
+                            <button
+                              onClick={() => { setDeleteModal(person.id); setActionMenu(null); }}
+                              className="flex items-center gap-3 px-4 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-red-400 hover:bg-red-500/10 w-full text-left"
+                            >
+                              <Trash2 className="w-4 h-4" /> Eliminar
+                            </button>
+                          )}
                         </div>
                       </>
                     )}

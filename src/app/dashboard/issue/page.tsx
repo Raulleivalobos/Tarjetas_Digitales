@@ -20,8 +20,10 @@ import { sendCertificateNotification } from '@/app/actions/email';
 function IssuePageContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const { organization, loading: authLoading } = useAuth();
+  const { organization, loading: authLoading, membership } = useAuth();
   const [activeTab, setActiveTab] = useState<'manual' | 'masivo'>(tabParam === 'masivo' ? 'masivo' : 'manual');
+  
+  const isReadOnly = !['owner', 'admin'].includes(membership?.role || '');
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -170,7 +172,7 @@ function IssuePageContent() {
   // -- Manual Logic --
   const handleManualSubmit = async (e?: React.FormEvent | React.MouseEvent, overrideStatus?: 'draft') => {
     if (e) e.preventDefault();
-    if (!organization) return;
+    if (!organization || isReadOnly) return;
     
     setManualLoading(true);
     setManualError('');
@@ -511,7 +513,7 @@ function IssuePageContent() {
   };
 
   const processUpload = async (status: 'active' | 'draft') => {
-    if (!file || !organization) return;
+    if (!file || !organization || isReadOnly) return;
     setProcessing(true);
     setResult({ total: 0, success: 0, errors: [] });
 
@@ -1490,7 +1492,8 @@ function IssuePageContent() {
                   setPreviewModalOpen(false);
                   handleManualSubmit(e);
                 }}
-                className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20"
+                disabled={isReadOnly}
+                className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 disabled:opacity-50"
               >
                 <Check className="w-5 h-5" />
                 Confirmar y Emitir

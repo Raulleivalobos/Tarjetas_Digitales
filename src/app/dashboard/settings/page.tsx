@@ -192,7 +192,7 @@ export default function SettingsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!organization) return;
+    if (!organization || isReadOnly) return;
     setSaving(true);
     setMessage({ text: '', type: '' });
 

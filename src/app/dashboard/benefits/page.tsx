@@ -9,10 +9,12 @@ import { Gift, Plus, Eye, QrCode, Calendar, Clock, CheckCircle, CalendarPlus, Tr
 import { formatDate } from '@/lib/utils';
 
 export default function BenefitsPage() {
-  const { organization, loading: authLoading } = useAuth();
+  const { organization, loading: authLoading, membership } = useAuth();
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const [benefits, setBenefits] = useState<any[]>([]);
+  
+  const isReadOnly = !['owner', 'admin'].includes(membership?.role || '');
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showExtend, setShowExtend] = useState<string | null>(null);
@@ -57,6 +59,7 @@ export default function BenefitsPage() {
   }
 
   async function handleDelete(benefitId: string) {
+    if (isReadOnly) return;
     if (!window.confirm('¿Estás seguro de que deseas eliminar este beneficio? Se eliminarán todas las asignaciones pendientes.')) return;
     setDeleting(benefitId);
     try {
@@ -75,7 +78,7 @@ export default function BenefitsPage() {
   }
 
   async function handleCreate() {
-    if (!form.name || !organization) return;
+    if (!form.name || !organization || isReadOnly) return;
     setSaving(true);
     
     // 1. Create Benefit
@@ -145,7 +148,7 @@ export default function BenefitsPage() {
   }
 
   async function handleExtend(benefitId: string) {
-    if (!extendDate) return;
+    if (!extendDate || isReadOnly) return;
     await supabase.from('benefits').update({ extended_end_date: extendDate, extension_reason: extendReason || null }).eq('id', benefitId);
     setShowExtend(null); setExtendDate(''); setExtendReason('');
     loadData();
@@ -189,9 +192,11 @@ export default function BenefitsPage() {
               <QrCode className="w-4 h-4" /> Entregar con QR
             </Link>
           )}
-          <button onClick={() => setShowCreate(true)} className="px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm flex items-center gap-2 transition-all">
-            <Plus className="w-4 h-4" /> Crear Beneficio
-          </button>
+          {!isReadOnly && (
+            <button onClick={() => setShowCreate(true)} className="px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm flex items-center gap-2 transition-all">
+              <Plus className="w-4 h-4" /> Crear Beneficio
+            </button>
+          )}
         </div>
       </div>
 
@@ -235,9 +240,11 @@ export default function BenefitsPage() {
                       <QrCode className="w-4 h-4" /> Escanear QR
                     </Link>
                   )}
-                  <button onClick={() => setShowExtend(b.id)} className="p-2 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all" title="Prorrogar"><CalendarPlus className="w-4 h-4" /></button>
+                  {!isReadOnly && (
+                    <button onClick={() => setShowExtend(b.id)} className="p-2 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all" title="Prorrogar"><CalendarPlus className="w-4 h-4" /></button>
+                  )}
                   <Link href={`/dashboard/benefits/${b.id}`} className="p-2 rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 transition-all" title="Ver detalle"><Eye className="w-4 h-4" /></Link>
-                  {b.deliveredCount === 0 && (
+                  {b.deliveredCount === 0 && !isReadOnly && (
                     <button 
                       onClick={() => handleDelete(b.id)} 
                       disabled={deleting === b.id}
