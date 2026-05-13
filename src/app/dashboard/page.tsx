@@ -92,24 +92,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!organization) {
+      if (!organization?.id) {
         setLoading(false);
         return;
       }
 
       setLoading(true);
       try {
-        const [
-          { count: totalBeneficiaries },
-          { count: activeBeneficiaries },
-          { count: activeCards },
-          { count: totalBenefits },
-          { count: benefitsUsed },
-          { count: benefitsPending },
-          { data: recentActivity },
-          { data: recentBeneficiaries },
-          { data: recentCertificates },
-        ] = await Promise.all([
+        const results = await Promise.allSettled([
           supabase.from('beneficiaries').select('*', { count: 'exact', head: true }).eq('org_id', organization.id),
           supabase.from('beneficiaries').select('*', { count: 'exact', head: true }).eq('org_id', organization.id).eq('status', 'active'),
           supabase.from('digital_cards').select('*', { count: 'exact', head: true }).eq('org_id', organization.id).eq('status', 'active'),
@@ -118,41 +108,34 @@ export default function DashboardPage() {
           supabase.from('benefit_assignments').select('*', { count: 'exact', head: true }).eq('org_id', organization.id).eq('status', 'pending'),
           supabase.from('validation_logs').select('*').eq('org_id', organization.id).order('created_at', { ascending: false }).limit(10),
           supabase.from('beneficiaries').select('id, full_name, rut, status, created_at').eq('org_id', organization.id).order('created_at', { ascending: false }).limit(5),
-          supabase.from('certificates').select('*, beneficiaries(full_name)').eq('org_id', organization.id).order('issued_at', { ascending: false }).limit(3),
+          supabase.from('certificates').select('*, beneficiaries(full_name)').eq('org_id', organization.id).order('folio', { ascending: false }).limit(3),
         ]);
 
+        const getValue = (idx: number, key: 'count' | 'data' = 'count') => {
+          const res = results[idx];
+          return res.status === 'fulfilled' ? (res.value as any)[key] : null;
+        };
+
         setData({
-          totalBeneficiaries: totalBeneficiaries || 0,
-          activeBeneficiaries: activeBeneficiaries || 0,
-          activeCards: activeCards || 0,
-          totalBenefits: totalBenefits || 0,
-          benefitsUsed: benefitsUsed || 0,
-          benefitsPending: benefitsPending || 0,
-          recentActivity: recentActivity || [],
-          recentBeneficiaries: recentBeneficiaries || [],
-          recentCertificates: recentCertificates || [],
+          totalBeneficiaries: getValue(0) || 0,
+          activeBeneficiaries: getValue(1) || 0,
+          activeCards: getValue(2) || 0,
+          totalBenefits: getValue(3) || 0,
+          benefitsUsed: getValue(4) || 0,
+          benefitsPending: getValue(5) || 0,
+          recentActivity: getValue(6, 'data') || [],
+          recentBeneficiaries: getValue(7, 'data') || [],
+          recentCertificates: getValue(8, 'data') || [],
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        setData({
-          totalBeneficiaries: 0,
-          activeBeneficiaries: 0,
-          activeCards: 0,
-          totalBenefits: 0,
-          benefitsUsed: 0,
-          benefitsPending: 0,
-          recentActivity: [],
-          recentBeneficiaries: [],
-          recentCertificates: [],
-        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organization]);
+  }, [organization?.id]);
 
   if (loading) return <PageSkeleton />;
 
@@ -590,7 +573,6 @@ export default function DashboardPage() {
             </div>
           )}
       </div>
-    </div>
     </div>
   );
 }
