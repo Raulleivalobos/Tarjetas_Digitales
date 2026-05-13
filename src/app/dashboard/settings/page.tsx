@@ -392,41 +392,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Institutional Access Key - NOW EDITABLE */}
-                <div className="p-6 rounded-2xl bg-brand-500/5 border border-brand-500/20 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
-                    <Key className="w-12 h-12 text-brand-400" />
-                  </div>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                    <div className="flex-1">
-                      <p className="text-[10px] font-black text-brand-400 uppercase tracking-widest mb-1">Clave de Acceso Institucional</p>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="text"
-                          value={formData.access_code}
-                          onChange={(e) => setFormData({ ...formData, access_code: e.target.value.toUpperCase() })}
-                          className="bg-transparent text-2xl font-black text-white font-mono tracking-widest uppercase outline-none border-b border-white/10 focus:border-brand-500 transition-colors w-full max-w-[300px]"
-                          placeholder="EJ: MI-CLAVE-2024"
-                        />
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(formData.access_code);
-                            setMessage({ text: 'Clave copiada al portapapeles', type: 'success' });
-                          }}
-                          className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-brand-400 transition-colors"
-                          title="Copiar Clave"
-                        >
-                          <Key className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-2 max-w-sm">
-                        Esta es la llave maestra para entrar a esta organización desde el Login. Puedes cambiarla cuando quieras.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-400 ml-1">Región</label>

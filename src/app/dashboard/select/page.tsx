@@ -81,31 +81,6 @@ export default function SelectOrganizationPage() {
               </div>
             </button>
           ))}
-
-          {/* Join new org card */}
-          <div className="glass-card p-6 border-dashed border-slate-700 bg-transparent flex flex-col justify-center items-center h-40 gap-4">
-            <p className="text-sm font-medium text-slate-500">¿Tienes otra clave?</p>
-            <form onSubmit={handleJoin} className="w-full space-y-2">
-              <div className="relative">
-                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
-                <input
-                  type="text"
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-                  placeholder="CLAVE-INSTITUCION"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-xs font-mono uppercase tracking-widest text-white focus:border-brand-500 outline-none transition-colors"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={joining || !accessCode}
-                className="w-full btn-primary py-2 text-xs font-bold disabled:opacity-50"
-              >
-                {joining ? 'Validando...' : 'Unirse a Institución'}
-              </button>
-            </form>
-            {error && <p className="text-[10px] text-red-400">{error}</p>}
-          </div>
         </div>
 
         <div className="flex justify-center border-t border-white/5 pt-8">
