@@ -89,9 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, 5000);
 
     const getSession = async () => {
+      setLoading(true);
       try {
         const { data, error } = await supabase.auth.getSession();
-        if (error) console.error('Error in getSession:', error);
+        if (error) throw error;
         
         const currentSession = data?.session || null;
         setSession(currentSession);
@@ -101,38 +102,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await fetchOrganization(currentSession.user.id);
         }
       } catch (err) {
-        console.error('Unhandled error in getSession:', err);
+        console.error('Error in initial session fetch:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    getSession();
-
+    // Escuchar cambios de estado de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
-        try {
+      async (event, newSession) => {
+        // Ignorar eventos que no cambian el usuario para evitar bucles
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setOrganization(null);
+          setMembership(null);
+          setMemberships([]);
+          localStorage.removeItem('last_org_id');
+          setLoading(false);
+          return;
+        }
+
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+          setLoading(true);
           setSession(newSession);
           setUser(newSession?.user ?? null);
-
+          
           if (newSession?.user) {
             await fetchOrganization(newSession.user.id);
-          } else {
-            setOrganization(null);
-            setMembership(null);
-            setMemberships([]);
-            localStorage.removeItem('last_org_id');
           }
-        } catch (err) {
-          console.error('Error in onAuthStateChange:', err);
-        } finally {
           setLoading(false);
         }
       }
     );
 
+    // Ejecutar carga inicial
+    getSession();
+
     return () => {
-      clearTimeout(failsafe);
       subscription.unsubscribe();
     };
   }, []);
