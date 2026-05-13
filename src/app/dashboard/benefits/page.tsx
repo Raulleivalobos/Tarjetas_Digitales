@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { Benefit } from '@/lib/types';
 import Link from 'next/link';
-import { Gift, Plus, Eye, QrCode, Calendar, Clock, CheckCircle, CalendarPlus } from 'lucide-react';
+import { Gift, Plus, Eye, QrCode, Calendar, Clock, CheckCircle, CalendarPlus, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 export default function BenefitsPage() {
@@ -24,6 +24,7 @@ export default function BenefitsPage() {
   const [selectedBens, setSelectedBens] = useState<string[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     if (organization) {
@@ -52,6 +53,24 @@ export default function BenefitsPage() {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDelete(benefitId: string) {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este beneficio? Se eliminarán todas las asignaciones pendientes.')) return;
+    setDeleting(benefitId);
+    try {
+      // First delete assignments (Supabase usually handles this if cascade is set, but better be safe)
+      await supabase.from('benefit_assignments').delete().eq('benefit_id', benefitId);
+      // Then delete the benefit
+      const { error } = await supabase.from('benefits').delete().eq('id', benefitId);
+      if (error) throw error;
+      loadData();
+    } catch (e) {
+      console.error(e);
+      alert('Error al eliminar el beneficio');
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -199,6 +218,16 @@ export default function BenefitsPage() {
                   )}
                   <button onClick={() => setShowExtend(b.id)} className="p-2 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all" title="Prorrogar"><CalendarPlus className="w-4 h-4" /></button>
                   <Link href={`/dashboard/benefits/${b.id}`} className="p-2 rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 transition-all" title="Ver detalle"><Eye className="w-4 h-4" /></Link>
+                  {b.deliveredCount === 0 && (
+                    <button 
+                      onClick={() => handleDelete(b.id)} 
+                      disabled={deleting === b.id}
+                      className="p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all disabled:opacity-50" 
+                      title="Eliminar Beneficio"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
               {/* Progress bar */}
