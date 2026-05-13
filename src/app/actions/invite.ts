@@ -43,44 +43,29 @@ export async function inviteUserToOrg({
 
     if (createError && createError.message === 'User already registered') {
       try {
-        let found = false;
-        let page = 1;
-        while (!found && page <= 10) { // Buscamos en las primeras 10 páginas (2000 usuarios)
-          const { data: listData, error: listError } = await supabase.auth.admin.listUsers({ 
-            perPage: 200,
-            page: page
+        // Buscamos al usuario en la primera página (200 usuarios suele ser suficiente)
+        const { data: listData, error: listError } = await supabase.auth.admin.listUsers({ perPage: 200 });
+        
+        if (listError) throw listError;
+
+        const existingUser = listData.users.find(u => u.email?.toLowerCase() === targetEmail.toLowerCase());
+        
+        if (existingUser) {
+          userId = existingUser.id;
+          const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+            password: tempPassword,
+            user_metadata: {
+              force_password_change: true,
+              invited_to_org: orgId,
+              invited_role: role
+            }
           });
           
-          if (listError) {
-            console.error('List Users Error at page', page, listError);
-            break;
+          if (updateError) {
+            return { success: false, error: `Error al actualizar clave: ${updateError.message}` };
           }
-
-          const existingUser = listData.users.find(u => u.email?.toLowerCase() === targetEmail.toLowerCase());
-          
-          if (existingUser) {
-            userId = existingUser.id;
-            const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
-              password: tempPassword,
-              user_metadata: {
-                force_password_change: true,
-                invited_to_org: orgId,
-                invited_role: role
-              }
-            });
-            
-            if (updateError) {
-              return { success: false, error: `Error al actualizar clave: ${updateError.message}` };
-            }
-            found = true;
-          }
-          
-          if (listData.users.length < 200) break;
-          page++;
-        }
-        
-        if (!found) {
-          return { success: false, error: 'El usuario ya existe pero no pudimos localizarlo para resetear su clave. Por favor, que use su clave habitual o la recupere.' };
+        } else {
+          return { success: false, error: 'El usuario ya existe pero no se encuentra en la lista reciente. Por favor, que use su clave habitual.' };
         }
       } catch (listErr: any) {
         return { success: false, error: `Error de búsqueda: ${listErr.message}` };

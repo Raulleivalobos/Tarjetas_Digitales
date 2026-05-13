@@ -261,9 +261,9 @@ export default function SettingsPage() {
       } else {
         setMessage({ text: `Error al invitar: ${result.error}`, type: 'error' });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Invite error:', err);
-      setMessage({ text: 'Error de conexión al enviar invitación', type: 'error' });
+      setMessage({ text: `Error de conexión: ${err.message || 'No se pudo contactar con el servidor'}`, type: 'error' });
     } finally {
       setLoading(false);
     }
