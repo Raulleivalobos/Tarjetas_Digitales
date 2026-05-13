@@ -22,22 +22,28 @@ export async function inviteUserToOrg({
   );
 
   try {
-    // 1. Invitar al usuario via Supabase Auth
-    const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://skardkey.cl'}/login`,
-      data: {
-        invited_to_org: orgId,
-        invited_role: role
+    // 1. Generar link de invitación (esto no envía correo automáticamente)
+    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      type: 'invite',
+      email: email,
+      options: {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://skardkey.cl'}/dashboard`,
+        data: {
+          invited_to_org: orgId,
+          invited_role: role
+        }
       }
     });
 
-    // Si el usuario ya existe, inviteError será "User already registered"
-    // En ese caso, igual queremos que sepa que fue invitado a ESTA organización
-    
-    // 2. Intentar crear la membresía de forma preventiva (o pre-autorizar)
-    // Usaremos una tabla 'org_invites' o simplemente le pediremos que use el accessCode
-    
-    // 3. Enviar correo personalizado vía Brevo
+    if (linkError) {
+      // Si el usuario ya existe, intentamos invitarlo igual a la organización 
+      // (Supabase lanzará error si ya tiene cuenta, pero igual podemos proceder con el correo)
+      console.warn('Link generation warning:', linkError.message);
+    }
+
+    const inviteLink = linkData?.properties?.action_link || `${process.env.NEXT_PUBLIC_APP_URL || 'https://skardkey.cl'}/login`;
+
+    // 2. Enviar correo personalizado vía Brevo
     const roleNames: Record<string, string> = {
       admin: 'Administrador',
       validator: 'Validador',
@@ -50,20 +56,18 @@ export async function inviteUserToOrg({
     const emailResult = await sendTransactionalEmail({
       to: email,
       subject: `Invitación a colaborar en ${orgName}`,
-      templateId: 1, // ID de plantilla en Brevo (ej: Invitación)
+      templateId: 1, // ID de plantilla en Brevo
       params: {
-        name: email.split('@')[0], // Usamos la parte del correo como nombre temporal
+        name: email.split('@')[0],
         message: `Has sido invitado a colaborar con la institución "${orgName}" en la plataforma SkardKey.`,
-        details: `Información de tu acceso:\n• Institución: ${orgName}\n• Rol asignado: ${roleNames[role] || role}\n• Código de Acceso: ${accessCode}\n\nPuedes ingresar usando tu correo y este código de acceso en el portal administrativo.`,
-        button_text: 'Aceptar Invitación e Ingresar',
-        url: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://skardkey.cl'}/login`
+        details: `Información de tu acceso:\n• Institución: ${orgName}\n• Rol asignado: ${roleNames[role] || role}\n• Código de Acceso: ${accessCode}\n\nPara activar tu cuenta y configurar tu contraseña, haz clic en el botón de abajo.`,
+        button_text: 'Activar Cuenta y Configurar Contraseña',
+        url: inviteLink
       }
     });
 
     if (!emailResult.success) {
       console.error('Email sending failed:', emailResult.error);
-      // Opcional: No fallar la invitación si solo falló el correo, 
-      // pero el usuario igual puede entrar con el link de Supabase
     }
 
     return { success: true };
