@@ -40,3 +40,23 @@ export async function getOrgMembers(orgId: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function updateMemberRole(memberId: string, newRole: string) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  try {
+    const { error } = await supabase
+      .from('org_members')
+      .update({ role: newRole })
+      .eq('id', memberId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating member role:', error);
+    return { success: false, error: error.message };
+  }
+}

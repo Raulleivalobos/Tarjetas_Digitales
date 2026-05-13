@@ -7,7 +7,7 @@ import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCi
 import { CHILE_DATA } from '@/lib/chile-data';
 
 import { inviteUserToOrg } from '@/app/actions/invite';
-import { getOrgMembers } from '@/app/actions/org';
+import { getOrgMembers, updateMemberRole } from '@/app/actions/org';
 
 type Tab = 'general' | 'members' | 'certificates' | 'security';
 type Role = 'owner' | 'admin' | 'validator' | 'viewer' | 'auditor' | 'municipal_admin' | 'municipal_viewer';
@@ -267,6 +267,21 @@ export default function SettingsPage() {
       setMessage({ text: `Error de conexión: ${err.message || 'No se pudo contactar con el servidor'}`, type: 'error' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRoleChange = async (memberId: string, newRole: Role) => {
+    try {
+      const result = await updateMemberRole(memberId, newRole);
+      if (result.success) {
+        setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+        setMessage({ text: 'Rol actualizado correctamente', type: 'success' });
+      } else {
+        setMessage({ text: `Error al actualizar rol: ${result.error}`, type: 'error' });
+      }
+    } catch (err) {
+      console.error('Failed to change role:', err);
+      setMessage({ text: 'Error al cambiar rol', type: 'error' });
     }
   };
 
@@ -785,15 +800,28 @@ export default function SettingsPage() {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${
-                              member.role === 'owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                              member.role === 'admin' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                              member.role === 'validator' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                              member.role === 'auditor' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                              'bg-slate-500/10 text-slate-400 border-slate-500/20'
-                            }`}>
-                              {roleDescriptions[member.role]?.title || member.role}
-                            </span>
+                            {member.role === 'owner' ? (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border bg-purple-500/10 text-purple-400 border-purple-500/20">
+                                {roleDescriptions[member.role]?.title || member.role}
+                              </span>
+                            ) : (
+                              <select
+                                value={member.role}
+                                disabled={isReadOnly}
+                                onChange={(e) => handleRoleChange(member.id, e.target.value as Role)}
+                                className={`inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border bg-transparent cursor-pointer hover:bg-white/5 transition-colors focus:outline-none ${
+                                  member.role === 'admin' ? 'text-blue-400 border-blue-500/20' :
+                                  member.role === 'validator' ? 'text-emerald-400 border-emerald-500/20' :
+                                  member.role === 'auditor' ? 'text-amber-400 border-amber-500/20' :
+                                  'text-slate-400 border-slate-500/20'
+                                }`}
+                              >
+                                <option value="admin" className="bg-slate-900">Administrador</option>
+                                <option value="validator" className="bg-slate-900">Validador</option>
+                                <option value="auditor" className="bg-slate-900">Auditor</option>
+                                <option value="viewer" className="bg-slate-900">Visualizador</option>
+                              </select>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-slate-500 font-mono text-[10px] uppercase tracking-wider">
