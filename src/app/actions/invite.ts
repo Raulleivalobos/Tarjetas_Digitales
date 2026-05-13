@@ -41,12 +41,13 @@ export async function inviteUserToOrg({
 
     if (createError && createError.message === 'User already registered') {
       // Si ya existe, lo buscamos para actualizar su clave y flag
-      const { data: listData } = await supabase.auth.admin.listUsers();
-      const existingUser = listData.users.find(u => u.email === email);
+      // Aumentamos el límite para asegurarnos de encontrarlo
+      const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      const existingUser = listData.users.find(u => u.email.toLowerCase() === email.toLowerCase());
       
       if (existingUser) {
         userId = existingUser.id;
-        await supabase.auth.admin.updateUserById(existingUser.id, {
+        const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
           password: tempPassword,
           user_metadata: {
             force_password_change: true,
@@ -54,6 +55,7 @@ export async function inviteUserToOrg({
             invited_role: role
           }
         });
+        if (updateError) console.error('Error updating existing user:', updateError);
       }
     } else if (userData?.user) {
       userId = userData.user.id;
@@ -78,7 +80,7 @@ export async function inviteUserToOrg({
       params: {
         name: email.split('@')[0],
         message: `Has sido invitado a colaborar con la institución "${orgName}" en la plataforma SkardKey.`,
-        details: `Información de tu acceso:<br>• Institución: ${orgName}<br>• Rol asignado: ${roleNames[role] || role}<br><br><strong>TU CLAVE TEMPORAL ES: ${tempPassword}</strong><br>(El sistema te pedirá cambiarla por una nueva al ingresar).`,
+        details: `Información de tu acceso:\n• Institución: ${orgName}\n• Rol asignado: ${roleNames[role] || role}\n\nTU CLAVE TEMPORAL ES: ${tempPassword}\n(El sistema te pedirá cambiarla por una nueva al ingresar).`,
         button_text: 'Ingresar al Panel de Control',
         url: inviteLink
       }
