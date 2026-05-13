@@ -62,8 +62,6 @@ export async function inviteUserToOrg({
     const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://skardkey.cl'}/login`;
 
     // 2. Enviar correo personalizado vía Brevo
-    const tempPassword = accessCode.length >= 6 ? accessCode : accessCode.padEnd(6, '0');
-    
     const roleNames: Record<string, string> = {
       admin: 'Administrador',
       validator: 'Validador',
