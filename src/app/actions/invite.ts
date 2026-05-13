@@ -22,11 +22,15 @@ export async function inviteUserToOrg({
   );
 
   try {
-    // 1. Crear el usuario con una contraseña temporal (el código de acceso)
-    // Esto permite que el usuario entre de inmediato.
+    // Aseguramos que la clave temporal tenga al menos 6 caracteres (requisito de Supabase)
+    const tempPassword = accessCode.length >= 6 ? accessCode : accessCode.padEnd(6, '0');
+
+    // 1. Intentar crear o actualizar el usuario
+    let userId: string | undefined;
+    
     const { data: userData, error: createError } = await supabase.auth.admin.createUser({
       email: email,
-      password: accessCode, // Usamos el código de acceso como clave temporal
+      password: tempPassword,
       email_confirm: true,
       user_metadata: {
         force_password_change: true,
@@ -35,16 +39,31 @@ export async function inviteUserToOrg({
       }
     });
 
-    // Si el usuario ya existe, no es un error crítico, 
-    // solo significa que ya tiene su propia cuenta y clave.
-    if (createError && createError.message !== 'User already registered') {
-      console.error('Error creating user:', createError);
+    if (createError && createError.message === 'User already registered') {
+      // Si ya existe, lo buscamos para actualizar su clave y flag
+      const { data: listData } = await supabase.auth.admin.listUsers();
+      const existingUser = listData.users.find(u => u.email === email);
+      
+      if (existingUser) {
+        userId = existingUser.id;
+        await supabase.auth.admin.updateUserById(existingUser.id, {
+          password: tempPassword,
+          user_metadata: {
+            force_password_change: true,
+            invited_to_org: orgId,
+            invited_role: role
+          }
+        });
+      }
+    } else if (userData?.user) {
+      userId = userData.user.id;
     }
 
-    const isNewUser = !createError;
     const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://skardkey.cl'}/login`;
 
     // 2. Enviar correo personalizado vía Brevo
+    const tempPassword = accessCode.length >= 6 ? accessCode : accessCode.padEnd(6, '0');
+    
     const roleNames: Record<string, string> = {
       admin: 'Administrador',
       validator: 'Validador',
@@ -61,7 +80,7 @@ export async function inviteUserToOrg({
       params: {
         name: email.split('@')[0],
         message: `Has sido invitado a colaborar con la institución "${orgName}" en la plataforma SkardKey.`,
-        details: `Información de tu acceso:\n• Institución: ${orgName}\n• Rol asignado: ${roleNames[role] || role}\n\n${isNewUser ? `TU CLAVE TEMPORAL ES: ${accessCode}\n(Se te pedirá cambiarla al ingresar por primera vez)` : 'Usa tu correo y contraseña habitual para ingresar.'}`,
+        details: `Información de tu acceso:\n• Institución: ${orgName}\n• Rol asignado: ${roleNames[role] || role}\n\nTU CLAVE TEMPORAL ES: ${tempPassword}\n(El sistema te pedirá cambiarla por una nueva al ingresar).`,
         button_text: 'Ingresar al Panel de Control',
         url: inviteLink
       }
