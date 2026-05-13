@@ -387,7 +387,7 @@ function TextElementBody({ element, scale = 1 }: { element: TextElement; scale?:
 
 const proxyImageUrl = (url: string | undefined | null) => {
   if (!url) return undefined;
-  if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('/')) return url;
+  if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('/') || url.includes('/api/proxy-image')) return url;
   return `/api/proxy-image?url=${encodeURIComponent(url)}`;
 };
 

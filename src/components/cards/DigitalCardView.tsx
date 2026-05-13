@@ -136,8 +136,8 @@ export function DigitalCardView({
                              attrKeyUpper === 'PHOTO_URL' ||
                              (attrKeyUpper && (attrKeyUpper.includes('FOTO') || attrKeyUpper.includes('PHOTO')));
 
-          if (isPhotoAttr && proxiedPhotoUrl) {
-            src = proxiedPhotoUrl;
+          if (isPhotoAttr && directPhotoUrl) {
+            src = directPhotoUrl;
           }
           return { ...el, data: { ...el.data, src } };
         }
