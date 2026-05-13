@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCircle, CheckCircle2, Upload, Trash2, FileText, DollarSign, Plus, Key } from 'lucide-react';
 import { CHILE_DATA } from '@/lib/chile-data';
 
+import { inviteUserToOrg } from '@/app/actions/invite';
+
 type Tab = 'general' | 'members' | 'certificates' | 'security';
 type Role = 'owner' | 'admin' | 'validator' | 'viewer' | 'auditor' | 'municipal_admin' | 'municipal_viewer';
 
@@ -245,7 +247,6 @@ export default function SettingsPage() {
     setMessage({ text: '', type: '' });
     
     try {
-      const { inviteUserToOrg } = await import('@/app/actions/invite');
       const result = await inviteUserToOrg({
         email: inviteEmail,
         role: inviteRole,

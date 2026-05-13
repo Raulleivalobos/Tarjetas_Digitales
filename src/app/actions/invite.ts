@@ -38,17 +38,32 @@ export async function inviteUserToOrg({
     // Usaremos una tabla 'org_invites' o simplemente le pediremos que use el accessCode
     
     // 3. Enviar correo personalizado vía Brevo
-    await sendTransactionalEmail({
+    const roleNames: Record<string, string> = {
+      admin: 'Administrador',
+      validator: 'Validador',
+      viewer: 'Visualizador',
+      auditor: 'Auditor',
+      municipal_admin: 'Admin Municipal',
+      municipal_viewer: 'Observador Municipal',
+    };
+
+    const emailResult = await sendTransactionalEmail({
       to: email,
       subject: `Invitación a colaborar en ${orgName}`,
       templateId: 1, // ID de plantilla en Brevo (ej: Invitación)
       params: {
         org_name: orgName,
-        role_name: role === 'admin' ? 'Administrador' : role === 'validator' ? 'Validador' : 'Visualizador',
+        role_name: roleNames[role] || role,
         access_code: accessCode,
         login_url: `${process.env.NEXT_PUBLIC_SITE_URL}/login`
       }
     });
+
+    if (!emailResult.success) {
+      console.error('Email sending failed:', emailResult.error);
+      // Opcional: No fallar la invitación si solo falló el correo, 
+      // pero el usuario igual puede entrar con el link de Supabase
+    }
 
     return { success: true };
   } catch (error: any) {
