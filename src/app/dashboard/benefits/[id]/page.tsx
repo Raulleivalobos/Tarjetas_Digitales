@@ -28,14 +28,18 @@ export default function BenefitDetailPage() {
     try {
       const { data: b } = await supabase.from('benefits').select('*').eq('id', id).single();
       setBenefit(b);
-      const { data: assigns } = await supabase.from('benefit_assignments').select('*, beneficiary:beneficiaries(full_name, rut, email)').eq('benefit_id', id).order('assigned_at', { ascending: false });
+      // Fetch assignments with beneficiary details including address for uniqueness control
+      const { data: assigns } = await supabase
+        .from('benefit_assignments')
+        .select('*, beneficiary:beneficiaries(full_name, rut, email, address)')
+        .eq('benefit_id', id)
+        .order('assigned_at', { ascending: false });
       setAssignments(assigns || []);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-
   }
 
   async function handleScan(cardId: string) {
@@ -46,7 +50,7 @@ export default function BenefitDetailPage() {
     try {
       const { data: card } = await supabase
         .from('digital_cards')
-        .select('*, beneficiary:beneficiaries(id, full_name, rut)')
+        .select('*, beneficiary:beneficiaries(id, full_name, rut, address)')
         .eq('id', cardId).single();
 
       if (!card || !card.beneficiary) {
@@ -55,8 +59,28 @@ export default function BenefitDetailPage() {
         return;
       }
 
-      // Find the assignment for this beneficiary + this benefit
+      // 1. Find the assignment for this beneficiary
       const assignment = assignments.find(a => a.beneficiary_id === card.beneficiary.id);
+      
+      // 2. Control por Dirección (Double Check at delivery time)
+      const isUniqueByAddress = benefit.settings?.unique_by_address === true;
+      if (isUniqueByAddress && card.beneficiary.address) {
+        const alreadyDeliveredAtAddress = assignments.find(a => 
+          a.status === 'used' && 
+          a.beneficiary?.address?.toLowerCase().trim() === card.beneficiary.address.toLowerCase().trim() &&
+          a.beneficiary_id !== card.beneficiary.id
+        );
+
+        if (alreadyDeliveredAtAddress) {
+          setMessage({ 
+            type: 'error', 
+            text: `BLOQUEADO: Beneficio ya entregado a ${alreadyDeliveredAtAddress.beneficiary.full_name} en esta dirección.` 
+          });
+          setProcessing(false);
+          return;
+        }
+      }
+
       if (!assignment) {
         setMessage({ type: 'warning', text: `${card.beneficiary.full_name} no tiene asignado este beneficio` });
         setProcessing(false);
@@ -80,7 +104,8 @@ export default function BenefitDetailPage() {
         setMessage({ type: 'success', text: `✓ ${card.beneficiary.full_name} — Beneficio entregado correctamente` });
         setAssignments(prev => prev.map(a => a.id === assignment.id ? { ...a, status: 'used', used_at: new Date().toISOString() } : a));
       }
-    } catch {
+    } catch (e) {
+      console.error(e);
       setMessage({ type: 'error', text: 'Error de conexión' });
     }
     setProcessing(false);
@@ -98,28 +123,42 @@ export default function BenefitDetailPage() {
     const doc = new jsPDF();
     const orgName = organization?.name || 'Organización';
     const effectiveEnd = benefit.extended_end_date || benefit.end_date;
-    const delivered = assignments.filter(a => a.status === 'used').length;
-    const pending = assignments.filter(a => a.status === 'pending').length;
-    const pct = assignments.length > 0 ? Math.round((delivered / assignments.length) * 100) : 0;
+    const deliveredCount = assignments.filter(a => a.status === 'used').length;
+    const pendingCount = assignments.filter(a => a.status === 'pending').length;
+    const pct = assignments.length > 0 ? Math.round((deliveredCount / assignments.length) * 100) : 0;
 
-    doc.setFontSize(18); doc.text('INFORME FINAL DE BENEFICIO', 14, 22);
+    doc.setFontSize(18); doc.text('INFORME DE BENEFICIO', 14, 22);
     doc.setFontSize(10); doc.setTextColor(100);
     doc.text(orgName, 14, 30);
     doc.text(`Generado: ${new Date().toLocaleDateString('es-CL')}`, 14, 36);
     doc.setFontSize(12); doc.setTextColor(0);
     doc.text(`Beneficio: ${benefit.name}`, 14, 48);
     doc.setFontSize(10);
-    doc.text(`Tipo: ${benefit.type} | Estado: ${benefit.status}`, 14, 55);
+    doc.text(`Tipo: ${benefit.type} | Control Dirección: ${benefit.settings?.unique_by_address ? 'SI' : 'NO'}`, 14, 55);
     doc.text(`Periodo: ${benefit.start_date ? formatDate(benefit.start_date) : 'N/A'} - ${effectiveEnd ? formatDate(effectiveEnd) : 'N/A'}`, 14, 61);
-    if (benefit.extended_end_date) doc.text(`Prórroga: ${formatDate(benefit.extended_end_date)} | Motivo: ${benefit.extension_reason || 'N/A'}`, 14, 67);
 
-    const statsY = benefit.extended_end_date ? 78 : 72;
-    doc.setFontSize(12); doc.text('RESUMEN', 14, statsY);
+    const statsY = 72;
+    doc.setFontSize(12); doc.text('RESUMEN DE ENTREGAS', 14, statsY);
     doc.setFontSize(10);
-    doc.text(`Total: ${assignments.length} | Entregados: ${delivered} (${pct}%) | Pendientes: ${pending}`, 14, statsY + 8);
+    doc.text(`Asignados: ${assignments.length} | Entregados: ${deliveredCount} (${pct}%) | Pendientes: ${pendingCount}`, 14, statsY + 8);
 
-    const tableData = assignments.map((a, i) => [i + 1, a.beneficiary?.full_name || 'N/A', a.beneficiary?.rut || 'N/A', a.status === 'used' ? 'ENTREGADO' : 'PENDIENTE', a.used_at ? new Date(a.used_at).toLocaleDateString('es-CL') : '-']);
-    (doc as any).autoTable({ startY: statsY + 18, head: [['#', 'Nombre', 'RUT', 'Estado', 'Fecha']], body: tableData, theme: 'grid', headStyles: { fillColor: [99, 102, 241] }, styles: { fontSize: 8 } });
+    const tableData = assignments.map((a, i) => [
+      i + 1, 
+      a.beneficiary?.full_name || 'N/A', 
+      a.beneficiary?.rut || 'N/A', 
+      a.beneficiary?.address || 'N/A',
+      a.status === 'used' ? 'ENTREGADO' : 'PENDIENTE', 
+      a.used_at ? new Date(a.used_at).toLocaleDateString('es-CL') : '-'
+    ]);
+
+    (doc as any).autoTable({ 
+      startY: statsY + 18, 
+      head: [['#', 'Nombre', 'RUT', 'Dirección', 'Estado', 'Fecha']], 
+      body: tableData, 
+      theme: 'grid', 
+      headStyles: { fillColor: [99, 102, 241] }, 
+      styles: { fontSize: 7 } 
+    });
     doc.save(`informe_${benefit.name.replace(/\s/g, '_')}.pdf`);
   }
 
@@ -134,7 +173,6 @@ export default function BenefitDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/benefits" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 transition-all"><ArrowLeft className="w-5 h-5" /></Link>
@@ -148,7 +186,6 @@ export default function BenefitDetailPage() {
         </button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass-card-solid p-5 rounded-2xl"><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Asignados</p><p className="text-3xl font-black text-white mt-1">{assignments.length}</p></div>
         <div className="glass-card-solid p-5 rounded-2xl"><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Entregados</p><p className="text-3xl font-black text-green-400 mt-1">{delivered}</p></div>
@@ -156,14 +193,12 @@ export default function BenefitDetailPage() {
         <div className="glass-card-solid p-5 rounded-2xl"><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Progreso</p><p className="text-3xl font-black text-brand-400 mt-1">{progress}%</p></div>
       </div>
 
-      {/* Progress */}
       <div className="glass-card-solid p-4 rounded-2xl">
         <div className="flex justify-between mb-1 text-[10px]"><span className="text-slate-500">0%</span><span className="text-slate-500">100%</span></div>
         <div className="bg-slate-800 rounded-full h-3 overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-green-500 transition-all duration-1000" style={{ width: `${progress}%` }} /></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Scanner Column */}
         {isActive && pending > 0 && (
           <div>
             <QRScanner
@@ -185,9 +220,7 @@ export default function BenefitDetailPage() {
           </div>
         )}
 
-        {/* Assignments List Column */}
         <div>
-          {/* Filters */}
           <div className="flex gap-2 mb-4">
             {(['all', 'pending', 'used'] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === f ? 'bg-brand-500 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}>
@@ -205,7 +238,10 @@ export default function BenefitDetailPage() {
                   <div key={a.id} className="px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
                     <div>
                       <p className="text-sm text-white font-medium">{a.beneficiary?.full_name}</p>
-                      <p className="text-[10px] text-slate-500 font-mono">{formatRut(a.beneficiary?.rut)}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[10px] text-slate-500 font-mono">{formatRut(a.beneficiary?.rut)}</p>
+                        {a.beneficiary?.address && <p className="text-[10px] text-slate-600 truncate max-w-[150px]">• {a.beneficiary.address}</p>}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {a.status === 'used' ? (

@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { Benefit } from '@/lib/types';
 import Link from 'next/link';
-import { Gift, Plus, Eye, QrCode, BarChart3, Calendar, Clock, CheckCircle, XCircle, AlertTriangle, CalendarPlus } from 'lucide-react';
+import { Gift, Plus, Eye, QrCode, Calendar, Clock, CheckCircle, CalendarPlus } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 export default function BenefitsPage() {
@@ -19,7 +19,8 @@ export default function BenefitsPage() {
   const [extendDate, setExtendDate] = useState('');
   const [extendReason, setExtendReason] = useState('');
   const [form, setForm] = useState({ name: '', description: '', type: 'subsidy', total_quantity: '', start_date: '', end_date: '' });
-  const [assignMode, setAssignMode] = useState<'all' | 'select'>('all');
+  const [assignMode, setAssignMode] = useState<'all' | 'active' | 'select'>('all');
+  const [uniqueByAddress, setUniqueByAddress] = useState(false);
   const [selectedBens, setSelectedBens] = useState<string[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
@@ -44,35 +45,72 @@ export default function BenefitsPage() {
         return { ...b, assignedCount: total || 0, deliveredCount: delivered || 0 };
       }));
       setBenefits(enriched);
-      const { data: benList } = await supabase.from('beneficiaries').select('id, full_name, rut').eq('org_id', organization!.id).eq('status', 'active');
+      // Fetch ALL beneficiaries to allow filtering in UI
+      const { data: benList } = await supabase.from('beneficiaries').select('id, full_name, rut, status, address').eq('org_id', organization!.id);
       setBeneficiaries(benList || []);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-
   }
 
   async function handleCreate() {
     if (!form.name || !organization) return;
     setSaving(true);
+    
+    // 1. Create Benefit
     const qty = form.total_quantity ? parseInt(form.total_quantity) : null;
     const { data: newBenefit, error } = await supabase.from('benefits').insert({
       org_id: organization.id, name: form.name, description: form.description || null,
       type: form.type, total_quantity: qty, remaining_quantity: qty,
-      start_date: form.start_date || null, end_date: form.end_date || null, status: 'active'
+      start_date: form.start_date || null, end_date: form.end_date || null, 
+      status: 'active',
+      settings: { unique_by_address: uniqueByAddress } // Store the control preference
     }).select().single();
 
     if (error || !newBenefit) { setSaving(false); console.error('Error al crear beneficio:', error); return; }
 
-    // Assign
-    const targets = assignMode === 'all' ? beneficiaries.map(b => b.id) : selectedBens;
+    // 2. Filter Targets
+    let targets: any[] = [];
+    if (assignMode === 'all') {
+      targets = beneficiaries;
+    } else if (assignMode === 'active') {
+      targets = beneficiaries.filter(b => b.status === 'active');
+    } else {
+      targets = beneficiaries.filter(b => selectedBens.includes(b.id));
+    }
+
+    // 3. Apply Unique Address Control if enabled
+    if (uniqueByAddress) {
+      const uniqueTargets = new Map();
+      targets.forEach(t => {
+        // Handle null addresses by making them unique per beneficiary
+        const addrKey = (t.address || `unique-${t.id}`).toLowerCase().trim();
+        if (!uniqueTargets.has(addrKey)) {
+          uniqueTargets.set(addrKey, t);
+        }
+      });
+      targets = Array.from(uniqueTargets.values());
+    }
+
+    // 4. Create Assignments
     if (targets.length > 0) {
-      const assignments = targets.map(bid => ({ benefit_id: newBenefit.id, beneficiary_id: bid, org_id: organization.id, status: 'pending' }));
+      const assignments = targets.map(t => ({ 
+        benefit_id: newBenefit.id, 
+        beneficiary_id: t.id, 
+        org_id: organization.id, 
+        status: 'pending' 
+      }));
+      
+      // Batch insert assignments
       await supabase.from('benefit_assignments').insert(assignments);
     }
+
     setForm({ name: '', description: '', type: 'subsidy', total_quantity: '', start_date: '', end_date: '' });
+    setAssignMode('all');
+    setUniqueByAddress(false);
+    setSelectedBens([]);
     setShowCreate(false);
     setSaving(false);
     loadData();
@@ -202,15 +240,41 @@ export default function BenefitsPage() {
                 <div><label className="text-xs font-bold text-slate-500 uppercase">Fecha Inicio</label><input type="date" value={form.start_date} onChange={e => setForm({...form, start_date: e.target.value})} className="w-full mt-1 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white" /></div>
                 <div><label className="text-xs font-bold text-slate-500 uppercase">Fecha Término</label><input type="date" value={form.end_date} onChange={e => setForm({...form, end_date: e.target.value})} className="w-full mt-1 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white" /></div>
               </div>
+              
               {/* Assignment mode */}
-              <div className="p-4 rounded-xl bg-brand-500/5 border border-brand-500/20 space-y-3">
+              <div className="p-4 rounded-xl bg-brand-500/5 border border-brand-500/20 space-y-4">
                 <p className="text-sm font-bold text-brand-300">Asignar a:</p>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={assignMode === 'all'} onChange={() => setAssignMode('all')} className="accent-brand-500" /><span className="text-sm text-white">Todos los socios ({beneficiaries.length})</span></label>
-                  <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={assignMode === 'select'} onChange={() => setAssignMode('select')} className="accent-brand-500" /><span className="text-sm text-white">Seleccionar</span></label>
+                <div className="grid grid-cols-1 gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-brand-500/20">
+                    <input type="radio" checked={assignMode === 'all'} onChange={() => setAssignMode('all')} className="accent-brand-500" />
+                    <span className="text-sm text-white">Todos los socios ({beneficiaries.length})</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-brand-500/20">
+                    <input type="radio" checked={assignMode === 'active'} onChange={() => setAssignMode('active')} className="accent-brand-500" />
+                    <span className="text-sm text-white">Solo socios activos ({beneficiaries.filter(b => b.status === 'active').length})</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors border border-transparent hover:border-brand-500/20">
+                    <input type="radio" checked={assignMode === 'select'} onChange={() => setAssignMode('select')} className="accent-brand-500" />
+                    <span className="text-sm text-white">Seleccionar manualmente</span>
+                  </label>
                 </div>
+
+                {/* Control por Dirección */}
+                <div className="pt-2 mt-2 border-t border-brand-500/10">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className={`w-10 h-5 rounded-full relative transition-all duration-300 ${uniqueByAddress ? 'bg-brand-500' : 'bg-slate-700'}`}>
+                      <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-300 ${uniqueByAddress ? 'left-6' : 'left-1'}`} />
+                    </div>
+                    <input type="checkbox" checked={uniqueByAddress} onChange={e => setUniqueByAddress(e.target.checked)} className="hidden" />
+                    <div>
+                      <p className="text-xs font-bold text-white group-hover:text-brand-300 transition-colors">Control por Dirección</p>
+                      <p className="text-[10px] text-slate-500">Solo se asignará 1 beneficio por cada dirección única registrada.</p>
+                    </div>
+                  </label>
+                </div>
+
                 {assignMode === 'select' && (
-                  <div className="max-h-40 overflow-y-auto space-y-1 mt-2">
+                  <div className="max-h-40 overflow-y-auto space-y-1 mt-2 pr-2 scrollbar-thin scrollbar-thumb-brand-500/20">
                     {beneficiaries.map(ben => (
                       <label key={ben.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 cursor-pointer">
                         <input type="checkbox" checked={selectedBens.includes(ben.id)} onChange={e => setSelectedBens(e.target.checked ? [...selectedBens, ben.id] : selectedBens.filter(x => x !== ben.id))} className="accent-brand-500" />
