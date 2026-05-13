@@ -544,9 +544,13 @@ function IssuePageContent() {
       try {
         // Smart mapping for standard fields
         const rowData = row as any;
-        const fullName = rowData.full_name || rowData.nombre || rowData['Nombre Completo'] || rowData['nombre completo'] || rowData['Nombre Receptor'] || rowData['Nombre'] || rowData.recipient_name;
+        const firstName = rowData.first_name || rowData.nombres || rowData.nombre;
+        const lastName = rowData.last_name || rowData.apellidos || '';
+        const fullName = rowData.full_name || (firstName ? `${firstName} ${lastName}`.trim() : null) || rowData['Nombre Completo'] || rowData['nombre completo'] || rowData['Nombre Receptor'] || rowData.recipient_name;
         const rut = rowData.rut || rowData.documento || rowData.recipient_rut || rowData.RUT;
         const email = rowData.email || rowData.correo || rowData['Email'] || rowData['Correo'];
+        const phone = rowData.phone || rowData.telefono || rowData.celular || rowData['Teléfono'] || rowData['Celular'];
+        const comuna = rowData.comuna || rowData.city || rowData.ciudad || rowData['Comuna'];
         
         // Photo URL: support Google Drive sharing links (case-insensitive column matching)
         const PHOTO_KEYS = ['photo_url', 'foto', 'photo', 'imagen', 'image'];
@@ -560,7 +564,7 @@ function IssuePageContent() {
         const photoUrlToSave = rawPhotoUrl ? convertGoogleDriveUrl(rawPhotoUrl) : null;
         
         // Collect custom fields from extra columns
-        const STANDARD_KEYS = ['full_name', 'nombre', 'rut', 'documento', 'email', 'correo', 'photo_url', 'foto', 'photo', 'imagen', 'image'];
+        const STANDARD_KEYS = ['first_name', 'last_name', 'full_name', 'nombre', 'nombres', 'apellidos', 'rut', 'documento', 'email', 'correo', 'phone', 'telefono', 'celular', 'comuna', 'photo_url', 'foto', 'photo', 'imagen', 'image'];
         const customFieldsToSave: Record<string, string> = {};
         for (const [key, val] of Object.entries(rowData)) {
           if (val && !STANDARD_KEYS.includes(key.toLowerCase())) {
@@ -594,9 +598,13 @@ function IssuePageContent() {
             .from('beneficiaries')
             .insert({
               org_id: organization.id,
+              first_name: firstName || null,
+              last_name: lastName || null,
               full_name: fullName || 'Sin Nombre',
               rut: cleanRut,
               email: email || null,
+              phone: phone || null,
+              comuna: comuna || null,
               photo_url: photoUrlToSave,
               custom_fields: customFieldsToSave
             })
@@ -610,8 +618,12 @@ function IssuePageContent() {
           await supabase
             .from('beneficiaries')
             .update({
+              first_name: firstName || undefined,
+              last_name: lastName || undefined,
               full_name: fullName || 'Sin Nombre',
               email: email || null,
+              phone: phone || null,
+              comuna: comuna || null,
               photo_url: photoUrlToSave || undefined,
               custom_fields: customFieldsToSave,
               status: 'active'
@@ -624,7 +636,7 @@ function IssuePageContent() {
           const qrCode = `${organization.slug}-${beneficiaryId}-${Math.random().toString(36).substring(2, 7)}`;
           const expiresAt = null; 
 
-          const { error: cardError } = await supabase.from('digital_cards').insert({
+          const { data: newCard, error: cardError } = await supabase.from('digital_cards').insert({
             beneficiary_id: beneficiaryId,
             org_id: organization.id,
             card_number: cardNumber,
@@ -634,12 +646,29 @@ function IssuePageContent() {
             metadata: {
               design_id: selectedDesign?.id || null,
             }
-          });
+          }).select('id').single();
 
           if (cardError) {
             currentResult.errors.push({ row: rowNum, field: 'card', message: `Error emitiendo tarjeta: ${cardError.message}` });
           } else {
             currentResult.success++;
+            
+            // Enviar notificación por email si existe
+            if (email && newCard) {
+              try {
+                await sendCertificateNotification({
+                  to: email,
+                  name: fullName,
+                  type: 'TARJETA DIGITAL',
+                  folio: cardNumber,
+                  rut: formatRut(cleanRut),
+                  orgName: organization.name,
+                  url: `${window.location.origin}/validate/${organization.slug}/${newCard.id}`
+                });
+              } catch (emailErr) {
+                console.error(`Error enviando email a ${email}:`, emailErr);
+              }
+            }
           }
         }
       } catch (err) {
@@ -664,8 +693,8 @@ function IssuePageContent() {
   // Build template headers from selected design's ACTIVE attributes only
   const getTemplateColumns = (): { headers: string[]; examples: string[] } => {
     // Always include base required fields
-    const headers = ['full_name', 'rut', 'email'];
-    const examples = ['Juan Pérez', '12.345.678-9', 'juan@ejemplo.com'];
+    const headers = ['first_name', 'last_name', 'rut', 'email', 'phone', 'comuna'];
+    const examples = ['Juan Andrés', 'Pérez González', '12.345.678-9', 'juan@ejemplo.com', '+56912345678', 'Puente Alto'];
 
     if (selectedDesign && selectedDesign.attributes) {
       const SKIP_KEYS = ['NOMBRE', 'NOMBRE RECEPTOR', 'FULL_NAME', 'RUT', 'EMAIL', 'CORREO'];
