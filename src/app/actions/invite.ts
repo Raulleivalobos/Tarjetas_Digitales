@@ -80,7 +80,7 @@ export async function inviteUserToOrg({
       params: {
         name: email.split('@')[0],
         message: `Has sido invitado a colaborar con la institución "${orgName}" en la plataforma SkardKey.`,
-        details: `Información de tu acceso:\n• Institución: ${orgName}\n• Rol asignado: ${roleNames[role] || role}\n\nTU CLAVE TEMPORAL ES: ${tempPassword}\n(El sistema te pedirá cambiarla por una nueva al ingresar).`,
+        details: `Información de tu acceso:<br>• Institución: ${orgName}<br>• Rol asignado: ${roleNames[role] || role}<br><br><strong>TU CLAVE TEMPORAL ES: ${tempPassword}</strong><br>(El sistema te pedirá cambiarla por una nueva al ingresar).`,
         button_text: 'Ingresar al Panel de Control',
         url: inviteLink
       }
