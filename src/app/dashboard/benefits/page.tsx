@@ -148,7 +148,17 @@ export default function BenefitsPage() {
 
   function getStatusBadge(b: any) {
     const endDate = getEffectiveEndDate(b);
-    if (endDate && new Date(endDate) < new Date()) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">VENCIDO</span>;
+    if (endDate) {
+      // Create a comparison date at the START of the current local day
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Parse endDate (YYYY-MM-DD) as local date (midnight)
+      // replace('-','/') is a trick to make JS parse as local time instead of UTC
+      const end = new Date(endDate.replace(/-/g, '/'));
+      
+      if (end < today) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">VENCIDO</span>;
+    }
     if (b.status === 'exhausted') return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20">AGOTADO</span>;
     if (b.status === 'active') return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">ACTIVO</span>;
     return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">INACTIVO</span>;

@@ -59,10 +59,20 @@ export function generateQRData(cardId: string, orgSlug: string): string {
 // Format date
 export function formatDate(date: string | null): string {
   if (!date) return '-';
+  
+  // If it's a simple YYYY-MM-DD (like from a date input or DB DATE column)
+  if (date.length === 10 && date.includes('-')) {
+    const parts = date.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+  }
+
   const d = new Date(date);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
+  // Fallback to UTC methods for ISO strings to avoid local shift
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const year = d.getUTCFullYear();
   return `${day}-${month}-${year}`;
 }
 
