@@ -45,10 +45,10 @@ export function DigitalCardView({
     const fileIdMatch = trimmed.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?.*id=)([^/&]+)/);
     
     if (fileIdMatch) {
-      direct = `https://lh3.googleusercontent.com/d/${fileIdMatch[1]}=w800`;
-    } else if (trimmed.includes('googleusercontent.com') && !trimmed.includes('?')) {
+      direct = `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w800`;
+    } else if (trimmed.includes('googleusercontent.com') && !trimmed.includes('sz=')) {
       // Ensure we have a size parameter if it's a direct LH3 link without one
-      direct = `${trimmed}=w800`;
+      direct = trimmed.includes('?') ? `${trimmed}&sz=w800` : `${trimmed}?sz=w800`;
     }
 
     const proxied = direct.startsWith('http') 

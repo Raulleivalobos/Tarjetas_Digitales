@@ -9,7 +9,11 @@ export async function GET(req: NextRequest) {
 
   try {
     const validUrl = new URL(url).toString();
-    const response = await fetch(validUrl);
+    const response = await fetch(validUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
 
     if (!response.ok) {
       return new NextResponse(`Failed to fetch image: ${response.statusText}`, { status: response.status });

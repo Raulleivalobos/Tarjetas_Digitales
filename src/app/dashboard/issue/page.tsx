@@ -493,20 +493,18 @@ function IssuePageContent() {
   const convertGoogleDriveUrl = (url: string): string => {
     if (!url) return '';
     const trimmed = url.trim();
-    // Format: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+    // Using the thumbnail endpoint is much more reliable for embedding
     const fileMatch = trimmed.match(/drive\.google\.com\/file\/d\/([^/]+)/);
     if (fileMatch) {
-      return `https://lh3.googleusercontent.com/d/${fileMatch[1]}=w800`;
+      return `https://drive.google.com/thumbnail?id=${fileMatch[1]}&sz=w800`;
     }
-    // Format: https://drive.google.com/open?id=FILE_ID
-    const openMatch = trimmed.match(/drive\.google\.com\/open\?id=([^&]+)/);
-    if (openMatch) {
-      return `https://lh3.googleusercontent.com/d/${openMatch[1]}=w800`;
-    }
-    // Format: https://drive.google.com/uc?export=view&id=FILE_ID (already converted)
     const ucMatch = trimmed.match(/drive\.google\.com\/uc\?.*id=([^&]+)/);
     if (ucMatch) {
-      return `https://lh3.googleusercontent.com/d/${ucMatch[1]}=w800`;
+      return `https://drive.google.com/thumbnail?id=${ucMatch[1]}&sz=w800`;
+    }
+    const openMatch = trimmed.match(/drive\.google\.com\/open\?.*id=([^&]+)/);
+    if (openMatch) {
+      return `https://drive.google.com/thumbnail?id=${openMatch[1]}&sz=w800`;
     }
     // Already a direct link or other URL
     return trimmed;
@@ -524,7 +522,13 @@ function IssuePageContent() {
 
     if (ext === 'csv') {
       const Papa = (await import('papaparse')).default;
-      const text = await file.text();
+      const validUrl = new URL(url).toString();
+      const response = await fetch(validUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+      const text = await response.text();
       const parsed = Papa.parse<BulkUploadRow>(text, { header: true, skipEmptyLines: true });
       dataToProcess = fixExcelDates(parsed.data);
     } else {
