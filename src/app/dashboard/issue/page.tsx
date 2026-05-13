@@ -549,8 +549,21 @@ function IssuePageContent() {
         const fullName = rowData.full_name || (firstName ? `${firstName} ${lastName}`.trim() : null) || rowData['Nombre Completo'] || rowData['nombre completo'] || rowData['Nombre Receptor'] || rowData.recipient_name;
         const rut = rowData.rut || rowData.documento || rowData.recipient_rut || rowData.RUT;
         const email = rowData.email || rowData.correo || rowData['Email'] || rowData['Correo'];
-        const phone = rowData.phone || rowData.telefono || rowData.celular || rowData['Teléfono'] || rowData['Celular'];
         const comuna = rowData.comuna || rowData.city || rowData.ciudad || rowData['Comuna'];
+        
+        // Normalize phone number to +56 9... format
+        let normalizedPhone = phone ? String(phone).trim() : null;
+        if (normalizedPhone) {
+          const digits = normalizedPhone.replace(/\D/g, '');
+          if (digits.length === 9) {
+            normalizedPhone = `+56 ${digits}`;
+          } else if (digits.length === 11 && digits.startsWith('56')) {
+            normalizedPhone = `+${digits.substring(0, 2)} ${digits.substring(2)}`;
+          } else if (digits.length === 12 && digits.startsWith('56')) {
+            // Already has full code but maybe no spaces
+            normalizedPhone = `+${digits.substring(0, 2)} ${digits.substring(2)}`;
+          }
+        }
         
         // Photo URL: support Google Drive sharing links (case-insensitive column matching)
         const PHOTO_KEYS = ['photo_url', 'foto', 'photo', 'imagen', 'image'];
@@ -603,7 +616,7 @@ function IssuePageContent() {
               full_name: fullName || 'Sin Nombre',
               rut: cleanRut,
               email: email || null,
-              phone: phone || null,
+              phone: normalizedPhone || null,
               comuna: comuna || null,
               photo_url: photoUrlToSave,
               custom_fields: customFieldsToSave
@@ -622,7 +635,7 @@ function IssuePageContent() {
               last_name: lastName || undefined,
               full_name: fullName || 'Sin Nombre',
               email: email || null,
-              phone: phone || null,
+              phone: normalizedPhone || null,
               comuna: comuna || null,
               photo_url: photoUrlToSave || undefined,
               custom_fields: customFieldsToSave,
