@@ -22,26 +22,27 @@ export async function inviteUserToOrg({
   );
 
   try {
-    // 1. Generar link de invitación (esto no envía correo automáticamente)
-    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-      type: 'invite',
+    // 1. Crear el usuario con una contraseña temporal (el código de acceso)
+    // Esto permite que el usuario entre de inmediato.
+    const { data: userData, error: createError } = await supabase.auth.admin.createUser({
       email: email,
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://skardkey.cl'}/dashboard`,
-        data: {
-          invited_to_org: orgId,
-          invited_role: role
-        }
+      password: accessCode, // Usamos el código de acceso como clave temporal
+      email_confirm: true,
+      user_metadata: {
+        force_password_change: true,
+        invited_to_org: orgId,
+        invited_role: role
       }
     });
 
-    if (linkError) {
-      // Si el usuario ya existe, intentamos invitarlo igual a la organización 
-      // (Supabase lanzará error si ya tiene cuenta, pero igual podemos proceder con el correo)
-      console.warn('Link generation warning:', linkError.message);
+    // Si el usuario ya existe, no es un error crítico, 
+    // solo significa que ya tiene su propia cuenta y clave.
+    if (createError && createError.message !== 'User already registered') {
+      console.error('Error creating user:', createError);
     }
 
-    const inviteLink = linkData?.properties?.action_link || `${process.env.NEXT_PUBLIC_APP_URL || 'https://skardkey.cl'}/login`;
+    const isNewUser = !createError;
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://skardkey.cl'}/login`;
 
     // 2. Enviar correo personalizado vía Brevo
     const roleNames: Record<string, string> = {
@@ -60,8 +61,8 @@ export async function inviteUserToOrg({
       params: {
         name: email.split('@')[0],
         message: `Has sido invitado a colaborar con la institución "${orgName}" en la plataforma SkardKey.`,
-        details: `Información de tu acceso:\n• Institución: ${orgName}\n• Rol asignado: ${roleNames[role] || role}\n• Código de Acceso: ${accessCode}\n\nPara activar tu cuenta y configurar tu contraseña, haz clic en el botón de abajo.`,
-        button_text: 'Activar Cuenta y Configurar Contraseña',
+        details: `Información de tu acceso:\n• Institución: ${orgName}\n• Rol asignado: ${roleNames[role] || role}\n\n${isNewUser ? `TU CLAVE TEMPORAL ES: ${accessCode}\n(Se te pedirá cambiarla al ingresar por primera vez)` : 'Usa tu correo y contraseña habitual para ingresar.'}`,
+        button_text: 'Ingresar al Panel de Control',
         url: inviteLink
       }
     });

@@ -22,6 +22,9 @@ import {
   FileText,
   Search,
   Key,
+  Lock,
+  Save,
+  AlertCircle,
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -33,6 +36,59 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showForcePassword, setShowForcePassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+
+  useEffect(() => {
+    if (user && user.user_metadata?.force_password_change) {
+      setShowForcePassword(true);
+    }
+  }, [user]);
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (newPassword.length < 6) {
+      setPasswordError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden');
+      return;
+    }
+
+    setUpdatingPassword(true);
+    const { createClient } = await import('@/lib/supabase/client');
+    const supabase = createClient();
+
+    try {
+      // 1. Actualizar contraseña
+      const { error: pwdError } = await supabase.auth.updateUser({ 
+        password: newPassword 
+      });
+
+      if (pwdError) throw pwdError;
+
+      // 2. Limpiar el flag de force_password_change
+      const { error: metaError } = await supabase.auth.updateUser({
+        data: { force_password_change: false }
+      });
+
+      if (metaError) throw metaError;
+
+      setShowForcePassword(false);
+      alert('Contraseña actualizada con éxito');
+    } catch (err: any) {
+      setPasswordError(err.message || 'Error al actualizar la contraseña');
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
 
   const isMunicipalRole = ['municipal_admin', 'municipal_viewer'].includes(membership?.role || '');
   const isMunicipalOrg = organization?.org_type === 'municipality';
@@ -243,6 +299,87 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
+      {/* Force Password Change Modal */}
+      {showForcePassword && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-surface-950/90 backdrop-blur-md">
+          <div className="w-full max-w-md glass-card p-8 animate-in fade-in zoom-in duration-300">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-brand-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-500/20">
+                <Key className="w-8 h-8 text-brand-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">Actualiza tu contraseña</h2>
+              <p className="text-slate-400 text-sm mt-2">
+                Por seguridad, debes cambiar tu clave temporal por una nueva antes de continuar.
+              </p>
+            </div>
+
+            <form onSubmit={handleUpdatePassword} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nueva Contraseña</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Al menos 6 caracteres"
+                    className="glass-input w-full pl-10 pr-4 py-3 text-sm"
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Confirmar Contraseña</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repite tu nueva contraseña"
+                    className="glass-input w-full pl-10 pr-4 py-3 text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {passwordError && (
+                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{passwordError}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={updatingPassword}
+                className="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2"
+              >
+                {updatingPassword ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white animate-spin rounded-full" />
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Actualizar y Entrar
+                  </>
+                )}
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="w-full text-slate-500 hover:text-slate-400 text-xs font-medium transition-colors"
+              >
+                Cerrar sesión
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+// End of file
