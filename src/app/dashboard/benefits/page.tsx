@@ -100,29 +100,38 @@ export default function BenefitsPage() {
       targets = beneficiaries.filter(b => selectedBens.includes(b.id));
     }
 
-    // 3. Apply Unique Address Control if enabled
+    // 3 & 4. Create Assignments with Unique Address Control (Designation Logic)
+    let assignments: any[] = [];
     if (uniqueByAddress) {
-      const uniqueTargets = new Map();
+      const addressGroups = new Map<string, any[]>();
       targets.forEach(t => {
-        // Handle null addresses by making them unique per beneficiary
         const addrKey = (t.address || `unique-${t.id}`).toLowerCase().trim();
-        if (!uniqueTargets.has(addrKey)) {
-          uniqueTargets.set(addrKey, t);
-        }
+        if (!addressGroups.has(addrKey)) addressGroups.set(addrKey, []);
+        addressGroups.get(addrKey)!.push(t);
       });
-      targets = Array.from(uniqueTargets.values());
-    }
 
-    // 4. Create Assignments
-    if (targets.length > 0) {
-      const assignments = targets.map(t => ({ 
+      // For each address, assign to everyone but mark only the first one as designated
+      for (const members of Array.from(addressGroups.values())) {
+        members.forEach((m, idx) => {
+          assignments.push({
+            benefit_id: newBenefit.id,
+            beneficiary_id: m.id,
+            org_id: organization.id,
+            status: 'pending',
+            notes: idx === 0 ? '[DESIGNATED]' : null
+          });
+        });
+      }
+    } else {
+      assignments = targets.map(t => ({ 
         benefit_id: newBenefit.id, 
         beneficiary_id: t.id, 
         org_id: organization.id, 
         status: 'pending' 
       }));
-      
-      // Batch insert assignments
+    }
+
+    if (assignments.length > 0) {
       await supabase.from('benefit_assignments').insert(assignments);
     }
 

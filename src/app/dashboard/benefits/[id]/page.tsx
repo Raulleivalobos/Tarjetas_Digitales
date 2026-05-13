@@ -62,19 +62,29 @@ export default function BenefitDetailPage() {
       // 1. Find the assignment for this beneficiary
       const assignment = assignments.find(a => a.beneficiary_id === card.beneficiary.id);
       
-      // 2. Control por Dirección (Double Check at delivery time)
+      // 2. Control por Dirección (Designation Check)
       const isUniqueByAddress = benefit.settings?.unique_by_address === true;
-      if (isUniqueByAddress && card.beneficiary.address) {
+      if (isUniqueByAddress) {
+        // Check if anyone at this address has already received it
         const alreadyDeliveredAtAddress = assignments.find(a => 
           a.status === 'used' && 
-          a.beneficiary?.address?.toLowerCase().trim() === card.beneficiary.address.toLowerCase().trim() &&
-          a.beneficiary_id !== card.beneficiary.id
+          a.beneficiary?.address?.toLowerCase().trim() === (card.beneficiary.address || '').toLowerCase().trim()
         );
 
         if (alreadyDeliveredAtAddress) {
           setMessage({ 
             type: 'error', 
-            text: `BLOQUEO POR DIRECCIÓN: Este beneficio ya fue retirado por ${alreadyDeliveredAtAddress.beneficiary.full_name} para el domicilio "${card.beneficiary.address}".` 
+            text: `BLOQUEO POR DIRECCIÓN: Este beneficio ya fue retirado por ${alreadyDeliveredAtAddress.beneficiary.full_name} para este domicilio.` 
+          });
+          setProcessing(false);
+          return;
+        }
+
+        // Check if THIS person is the designated one
+        if (assignment && assignment.notes !== '[DESIGNATED]') {
+          setMessage({ 
+            type: 'warning', 
+            text: `NO DESIGNADO: ${card.beneficiary.full_name} vive en un domicilio con control por dirección, pero no es la persona designada para el retiro.` 
           });
           setProcessing(false);
           return;
@@ -90,7 +100,7 @@ export default function BenefitDetailPage() {
       if (assignment.status === 'used') {
         setMessage({ 
           type: 'warning', 
-          text: `ENTREGA DUPLICADA: ${card.beneficiary.full_name} ya recibió su beneficio el ${formatDate(assignment.used_at)} a las ${new Date(assignment.used_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}.` 
+          text: `ENTREGA DUPLICADA: ${card.beneficiary.full_name} ya recibió su beneficio el ${formatDate(assignment.used_at)}.` 
         });
         setProcessing(false);
         return;
@@ -112,6 +122,39 @@ export default function BenefitDetailPage() {
       setMessage({ type: 'error', text: 'Error de conexión' });
     }
     setProcessing(false);
+  }
+
+  async function toggleDesignation(assignmentId: string) {
+    const target = assignments.find(a => a.id === assignmentId);
+    if (!target || !target.beneficiary?.address || processing) return;
+
+    const addr = target.beneficiary.address.toLowerCase().trim();
+    const hasDelivery = assignments.some(a => 
+      a.status === 'used' && a.beneficiary?.address?.toLowerCase().trim() === addr
+    );
+
+    if (hasDelivery) {
+      alert('No se puede cambiar la designación porque el beneficio ya fue entregado en este domicilio.');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const sameAddressIds = assignments
+        .filter(a => a.beneficiary?.address?.toLowerCase().trim() === addr)
+        .map(a => a.id);
+
+      // 1. Clear all in this house
+      await supabase.from('benefit_assignments').update({ notes: null }).in('id', sameAddressIds);
+      // 2. Set new one
+      await supabase.from('benefit_assignments').update({ notes: '[DESIGNATED]' }).eq('id', assignmentId);
+      
+      loadDetail();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setProcessing(false);
+    }
   }
 
   function getFiltered() {
@@ -237,12 +280,27 @@ export default function BenefitDetailPage() {
                         {a.beneficiary?.address && <p className="text-[10px] text-slate-600 truncate max-w-[150px]">• {a.beneficiary.address}</p>}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {a.status === 'used' ? (
-                        <><CheckCircle className="w-3.5 h-3.5 text-green-500" /><span className="text-xs text-green-400 font-bold">Entregado</span></>
-                      ) : (
-                        <><Clock className="w-3.5 h-3.5 text-yellow-500" /><span className="text-xs text-yellow-400 font-bold">Pendiente</span></>
+                    <div className="flex items-center gap-3">
+                      {benefit.settings?.unique_by_address && (
+                        <button 
+                          onClick={() => toggleDesignation(a.id)}
+                          disabled={a.status === 'used'}
+                          className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all ${
+                            a.notes === '[DESIGNATED]' 
+                              ? 'bg-brand-500 text-white border border-brand-400 shadow-lg shadow-brand-500/20' 
+                              : 'bg-white/5 text-slate-500 border border-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          {a.notes === '[DESIGNATED]' ? 'Designado' : 'Habilitar'}
+                        </button>
                       )}
+                      <div className="flex items-center gap-2">
+                        {a.status === 'used' ? (
+                          <><CheckCircle className="w-3.5 h-3.5 text-green-500" /><span className="text-xs text-green-400 font-bold">Entregado</span></>
+                        ) : (
+                          <><Clock className="w-3.5 h-3.5 text-yellow-500" /><span className="text-xs text-yellow-400 font-bold">Pendiente</span></>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
