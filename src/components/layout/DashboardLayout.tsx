@@ -46,8 +46,8 @@ export default function DashboardLayout({
       { name: 'Panel', href: '/dashboard', icon: LayoutDashboard },
     ]),
     
-    // Solo mostrar herramientas operativas si NO es un perfil puramente municipal
-    ...(!isMunicipal ? [
+    // Solo mostrar herramientas operativas si NO es un perfil puramente municipal o de lectura
+    ...(!isMunicipal && !['viewer', 'auditor'].includes(membership?.role || '') ? [
       { name: 'Diseños', href: '/dashboard/designs', icon: Palette },
       { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
       { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
@@ -56,6 +56,14 @@ export default function DashboardLayout({
       { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
       { name: 'Validar QR', href: '/dashboard/scanner', icon: QrCode },
       { name: 'Emitir', href: '/dashboard/issue', icon: Upload },
+    ] : []),
+
+    // Secciones para Auditor / Visualizador (Acceso a listas pero no a herramientas de edición/escaneo)
+    ...(['viewer', 'auditor'].includes(membership?.role || '') ? [
+      { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
+      { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
+      { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
+      { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
     ] : []),
     
     { name: 'Configuración', href: '/dashboard/settings', icon: Settings },
@@ -193,7 +201,13 @@ export default function DashboardLayout({
                 <p className="text-sm font-medium text-slate-200 truncate">
                   {user.email}
                 </p>
-                <p className="text-xs text-slate-500">Administrador</p>
+                <p className="text-xs text-slate-500">
+                  {membership?.role === 'owner' ? 'Propietario' : 
+                   membership?.role === 'admin' ? 'Administrador' : 
+                   membership?.role === 'auditor' ? 'Auditor' :
+                   membership?.role === 'validator' ? 'Validador' :
+                   membership?.role === 'viewer' ? 'Visualizador' : 'Usuario'}
+                </p>
               </div>
             </div>
             <button

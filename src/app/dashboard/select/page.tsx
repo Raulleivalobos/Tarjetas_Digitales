@@ -65,9 +65,16 @@ export default function SelectOrganizationPage() {
                   )}
                 </div>
                 <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full border ${
-                  m.role === 'owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                  m.role === 'owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
+                  m.role === 'admin' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                  m.role === 'auditor' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                  'bg-slate-500/10 text-slate-400 border-slate-500/20'
                 }`}>
-                  {m.role}
+                  {m.role === 'owner' ? 'Propietario' : 
+                   m.role === 'admin' ? 'Administrador' : 
+                   m.role === 'auditor' ? 'Auditor' :
+                   m.role === 'validator' ? 'Validador' :
+                   m.role === 'viewer' ? 'Visualizador' : m.role}
                 </span>
               </div>
               <div>

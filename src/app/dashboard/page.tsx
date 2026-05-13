@@ -84,11 +84,16 @@ const statusData = [
 ];
 
 export default function DashboardPage() {
-  const { organization } = useAuth();
+  const { organization, membership } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
+
+  const role = membership?.role || 'viewer';
+  const isAdmin = ['owner', 'admin', 'auditor'].includes(role);
+  const isValidator = role === 'validator';
+  const isViewer = role === 'viewer';
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -145,7 +150,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase">
-            Panel de Control
+            {isValidator ? 'Módulo de Operación' : 'Panel de Control'}
           </h1>
           <div className="flex items-center gap-3 mt-1">
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
@@ -153,130 +158,86 @@ export default function DashboardPage() {
               <span className="text-[10px] font-bold text-emerald-400 font-mono tracking-widest uppercase">Sistema Online</span>
             </div>
             <p className="text-slate-500 text-xs font-mono uppercase tracking-widest">
-               Org: {organization?.name || 'Cargando...'}
+               Perfil: {roleDescriptions[role]?.title || role}
             </p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-1 text-[10px] text-slate-500 font-mono tracking-widest uppercase">
           <div className="flex items-center gap-2">
             <Clock className="w-3 h-3 text-brand-400" />
-            <span>Última Sincronización: 12:45:02</span>
+            <span>Última Sincronización: {new Date().toLocaleTimeString()}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Activity className="w-3 h-3 text-brand-400" />
-            <span>ID_SESIÓN: CS-X92-2024</span>
+            <Building2 className="w-3 h-3 text-brand-400" />
+            <span className="truncate max-w-[150px]">{organization?.name}</span>
           </div>
         </div>
       </div>
 
-      {/* Onboarding Banner - New Institutional Level Prompt */}
-      {!organization?.parent_org_id && organization?.org_type !== 'municipality' && (
-        <div className="glass-card p-6 bg-gradient-to-r from-brand-500/10 via-indigo-500/5 to-transparent border-brand-500/20 relative overflow-hidden group">
-          <div className="absolute -right-8 -top-8 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Building2 className="w-32 h-32 text-white" />
-          </div>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-brand-400 text-xs font-bold uppercase tracking-widest mb-1">
-                <Zap className="w-3 h-3 fill-current" />
-                Nueva Funcionalidad
-              </div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Configura tu Nivel Institucional</h2>
-              <p className="text-slate-400 text-sm max-w-2xl">
-                Ahora puedes vincular tu organización con una Municipalidad para acceder a estadísticas compartidas o activar el perfil de Municipalidad para supervisar a tus Juntas de Vecinos.
-              </p>
+      {/* Quick Actions Panel - Filtered by role */}
+      {(!isViewer && !isValidator) && (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 stagger-children">
+          <Link href="/dashboard/beneficiaries" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-brand-500/10 hover:border-brand-500/30 group transition-all relative overflow-hidden">
+            <div className="w-12 h-12 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+              <Users className="w-6 h-6" />
             </div>
-            <Link 
-              href="/dashboard/settings" 
-              className="btn-primary px-6 py-3 text-xs font-black uppercase tracking-widest whitespace-nowrap flex items-center gap-2"
-            >
-              Configurar Ahora
-              <ArrowUpRight className="w-4 h-4" />
-            </Link>
-          </div>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Registrar Socio</span>
+          </Link>
+          
+          <Link href="/dashboard/scanner" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-emerald-500/10 hover:border-emerald-500/30 group transition-all relative overflow-hidden">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+              <Zap className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Escanear QR</span>
+          </Link>
+          
+          <Link href="/dashboard/cards" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-purple-500/10 hover:border-purple-500/30 group transition-all relative overflow-hidden">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+              <CreditCard className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Emitir Credencial</span>
+          </Link>
+          
+          <Link href="/dashboard/attendance" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-amber-500/10 hover:border-amber-500/30 group transition-all relative overflow-hidden">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+              <Activity className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Validar Asistencia</span>
+          </Link>
+          
+          <Link href="/dashboard/certificates/issue" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-blue-500/10 hover:border-blue-500/30 group transition-all relative overflow-hidden">
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+              <FileText className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Emitir Certificado</span>
+          </Link>
         </div>
       )}
 
-      {/* Municipal Access Banner */}
-      {organization?.org_type === 'municipality' && (
-        <div className="glass-card p-8 bg-gradient-to-br from-indigo-500/20 via-brand-500/10 to-transparent border-indigo-500/30 relative overflow-hidden group">
-          <div className="absolute -right-12 -bottom-12 p-12 opacity-5 group-hover:opacity-10 transition-transform duration-500 group-hover:scale-110">
-            <Building2 className="w-64 h-64 text-white" />
-          </div>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-widest mb-1">
-                <Building2 className="w-4 h-4" />
-                Perfil Municipal Detectado
-              </div>
-              <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Panel de Inteligencia Territorial</h2>
-              <p className="text-slate-400 text-sm max-w-xl leading-relaxed">
-                Has ingresado como administrador municipal. Tu acceso está optimizado para la supervisión estadística y gestión de Juntas de Vecinos vinculadas.
-              </p>
+      {/* Validator Quick Actions */}
+      {isValidator && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Link href="/dashboard/scanner" className="glass-card p-10 flex flex-col items-center justify-center gap-6 bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all group">
+            <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+              <Zap className="w-10 h-10" />
             </div>
-            <Link 
-              href="/dashboard/municipal" 
-              className="btn-primary px-8 py-4 text-xs font-black uppercase tracking-widest whitespace-nowrap flex items-center gap-3 shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] transition-all"
-            >
-              Entrar al Panel de Control
-              <ArrowUpRight className="w-5 h-5" />
-            </Link>
-          </div>
+            <div className="text-center">
+              <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Escanear Credencial</h3>
+              <p className="text-slate-400 text-sm mt-2">Validar identidad y beneficios de socios</p>
+            </div>
+          </Link>
+
+          <Link href="/dashboard/attendance" className="glass-card p-10 flex flex-col items-center justify-center gap-6 bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 transition-all group">
+            <div className="w-20 h-20 rounded-3xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+              <Activity className="w-10 h-10" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Registrar Asistencia</h3>
+              <p className="text-slate-400 text-sm mt-2">Control de participación en asambleas</p>
+            </div>
+          </Link>
         </div>
       )}
-
-      {/* Quick Actions Panel - P1 Efficiency Fix */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
-        <Link href="/dashboard/beneficiaries" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-brand-500/10 hover:border-brand-500/30 group transition-all relative overflow-hidden">
-          <div className="w-12 h-12 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
-            <Users className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Registrar Socio</span>
-          <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity">
-            <ArrowUpRight className="w-3 h-3" />
-          </div>
-        </Link>
-        
-        <Link href="/dashboard/scanner" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-emerald-500/10 hover:border-emerald-500/30 group transition-all relative overflow-hidden">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
-            <Zap className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Escanear QR</span>
-           <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity">
-            <ArrowUpRight className="w-3 h-3" />
-          </div>
-        </Link>
-        
-        <Link href="/dashboard/cards" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-purple-500/10 hover:border-purple-500/30 group transition-all relative overflow-hidden">
-          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
-            <CreditCard className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Emitir Credencial</span>
-           <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity">
-            <ArrowUpRight className="w-3 h-3" />
-          </div>
-        </Link>
-        
-        <Link href="/dashboard/attendance" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-amber-500/10 hover:border-amber-500/30 group transition-all relative overflow-hidden">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
-            <Activity className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Validar Asistencia</span>
-           <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity">
-            <ArrowUpRight className="w-3 h-3" />
-          </div>
-        </Link>
-        
-        <Link href="/dashboard/certificates/issue" className="glass-card-solid p-5 flex flex-col items-center justify-center gap-3 hover:bg-blue-500/10 hover:border-blue-500/30 group transition-all relative overflow-hidden">
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
-            <FileText className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] font-mono group-hover:text-white transition-colors text-center">Emitir Certificado</span>
-           <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-20 transition-opacity">
-            <ArrowUpRight className="w-3 h-3" />
-          </div>
-        </Link>
-      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
@@ -420,54 +381,56 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Bottom Row */}
+      {/* Bottom Row - Filtered by role */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent Beneficiaries */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-white tracking-tight">Últimos Beneficiarios</h3>
-              <p className="text-sm text-slate-300">Registrados recientemente</p>
+        {/* Recent Beneficiaries - Hide for Validators */}
+        {!isValidator && (
+          <div className="glass-card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-white tracking-tight">Últimos Beneficiarios</h3>
+                <p className="text-sm text-slate-300">Registrados recientemente</p>
+              </div>
+              <Link
+                href="/dashboard/beneficiaries"
+                className="flex items-center gap-1 text-sm text-brand-400 hover:text-brand-300 transition-colors font-bold uppercase tracking-tighter"
+              >
+                Ver todos
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
             </div>
-            <Link
-              href="/dashboard/beneficiaries"
-              className="flex items-center gap-1 text-sm text-brand-400 hover:text-brand-300 transition-colors font-bold uppercase tracking-tighter"
-            >
-              Ver todos
-              <ArrowUpRight className="w-4 h-4" />
-            </Link>
-          </div>
 
-          {data?.recentBeneficiaries && data.recentBeneficiaries.length > 0 ? (
-            <div className="space-y-3">
-              {data.recentBeneficiaries.map((person) => (
-                <div
-                  key={person.id}
-                  className="flex items-center justify-between p-3 rounded-xl hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500/20 to-purple-500/20 flex items-center justify-center text-brand-300 font-semibold text-sm">
-                      {person.full_name.charAt(0)}
+            {data?.recentBeneficiaries && data.recentBeneficiaries.length > 0 ? (
+              <div className="space-y-3">
+                {data.recentBeneficiaries.map((person) => (
+                  <div
+                    key={person.id}
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-white/[0.02] transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500/20 to-purple-500/20 flex items-center justify-center text-brand-300 font-semibold text-sm">
+                        {person.full_name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">{person.full_name}</p>
+                        <p className="text-xs text-slate-400 font-mono tracking-tight">{person.rut}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">{person.full_name}</p>
-                      <p className="text-xs text-slate-400 font-mono tracking-tight">{person.rut}</p>
-                    </div>
+                    <StatusBadge status={person.status} size="sm" />
                   </div>
-                  <StatusBadge status={person.status} size="sm" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-slate-500">
-              <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No hay beneficiarios aún</p>
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No hay beneficiarios aún</p>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Recent Activity */}
-        <div className="glass-card p-6">
+        {/* Recent Activity - Always show for visibility */}
+        <div className={`glass-card p-6 ${isValidator ? 'lg:col-span-2' : ''}`}>
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-white tracking-tight">Actividad Reciente</h3>
@@ -517,61 +480,64 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Recent Certificates - New Section */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-white tracking-tight">Últimos Certificados</h3>
-              <p className="text-sm text-slate-300">Emisiones recientes (Top 3)</p>
+        {/* Recent Certificates - Hide for Validators */}
+        {!isValidator && (
+          <div className="glass-card p-6 lg:col-span-2">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-white tracking-tight">Últimos Certificados</h3>
+                <p className="text-sm text-slate-300">Emisiones recientes (Top 3)</p>
+              </div>
+              <Link
+                href="/dashboard/certificates"
+                className="flex items-center gap-1 text-sm text-brand-400 hover:text-brand-300 transition-colors font-bold uppercase tracking-tighter"
+              >
+                Ver todos
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
             </div>
-            <Link
-              href="/dashboard/certificates"
-              className="flex items-center gap-1 text-sm text-brand-400 hover:text-brand-300 transition-colors font-bold uppercase tracking-tighter"
-            >
-              Ver todos
-              <ArrowUpRight className="w-4 h-4" />
-            </Link>
-          </div>
 
-          {data?.recentCertificates && data.recentCertificates.length > 0 ? (
-            <div className="space-y-4">
-              {data.recentCertificates.map((cert) => (
-                <div
-                  key={cert.id}
-                  className="flex items-center justify-between p-4 glass-card-solid border-white/5 hover:border-blue-500/20 transition-all"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold text-xs font-mono">
-                      #{cert.folio}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">
-                        {cert.resident_data?.full_name || cert.beneficiaries?.full_name || 'Desconocido'}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] uppercase font-bold text-slate-500">
-                          {cert.type.replace('_', ' ')}
-                        </span>
-                        <span className="text-[10px] text-slate-600 font-mono">•</span>
-                        <span className="text-[10px] text-slate-600 font-mono">
-                          {formatDateTime(cert.created_at)}
-                        </span>
+            {data?.recentCertificates && data.recentCertificates.length > 0 ? (
+              <div className="space-y-4">
+                {data.recentCertificates.map((cert) => (
+                  <div
+                    key={cert.id}
+                    className="flex items-center justify-between p-4 glass-card-solid border-white/5 hover:border-blue-500/20 transition-all"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold text-xs font-mono">
+                        #{cert.folio}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">
+                          {cert.resident_data?.full_name || cert.beneficiaries?.full_name || 'Desconocido'}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] uppercase font-bold text-slate-500">
+                            {cert.type.replace('_', ' ')}
+                          </span>
+                          <span className="text-[10px] text-slate-600 font-mono">•</span>
+                          <span className="text-[10px] text-slate-600 font-mono">
+                            {formatDateTime(cert.created_at)}
+                          </span>
+                        </div>
                       </div>
                     </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-emerald-400">${cert.cost?.toLocaleString('es-CL')}</p>
+                      <StatusBadge status={cert.status} size="sm" />
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-emerald-400">${cert.cost?.toLocaleString('es-CL')}</p>
-                    <StatusBadge status={cert.status} size="sm" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-slate-500">
-              <FileText className="w-10 h-10 mx-auto mb-2 opacity-10" />
-              <p className="text-xs font-mono uppercase tracking-widest">No hay certificados recientes</p>
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-slate-500">
+                <FileText className="w-10 h-10 mx-auto mb-2 opacity-10" />
+                <p className="text-xs font-mono uppercase tracking-widest">No hay certificados recientes</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
     </div>

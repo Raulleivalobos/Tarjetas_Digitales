@@ -37,7 +37,7 @@ export interface OrgMember {
   id: string;
   org_id: string;
   user_id: string;
-  role: 'owner' | 'admin' | 'validator' | 'viewer' | 'municipal_admin' | 'municipal_viewer';
+  role: 'owner' | 'admin' | 'validator' | 'viewer' | 'auditor' | 'municipal_admin' | 'municipal_viewer';
   created_at: string;
 }
 

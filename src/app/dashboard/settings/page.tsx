@@ -7,7 +7,7 @@ import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCi
 import { CHILE_DATA } from '@/lib/chile-data';
 
 type Tab = 'general' | 'members' | 'certificates' | 'security';
-type Role = 'owner' | 'admin' | 'validator' | 'viewer' | 'municipal_admin' | 'municipal_viewer';
+type Role = 'owner' | 'admin' | 'validator' | 'viewer' | 'auditor' | 'municipal_admin' | 'municipal_viewer';
 
 interface Member {
   id: string;
@@ -22,12 +22,13 @@ const roleDescriptions: Record<Role, { title: string; desc: string }> = {
   admin: { title: 'Administrador', desc: 'Puede gestionar beneficiarios, beneficios y tarjetas.' },
   validator: { title: 'Validador', desc: 'Solo puede escanear y validar tarjetas/beneficios.' },
   viewer: { title: 'Visualizador', desc: 'Acceso de solo lectura a métricas e información.' },
+  auditor: { title: 'Auditor', desc: 'Acceso de revisión a todos los registros y métricas.' },
   municipal_admin: { title: 'Admin Municipal', desc: 'Acceso administrativo para gestión de convenios municipales.' },
   municipal_viewer: { title: 'Observador Municipal', desc: 'Acceso estadístico para entes gubernamentales.' },
 };
 
 export default function SettingsPage() {
-  const { organization, refreshOrganization, user: currentUser } = useAuth();
+  const { organization, refreshOrganization, user: currentUser, membership } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('general');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -36,6 +37,8 @@ export default function SettingsPage() {
   const [municipalities, setMunicipalities] = useState<any[]>([]);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
+  
+  const isReadOnly = !['owner', 'admin'].includes(membership?.role || '');
   
   const [formData, setFormData] = useState({
     name: organization?.name || '',
@@ -511,25 +514,27 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="pt-8 flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="px-8 py-3 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shadow-[0_8px_20px_rgba(99,102,241,0.3)] flex items-center gap-2"
-                  >
-                    {saving ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white animate-spin rounded-full" />
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4" />
-                        Guardar Cambios
-                      </>
-                    )}
-                  </button>
-                </div>
+                {!isReadOnly && (
+                  <div className="pt-8 flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="px-8 py-3 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shadow-[0_8px_20px_rgba(99,102,241,0.3)] flex items-center gap-2"
+                    >
+                      {saving ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white animate-spin rounded-full" />
+                          Guardando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          Guardar Cambios
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </section>
             </form>
           )}
@@ -678,68 +683,73 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-4">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="btn-primary px-6 py-2.5 text-sm flex items-center gap-2"
-                  >
-                    <Save className="w-4 h-4" />
-                    Guardar Configuración
-                  </button>
-                </div>
+                {!isReadOnly && (
+                  <div className="flex justify-end pt-4">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="btn-primary px-6 py-2.5 text-sm flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      Guardar Configuración
+                    </button>
+                  </div>
+                )}
               </form>
             </div>
           )}
 
           {activeTab === 'members' && (
             <div className="space-y-6 animate-fade-in">
-              {/* Invite Form */}
-              <div className="glass-card p-6 md:p-8">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                  <div>
-                    <h2 className="text-lg font-bold text-white mb-1">Añadir Nuevo Usuario</h2>
-                    <p className="text-sm text-slate-400">Envía un acceso a un colaborador para que te ayude a gestionar.</p>
-                  </div>
-                </div>
-
-                <form onSubmit={handleInvite} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                  <div className="space-y-2 md:col-span-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Correo Electrónico</label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                      <input
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        placeholder="ejemplo@correo.com"
-                        className="glass-input w-full pl-10 pr-4 py-2.5 text-sm"
-                        required
-                      />
+              {/* Invite Form - Only for Admins */}
+              {!isReadOnly && (
+                <div className="glass-card p-6 md:p-8">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                    <div>
+                      <h2 className="text-lg font-bold text-white mb-1">Añadir Nuevo Usuario</h2>
+                      <p className="text-sm text-slate-400">Envía un acceso a un colaborador para que te ayude a gestionar.</p>
                     </div>
                   </div>
-                  <div className="space-y-2 md:col-span-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Rol de Acceso</label>
-                    <select
-                      value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value as Role)}
-                      className="glass-input w-full px-4 py-2.5 text-sm appearance-none cursor-pointer"
+
+                  <form onSubmit={handleInvite} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div className="space-y-2 md:col-span-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Correo Electrónico</label>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <input
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder="ejemplo@correo.com"
+                          className="glass-input w-full pl-10 pr-4 py-2.5 text-sm"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2 md:col-span-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Rol de Acceso</label>
+                      <select
+                        value={inviteRole}
+                        onChange={(e) => setInviteRole(e.target.value as Role)}
+                        className="glass-input w-full px-4 py-2.5 text-sm appearance-none cursor-pointer"
+                      >
+                        <option value="admin">Administrador</option>
+                        <option value="validator">Validador (Solo Escanear)</option>
+                        <option value="auditor">Auditor (Revisión Completa)</option>
+                        <option value="viewer">Visualizador (Solo Lectura)</option>
+                      </select>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2"
                     >
-                      <option value="admin">Administrador</option>
-                      <option value="validator">Validador (Solo Escanear)</option>
-                      <option value="viewer">Visualizador (Solo Lectura)</option>
-                    </select>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    Invitar Usuario
-                  </button>
-                </form>
-              </div>
+                      <UserPlus className="w-4 h-4" />
+                      Invitar Usuario
+                    </button>
+                  </form>
+                </div>
+              )}
 
               {/* Members List */}
               <div className="glass-card overflow-hidden">
@@ -754,6 +764,7 @@ export default function SettingsPage() {
                       <tr className="border-b border-white/5 text-slate-500 uppercase text-[10px] tracking-widest font-bold">
                         <th className="px-6 py-4">Usuario</th>
                         <th className="px-6 py-4">Rol Asignado</th>
+                        <th className="px-6 py-4">Fecha Acceso</th>
                         <th className="px-6 py-4 text-right">Acciones</th>
                       </tr>
                     </thead>
@@ -765,7 +776,10 @@ export default function SettingsPage() {
                               <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-400 font-bold text-xs border border-brand-500/20">
                                 {member.email?.charAt(0).toUpperCase()}
                               </div>
-                              <span className="text-slate-200 font-medium">{member.email}</span>
+                              <div>
+                                <span className="text-slate-200 font-medium block">{member.email}</span>
+                                <span className="text-[9px] text-slate-600 font-mono tracking-tighter">ID: {member.user_id.substring(0,8)}</span>
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
@@ -773,13 +787,19 @@ export default function SettingsPage() {
                               member.role === 'owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
                               member.role === 'admin' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                               member.role === 'validator' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                              member.role === 'auditor' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
                               'bg-slate-500/10 text-slate-400 border-slate-500/20'
                             }`}>
-                              {roleDescriptions[member.role].title}
+                              {roleDescriptions[member.role]?.title || member.role}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-slate-500 font-mono text-[10px] uppercase tracking-wider">
+                              {new Date(member.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            {member.role !== 'owner' && (
+                            {member.role !== 'owner' && !isReadOnly && (
                               <button className="p-2 text-slate-500 hover:text-red-400 transition-colors">
                                 <UserX className="w-4 h-4" />
                               </button>
