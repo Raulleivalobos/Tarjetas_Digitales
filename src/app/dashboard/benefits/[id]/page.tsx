@@ -74,7 +74,7 @@ export default function BenefitDetailPage() {
         if (alreadyDeliveredAtAddress) {
           setMessage({ 
             type: 'error', 
-            text: `BLOQUEADO: Beneficio ya entregado a ${alreadyDeliveredAtAddress.beneficiary.full_name} en esta dirección.` 
+            text: `BLOQUEO POR DIRECCIÓN: Este beneficio ya fue retirado por ${alreadyDeliveredAtAddress.beneficiary.full_name} para el domicilio "${card.beneficiary.address}".` 
           });
           setProcessing(false);
           return;
@@ -88,7 +88,10 @@ export default function BenefitDetailPage() {
       }
 
       if (assignment.status === 'used') {
-        setMessage({ type: 'warning', text: `${card.beneficiary.full_name} ya recibió este beneficio el ${formatDate(assignment.used_at)}` });
+        setMessage({ 
+          type: 'warning', 
+          text: `ENTREGA DUPLICADA: ${card.beneficiary.full_name} ya recibió su beneficio el ${formatDate(assignment.used_at)} a las ${new Date(assignment.used_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}.` 
+        });
         setProcessing(false);
         return;
       }
