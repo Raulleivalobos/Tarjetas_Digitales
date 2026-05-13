@@ -83,6 +83,16 @@ const statusData = [
   { name: 'Bloqueados', value: 10, color: '#f87171' },
 ];
 
+const roleDescriptions: Record<string, { title: string }> = {
+  owner: { title: 'Propietario' },
+  admin: { title: 'Administrador' },
+  validator: { title: 'Validador' },
+  viewer: { title: 'Visualizador' },
+  auditor: { title: 'Auditor' },
+  municipal_admin: { title: 'Admin Municipal' },
+  municipal_viewer: { title: 'Observador Municipal' },
+};
+
 export default function DashboardPage() {
   const { organization, membership } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
