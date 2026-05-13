@@ -9,9 +9,10 @@ interface QRScannerProps {
   title?: string;
   subtitle?: string;
   isProcessing?: boolean;
+  message?: { type: 'success' | 'error' | 'warning'; text: string } | null;
 }
 
-export default function QRScanner({ onScan, onClose, title = 'Escáner QR', subtitle = 'Apunta la cámara al código QR de la tarjeta', isProcessing = false }: QRScannerProps) {
+export default function QRScanner({ onScan, onClose, title = 'Escáner QR', subtitle = 'Apunta la cámara al código QR de la tarjeta', isProcessing = false, message }: QRScannerProps) {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
@@ -186,7 +187,27 @@ export default function QRScanner({ onScan, onClose, title = 'Escáner QR', subt
             </div>
           </div>
         )}
+
+        {/* Status Message Overlay/Footer */}
+        {message && (
+          <div className={`mt-4 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${
+            message.type === 'success' ? 'bg-green-500/10 border border-green-500/20 text-green-400' :
+            message.type === 'warning' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400' :
+            'bg-red-500/10 border border-red-500/20 text-red-400'
+          }`}>
+            <div className="shrink-0">
+              {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : 
+               message.type === 'warning' ? <AlertTriangle className="w-5 h-5" /> : 
+               <XCircle className="w-5 h-5" />}
+            </div>
+            <p className="text-sm font-bold leading-tight">{message.text}</p>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+// Re-import icons needed for the message
+import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+

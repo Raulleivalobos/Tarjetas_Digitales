@@ -209,17 +209,8 @@ export default function BenefitDetailPage() {
               title="Entregar Beneficio"
               subtitle={`Escanea la tarjeta para entregar "${benefit.name}"`}
               isProcessing={processing}
+              message={message}
             />
-            {message && (
-              <div className={`mt-4 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in duration-300 ${
-                message.type === 'success' ? 'bg-green-500/10 border border-green-500/20 text-green-400' :
-                message.type === 'warning' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400' :
-                'bg-red-500/10 border border-red-500/20 text-red-400'
-              }`}>
-                {message.type === 'success' ? <CheckCircle className="w-5 h-5 shrink-0" /> : message.type === 'warning' ? <AlertTriangle className="w-5 h-5 shrink-0" /> : <XCircle className="w-5 h-5 shrink-0" />}
-                <p className="text-sm font-bold">{message.text}</p>
-              </div>
-            )}
           </div>
         )}
 
