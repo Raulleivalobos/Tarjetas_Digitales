@@ -7,7 +7,7 @@ import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCi
 import { CHILE_DATA } from '@/lib/chile-data';
 
 import { inviteUserToOrg } from '@/app/actions/invite';
-import { getOrgMembers, updateMemberRole } from '@/app/actions/org';
+import { getOrgMembers, updateMemberRole, removeOrgMember } from '@/app/actions/org';
 
 type Tab = 'general' | 'members' | 'certificates' | 'security';
 type Role = 'owner' | 'admin' | 'validator' | 'viewer' | 'auditor' | 'municipal_admin' | 'municipal_viewer';
@@ -282,6 +282,23 @@ export default function SettingsPage() {
     } catch (err) {
       console.error('Failed to change role:', err);
       setMessage({ text: 'Error al cambiar rol', type: 'error' });
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string, email: string) => {
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar el acceso a ${email}?`)) return;
+    
+    try {
+      const result = await removeOrgMember(memberId);
+      if (result.success) {
+        setMembers(prev => prev.filter(m => m.id !== memberId));
+        setMessage({ text: 'Acceso revocado correctamente', type: 'success' });
+      } else {
+        setMessage({ text: `Error al eliminar: ${result.error}`, type: 'error' });
+      }
+    } catch (err) {
+      console.error('Failed to remove member:', err);
+      setMessage({ text: 'Error de conexión al eliminar', type: 'error' });
     }
   };
 
@@ -830,7 +847,11 @@ export default function SettingsPage() {
                           </td>
                           <td className="px-6 py-4 text-right">
                             {member.role !== 'owner' && !isReadOnly && (
-                              <button className="p-2 text-slate-500 hover:text-red-400 transition-colors">
+                              <button 
+                                onClick={() => handleRemoveMember(member.id, member.email || 'este usuario')}
+                                className="p-2 text-slate-500 hover:text-red-400 transition-colors"
+                                title="Eliminar Acceso"
+                              >
                                 <UserX className="w-4 h-4" />
                               </button>
                             )}
