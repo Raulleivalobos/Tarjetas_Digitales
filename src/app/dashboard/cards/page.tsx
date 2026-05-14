@@ -149,8 +149,7 @@ export default function CardsPage() {
         setSelectedIds([]);
       }
     } catch (error: any) {
-      console.error(error);
-      alert(`Error al actualizar estado: ${error.message}`);
+      console.error('Error al actualizar estado:', error);
     } finally {
       setIsUpdating(false);
     }
@@ -184,8 +183,7 @@ export default function CardsPage() {
         }
       }
     } catch (error: any) {
-      console.error(error);
-      alert(`Error al anular: ${error.message}`);
+      console.error('Error al anular:', error);
     } finally {
       setIsUpdating(false);
     }

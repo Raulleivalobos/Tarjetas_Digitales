@@ -121,10 +121,9 @@ export default function SettingsPage() {
       }
     } catch (err: any) {
       console.error('Audit Fetch Exception:', err);
-      setMessage({ text: 'Error de conexión', type: 'error' });
+      setMessage({ text: 'No se pudo cargar el registro de actividad', type: 'error' });
     } finally {
-      // Forzar el fin del estado de carga pase lo que pase
-      setTimeout(() => setLoadingLogs(false), 500);
+      setLoadingLogs(false);
     }
   };
 
