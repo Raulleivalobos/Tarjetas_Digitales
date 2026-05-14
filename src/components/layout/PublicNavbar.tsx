@@ -140,7 +140,7 @@ export function PublicNavbar() {
             {/* Login button - Visible on all screens */}
             <Link
               href="/login"
-              className="px-3 lg:px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              className="px-4 py-2 text-sm font-bold text-brand-300 border border-brand-500/30 rounded-full hover:bg-brand-500/10 hover:border-brand-500/50 transition-all shadow-lg shadow-brand-500/5 active:scale-95"
             >
               Acceder
             </Link>
@@ -198,7 +198,7 @@ export function PublicNavbar() {
             <div className="pt-4 space-y-2 border-t border-brand-500/10 mt-4">
               <Link
                 href="/login"
-                className="block text-center px-4 py-2.5 text-sm text-slate-300 border border-brand-500/20 rounded-xl hover:bg-brand-500/10"
+                className="block text-center px-4 py-2.5 text-sm font-bold text-brand-300 border border-brand-500/30 rounded-xl hover:bg-brand-500/10 transition-colors"
               >
                 Acceder
               </Link>
