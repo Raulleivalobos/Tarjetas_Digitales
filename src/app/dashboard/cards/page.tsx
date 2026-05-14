@@ -27,6 +27,7 @@ import {
 import { Modal } from '@/components/ui/Modal';
 import { exportElementToPDF } from '@/lib/pdfGenerator';
 import { sendCertificateNotification } from '@/app/actions/email';
+import { logActivity } from '@/app/actions/audit';
 
 interface CardWithBeneficiary extends DigitalCard {
   beneficiary: Beneficiary;
@@ -134,6 +135,16 @@ export default function CardsPage() {
         .in('id', selectedIds);
         
       if (!error) {
+        // Log activity
+        await logActivity({
+          orgId: organization!.id,
+          userId: membership!.user_id,
+          userEmail: organization!.name,
+          action: `BULK_CARD_STATUS_${newStatus.toUpperCase()}`,
+          entityType: 'card',
+          details: { count: selectedIds.length, ids: selectedIds }
+        });
+        
         setCards(cards.map(c => selectedIds.includes(c.id) ? { ...c, status: newStatus } : c));
         setSelectedIds([]);
       }
@@ -155,6 +166,16 @@ export default function CardsPage() {
         .in('id', ids);
         
       if (!error) {
+        // Log activity
+        await logActivity({
+          orgId: organization!.id,
+          userId: membership!.user_id,
+          userEmail: organization!.name,
+          action: 'REVOKE_CARDS',
+          entityType: 'card',
+          details: { count: ids.length, ids: ids }
+        });
+
         setCards(cards.map(c => ids.includes(c.id) ? { ...c, status: 'revoked' } : c));
         setSelectedIds(selectedIds.filter(selId => !ids.includes(selId)));
         if (selectedCard && ids.includes(selectedCard.id)) {

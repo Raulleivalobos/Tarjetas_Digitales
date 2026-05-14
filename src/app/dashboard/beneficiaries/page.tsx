@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { deleteBeneficiary } from '@/app/actions/beneficiaries';
 
 export default function BeneficiariesPage() {
   const { organization, loading: authLoading, membership } = useAuth();
@@ -80,12 +81,15 @@ export default function BeneficiariesPage() {
   }, [organization, authLoading, fetchBeneficiaries]);
 
   const handleDelete = async (id: string) => {
-    if (isReadOnly) return;
-    const { error } = await supabase.from('beneficiaries').delete().eq('id', id);
-    if (!error) {
+    if (isReadOnly || !organization) return;
+    
+    const result = await deleteBeneficiary(id, membership!.user_id, organization.name, organization.id);
+    if (result.success) {
       setBeneficiaries((prev) => prev.filter((b) => b.id !== id));
       selectedIds.delete(id);
       setSelectedIds(new Set(selectedIds));
+    } else {
+      alert(`Error al eliminar: ${result.error}`);
     }
     setDeleteModal(null);
   };

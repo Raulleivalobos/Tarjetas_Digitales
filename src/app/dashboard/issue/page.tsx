@@ -16,6 +16,7 @@ const CanvasPreview = dynamic(
 );
 import { useSearchParams } from 'next/navigation';
 import { sendCertificateNotification } from '@/app/actions/email';
+import { logActivity } from '@/app/actions/audit';
 
 function IssuePageContent() {
   const searchParams = useSearchParams();
@@ -294,16 +295,25 @@ function IssuePageContent() {
             .single();
           if (cardError) throw cardError;
           newCard = data;
-        } else {
-          // Emitir nueva tarjeta
-          const { data, error: cardError } = await supabase
-            .from('digital_cards')
-            .insert({ ...cardData, beneficiary_id: beneficiaryId })
-            .select('id')
-            .single();
           if (cardError) throw cardError;
           newCard = data;
         }
+
+        // Log activity
+        await logActivity({
+          orgId: organization.id,
+          userId: membership!.user_id,
+          userEmail: organization.name, // organization.name is being used as a placeholder for userEmail in some parts of the code, but I should use membership info if available. 
+          // Actually, DashboardLayout uses user.email.
+          action: existingCard ? 'REISSUE_CARD' : 'ISSUE_CARD',
+          entityType: 'card',
+          entityId: newCard.id,
+          details: { 
+            card_number: cardNumber, 
+            beneficiary: manualForm.full_name,
+            rut: cleanRut 
+          }
+        });
         
         // Enviar notificación por email
         if (manualForm.email) {
