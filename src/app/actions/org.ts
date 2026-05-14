@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@supabase/supabase-js';
+import { logActivity } from './audit';
 
 export async function getOrgMembers(orgId: string) {
   const supabase = createClient(
@@ -41,7 +42,13 @@ export async function getOrgMembers(orgId: string) {
   }
 }
 
-export async function updateMemberRole(memberId: string, newRole: string) {
+export async function updateMemberRole(
+  memberId: string, 
+  newRole: string,
+  adminId: string,
+  adminEmail: string,
+  orgId: string
+) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -54,6 +61,18 @@ export async function updateMemberRole(memberId: string, newRole: string) {
       .eq('id', memberId);
 
     if (error) throw error;
+
+    // Log activity
+    await logActivity({
+      orgId,
+      userId: adminId,
+      userEmail: adminEmail,
+      action: 'UPDATE_MEMBER_ROLE',
+      entityType: 'membership',
+      entityId: memberId,
+      details: { new_role: newRole }
+    });
+
     return { success: true };
   } catch (error: any) {
     console.error('Error updating member role:', error);
@@ -61,7 +80,12 @@ export async function updateMemberRole(memberId: string, newRole: string) {
   }
 }
 
-export async function removeOrgMember(memberId: string) {
+export async function removeOrgMember(
+  memberId: string,
+  adminId: string,
+  adminEmail: string,
+  orgId: string
+) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -74,6 +98,17 @@ export async function removeOrgMember(memberId: string) {
       .eq('id', memberId);
 
     if (error) throw error;
+
+    // Log activity
+    await logActivity({
+      orgId,
+      userId: adminId,
+      userEmail: adminEmail,
+      action: 'REMOVE_MEMBER',
+      entityType: 'membership',
+      entityId: memberId
+    });
+
     return { success: true };
   } catch (error: any) {
     console.error('Error removing member:', error);

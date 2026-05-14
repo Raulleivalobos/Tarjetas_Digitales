@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef} from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCircle, CheckCircle2, Upload, Trash2, FileText, DollarSign, Plus, Key } from 'lucide-react';
+import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCircle, CheckCircle2, Upload, Trash2, FileText, DollarSign, Plus, Key, RefreshCw } from 'lucide-react';
 import { CHILE_DATA } from '@/lib/chile-data';
 
 import { inviteUserToOrg } from '@/app/actions/invite';
@@ -36,6 +36,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [members, setMembers] = useState<Member[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [municipalities, setMunicipalities] = useState<any[]>([]);
   const supabaseRef = useRef(createClient());
@@ -82,11 +84,10 @@ export default function SettingsPage() {
   const [inviteRole, setInviteRole] = useState<Role>('validator');
 
   useEffect(() => {
-    if (activeTab === 'members' && organization) {
-      fetchMembers();
-    }
-    if (activeTab === 'general') {
-      fetchMunicipalities();
+    if (organization) {
+      if (activeTab === 'members') fetchMembers();
+      if (activeTab === 'security') fetchLogs();
+      if (activeTab === 'general') fetchMunicipalities();
     }
   }, [activeTab, organization]);
 
@@ -96,6 +97,25 @@ export default function SettingsPage() {
       .select('id, name')
       .eq('org_type', 'municipality');
     if (data) setMunicipalities(data);
+  };
+
+  const fetchLogs = async () => {
+    if (!organization) return;
+    setLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('org_id', organization.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (!error) setLogs(data || []);
+    } catch (err) {
+      console.error('Error loading logs:', err);
+    } finally {
+      setLoadingLogs(false);
+    }
   };
 
   const fetchMembers = async () => {
@@ -272,7 +292,7 @@ export default function SettingsPage() {
 
   const handleRoleChange = async (memberId: string, newRole: Role) => {
     try {
-      const result = await updateMemberRole(memberId, newRole);
+      const result = await updateMemberRole(memberId, newRole, currentUser!.id, currentUser!.email!, organization.id);
       if (result.success) {
         setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
         setMessage({ text: 'Rol actualizado correctamente', type: 'success' });
@@ -289,7 +309,7 @@ export default function SettingsPage() {
     if (!window.confirm(`¿Estás seguro de que deseas eliminar el acceso a ${email}?`)) return;
     
     try {
-      const result = await removeOrgMember(memberId);
+      const result = await removeOrgMember(memberId, currentUser!.id, currentUser!.email!, organization.id);
       if (result.success) {
         setMembers(prev => prev.filter(m => m.id !== memberId));
         setMessage({ text: 'Acceso revocado correctamente', type: 'success' });
@@ -866,12 +886,85 @@ export default function SettingsPage() {
           )}
 
           {activeTab === 'security' && (
-            <div className="glass-card p-6 md:p-8 space-y-6 animate-fade-in text-center py-12">
-              <Shield className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <h2 className="text-xl font-medium text-slate-300">Seguridad</h2>
-              <p className="text-slate-500 max-w-md mx-auto">
-                Las opciones de seguridad avanzada estarán disponibles próximamente.
-              </p>
+            <div className="space-y-6 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-brand-400" />
+                    Registro de Actividad (Audit Log)
+                  </h2>
+                  <p className="text-slate-500 text-sm mt-1">Historial de acciones críticas realizadas por los colaboradores.</p>
+                </div>
+                <button 
+                  onClick={fetchLogs}
+                  disabled={loadingLogs}
+                  className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-white transition-all"
+                  title="Actualizar registro"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingLogs ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              <div className="glass-card overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-brand-500/10 bg-brand-500/[0.02]">
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha y Hora</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Usuario</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Acción</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Entidad</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Detalles</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {loadingLogs ? (
+                        <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">Cargando registros...</td></tr>
+                      ) : logs.length === 0 ? (
+                        <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">No hay actividad registrada aún.</td></tr>
+                      ) : (
+                        logs.map((log) => (
+                          <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-xs text-slate-300">
+                                {new Date(log.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              </div>
+                              <div className="text-[10px] text-slate-500 font-mono">
+                                {new Date(log.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-xs font-bold text-white truncate max-w-[150px]" title={log.user_email}>
+                                {log.user_email?.split('@')[0]}
+                              </div>
+                              <div className="text-[10px] text-slate-500 truncate max-w-[150px]">
+                                {log.user_email}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${
+                                log.action.includes('DELETE') || log.action.includes('REMOVE') ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                log.action.includes('CREATE') || log.action.includes('ISSUE') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                'bg-brand-500/10 text-brand-400 border-brand-500/20'
+                              }`}>
+                                {log.action.replace(/_/g, ' ')}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-xs text-slate-400 capitalize">{log.entity_type}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-[10px] text-slate-500 font-mono max-w-[200px] truncate" title={JSON.stringify(log.details)}>
+                                {log.details ? (typeof log.details === 'string' ? log.details : JSON.stringify(log.details)) : '-'}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </div>
