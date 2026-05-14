@@ -100,27 +100,31 @@ export default function SettingsPage() {
   };
 
   const fetchLogs = async () => {
-    if (!organization) return;
+    if (!organization?.id) return;
+    
     setLoadingLogs(true);
+    setLogs([]); // Limpiar previos
+    
     try {
       const { data, error } = await supabase
         .from('audit_logs')
-        .select('*')
+        .select('id, created_at, user_email, action, entity_type, details')
         .eq('org_id', organization.id)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(30);
       
       if (error) {
-        console.error('Error loading logs:', error);
-        setMessage({ text: `Error al cargar logs: ${error.message}`, type: 'error' });
+        console.error('Audit Fetch Error:', error);
+        setMessage({ text: `Error: ${error.message}`, type: 'error' });
       } else {
         setLogs(data || []);
       }
     } catch (err: any) {
-      console.error('Error loading logs:', err);
-      setMessage({ text: 'Error de conexión al cargar logs', type: 'error' });
+      console.error('Audit Fetch Exception:', err);
+      setMessage({ text: 'Error de conexión', type: 'error' });
     } finally {
-      setLoadingLogs(false);
+      // Forzar el fin del estado de carga pase lo que pase
+      setTimeout(() => setLoadingLogs(false), 500);
     }
   };
 
