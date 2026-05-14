@@ -110,9 +110,15 @@ export default function SettingsPage() {
         .order('created_at', { ascending: false })
         .limit(50);
       
-      if (!error) setLogs(data || []);
-    } catch (err) {
+      if (error) {
+        console.error('Error loading logs:', error);
+        setMessage({ text: `Error al cargar logs: ${error.message}`, type: 'error' });
+      } else {
+        setLogs(data || []);
+      }
+    } catch (err: any) {
       console.error('Error loading logs:', err);
+      setMessage({ text: 'Error de conexión al cargar logs', type: 'error' });
     } finally {
       setLoadingLogs(false);
     }

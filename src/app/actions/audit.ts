@@ -23,7 +23,7 @@ export async function logActivity({
   );
 
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('audit_logs')
       .insert({
         org_id: orgId,
@@ -33,13 +33,16 @@ export async function logActivity({
         entity_type: entityType,
         entity_id: entityId || null,
         details: details || null
-      });
+      })
+      .select();
 
     if (error) {
-      console.error('Failed to log activity:', error);
-      return { success: false, error };
+      console.error('FAILED TO LOG ACTIVITY:', error);
+      return { success: false, error: error.message };
     }
-    return { success: true };
+    
+    console.log('Successfully logged activity:', action);
+    return { success: true, data };
   } catch (err) {
     console.error('Audit log exception:', err);
     return { success: false, error: err };
