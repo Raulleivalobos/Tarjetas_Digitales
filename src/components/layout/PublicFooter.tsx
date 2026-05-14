@@ -91,7 +91,7 @@ export function PublicFooter() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-black text-white tracking-tighter leading-none">Skard<span className="text-brand-400">Key</span></span>
-                <span className="text-[9px] uppercase tracking-[0.2em] text-slate-500 mt-1 font-bold">Secure Systems</span>
+                <span className="text-[9px] uppercase tracking-[0.2em] text-brand-400 mt-1 font-bold">Identidad Digital & Beneficios</span>
               </div>
             </Link>
             <p className="text-xs text-slate-500 mb-4 leading-relaxed">
@@ -104,7 +104,7 @@ export function PublicFooter() {
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Phone className="w-3.5 h-3.5 text-brand-400" />
-                <span>+56 9 XXXX XXXX</span>
+                <span>+56 9 51495297</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <MapPin className="w-3.5 h-3.5 text-brand-400" />

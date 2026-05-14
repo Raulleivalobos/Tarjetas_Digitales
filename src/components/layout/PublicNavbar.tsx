@@ -72,7 +72,7 @@ export function PublicNavbar() {
             </div>
             <div className="flex flex-col">
               <span className="text-2xl font-black text-white tracking-tighter leading-none">Skard<span className="text-brand-400">Key</span></span>
-              <span className="text-[10px] uppercase tracking-[0.3em] text-slate-500 mt-1 font-bold">Secure ID</span>
+              <span className="text-[10px] uppercase tracking-[0.3em] text-brand-400 mt-1 font-bold">Identidad Digital</span>
             </div>
           </Link>
 

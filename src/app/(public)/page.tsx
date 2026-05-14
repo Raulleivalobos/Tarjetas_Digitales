@@ -201,7 +201,7 @@ export default function LandingPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {STEPS.map(({ num, title, desc }, i) => (
               <div key={i} className="relative text-center">
-                <div className="text-5xl font-black text-brand-500/15 mb-3">{num}</div>
+                <div className="text-5xl font-black text-brand-400/40 mb-3">{num}</div>
                 <h3 className="text-base font-bold text-white mb-2">{title}</h3>
                 <p className="text-xs text-slate-400 leading-relaxed">{desc}</p>
                 {i < STEPS.length - 1 && (
