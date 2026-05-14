@@ -35,7 +35,7 @@ interface CardWithBeneficiary extends DigitalCard {
 }
 
 export default function CardsPage() {
-  const { organization, membership, loading: authLoading } = useAuth();
+  const { organization, loading: authLoading, membership, user } = useAuth();
   const isAdmin = membership?.role === 'admin' || membership?.role === 'owner';
   const [cards, setCards] = useState<CardWithBeneficiary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,7 +139,7 @@ export default function CardsPage() {
         await logActivity({
           orgId: organization!.id,
           userId: membership!.user_id,
-          userEmail: organization!.name,
+          userEmail: user?.email || 'unknown',
           action: `BULK_CARD_STATUS_${newStatus.toUpperCase()}`,
           entityType: 'card',
           details: { count: selectedIds.length, ids: selectedIds }
@@ -170,7 +170,7 @@ export default function CardsPage() {
         await logActivity({
           orgId: organization!.id,
           userId: membership!.user_id,
-          userEmail: organization!.name,
+          userEmail: user?.email || 'unknown',
           action: 'REVOKE_CARDS',
           entityType: 'card',
           details: { count: ids.length, ids: ids }

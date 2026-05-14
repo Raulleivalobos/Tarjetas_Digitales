@@ -21,7 +21,7 @@ import { logActivity } from '@/app/actions/audit';
 function IssuePageContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const { organization, loading: authLoading, membership } = useAuth();
+  const { organization, loading: authLoading, membership, user } = useAuth();
   const [activeTab, setActiveTab] = useState<'manual' | 'masivo'>(tabParam === 'masivo' ? 'masivo' : 'manual');
   
   const isReadOnly = !['owner', 'admin'].includes(membership?.role || '');
@@ -303,8 +303,7 @@ function IssuePageContent() {
         await logActivity({
           orgId: organization.id,
           userId: membership!.user_id,
-          userEmail: organization.name, // organization.name is being used as a placeholder for userEmail in some parts of the code, but I should use membership info if available. 
-          // Actually, DashboardLayout uses user.email.
+          userEmail: user?.email || 'unknown',
           action: existingCard ? 'REISSUE_CARD' : 'ISSUE_CARD',
           entityType: 'card',
           entityId: newCard.id,

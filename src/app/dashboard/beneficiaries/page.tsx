@@ -33,7 +33,7 @@ import Image from 'next/image';
 import { deleteBeneficiary } from '@/app/actions/beneficiaries';
 
 export default function BeneficiariesPage() {
-  const { organization, loading: authLoading, membership } = useAuth();
+  const { organization, loading: authLoading, membership, user } = useAuth();
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -83,7 +83,7 @@ export default function BeneficiariesPage() {
   const handleDelete = async (id: string) => {
     if (isReadOnly || !organization) return;
     
-    const result = await deleteBeneficiary(id, membership!.user_id, organization.name, organization.id);
+    const result = await deleteBeneficiary(id, membership!.user_id, user?.email || 'unknown', organization.id);
     if (result.success) {
       setBeneficiaries((prev) => prev.filter((b) => b.id !== id));
       selectedIds.delete(id);
