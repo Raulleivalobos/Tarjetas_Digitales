@@ -7,6 +7,7 @@ import { Benefit } from '@/lib/types';
 import Link from 'next/link';
 import { Gift, Plus, Eye, QrCode, Calendar, Clock, CheckCircle, CalendarPlus, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { logActivity } from '@/app/actions/audit';
 
 export default function BenefitsPage() {
   const { organization, loading: authLoading, membership } = useAuth();
@@ -65,9 +66,23 @@ export default function BenefitsPage() {
     try {
       // First delete assignments (Supabase usually handles this if cascade is set, but better be safe)
       await supabase.from('benefit_assignments').delete().eq('benefit_id', benefitId);
+      
+      // Get benefit info for log before deleting
+      const { data: b } = await supabase.from('benefits').select('name').eq('id', benefitId).single();
+
       // Then delete the benefit
       const { error } = await supabase.from('benefits').delete().eq('id', benefitId);
       if (error) throw error;
+
+      await logActivity({
+        orgId: organization!.id,
+        userId: membership!.user_id,
+        userEmail: user?.email || 'unknown',
+        action: 'DELETE_BENEFIT',
+        entityType: 'benefit',
+        details: { benefit_id: benefitId, benefit_name: b?.name }
+      });
+
       loadData();
     } catch (e) {
       console.error(e);
@@ -138,6 +153,21 @@ export default function BenefitsPage() {
       await supabase.from('benefit_assignments').insert(assignments);
     }
 
+    await logActivity({
+      orgId: organization.id,
+      userId: membership!.user_id,
+      userEmail: user?.email || 'unknown',
+      action: 'CREATE_BENEFIT',
+      entityType: 'benefit',
+      details: { 
+        benefit_id: newBenefit.id, 
+        name: form.name, 
+        assigned_count: assignments.length,
+        assign_mode: assignMode,
+        unique_by_address: uniqueByAddress
+      }
+    });
+
     setForm({ name: '', description: '', type: 'subsidy', total_quantity: '', start_date: '', end_date: '' });
     setAssignMode('all');
     setUniqueByAddress(false);
@@ -149,7 +179,19 @@ export default function BenefitsPage() {
 
   async function handleExtend(benefitId: string) {
     if (!extendDate || isReadOnly) return;
-    await supabase.from('benefits').update({ extended_end_date: extendDate, extension_reason: extendReason || null }).eq('id', benefitId);
+    const { error } = await supabase.from('benefits').update({ extended_end_date: extendDate, extension_reason: extendReason || null }).eq('id', benefitId);
+    
+    if (!error) {
+      await logActivity({
+        orgId: organization!.id,
+        userId: membership!.user_id,
+        userEmail: user?.email || 'unknown',
+        action: 'EXTEND_BENEFIT',
+        entityType: 'benefit',
+        details: { benefit_id: benefitId, new_date: extendDate, reason: extendReason }
+      });
+    }
+
     setShowExtend(null); setExtendDate(''); setExtendReason('');
     loadData();
   }

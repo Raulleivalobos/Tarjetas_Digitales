@@ -1,4 +1,5 @@
 'use client';
+'use client';
 
 import { useState, useEffect, useRef} from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,9 +7,10 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { ClipboardList, Plus, Eye, Calendar, Users, BarChart3, CheckCircle, QrCode } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { logActivity } from '@/app/actions/audit';
 
 export default function AttendancePage() {
-  const { organization, user, loading: authLoading } = useAuth();
+  const { organization, user, membership, loading: authLoading } = useAuth();
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const [meetings, setMeetings] = useState<any[]>([]);
@@ -39,12 +41,9 @@ export default function AttendancePage() {
         return { ...m, attendeeCount: attendees || 0 };
       }));
       setMeetings(enriched);
-    } catch (e) {
-      console.error(e);
     } finally {
       setLoading(false);
     }
-
   }
 
   async function handleCreate() {
@@ -55,6 +54,16 @@ export default function AttendancePage() {
       meeting_date: form.meeting_date, status: 'active', created_by: user?.id
     });
     if (error) { console.error('Error al crear reunión:', error); setSaving(false); return; }
+
+    await logActivity({
+      orgId: organization.id,
+      userId: membership!.user_id,
+      userEmail: user?.email || 'unknown',
+      action: 'CREATE_MEETING',
+      entityType: 'meeting',
+      details: { name: form.name, date: form.meeting_date }
+    });
+
     setForm({ name: '', description: '', meeting_date: '' });
     setShowCreate(false);
     setSaving(false);
@@ -62,7 +71,22 @@ export default function AttendancePage() {
   }
 
   async function closeMeeting(meetingId: string) {
-    await supabase.from('meetings').update({ status: 'closed' }).eq('id', meetingId);
+    const { error } = await supabase.from('meetings').update({ status: 'closed' }).eq('id', meetingId);
+    
+    if (!error) {
+      // Get meeting name for log
+      const { data: m } = await supabase.from('meetings').select('name').eq('id', meetingId).single();
+      
+      await logActivity({
+        orgId: organization!.id,
+        userId: membership!.user_id,
+        userEmail: user?.email || 'unknown',
+        action: 'CLOSE_MEETING',
+        entityType: 'meeting',
+        details: { meeting_id: meetingId, meeting_name: m?.name }
+      });
+    }
+
     loadData();
   }
 

@@ -706,6 +706,22 @@ function IssuePageContent() {
       }
     }
 
+    if (currentResult.success > 0) {
+      await logActivity({
+        orgId: organization.id,
+        userId: membership!.user_id,
+        userEmail: user?.email || 'unknown',
+        action: 'BULK_ISSUE_CARDS',
+        entityType: 'card',
+        details: { 
+          total_rows: dataToProcess.length,
+          successful: currentResult.success,
+          status: status,
+          file_name: file.name
+        }
+      });
+    }
+
     setResult(currentResult);
     setProcessing(false);
     setFile(null);

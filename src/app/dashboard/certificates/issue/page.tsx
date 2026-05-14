@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
+import { logActivity } from '@/app/actions/audit';
 import { 
   ArrowLeft, 
   Search, 
@@ -40,7 +41,7 @@ const REASONS = [
 
 export default function IssueCertificatePage() {
   const router = useRouter();
-  const { organization } = useAuth();
+  const { organization, user, membership } = useAuth();
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -233,12 +234,15 @@ export default function IssueCertificatePage() {
         }
       };
 
+        }
+      }
+
       const { data: newCert, error: insertError } = await supabase.from('certificates').insert(certData).select('id').single();
       if (insertError) throw insertError;
 
       // Intentar enviar notificación por email si hay un destinatario
       const email = formData.type === 'residente' ? formData.resident_data.email : selectedBeneficiary?.email;
-      if (email) {
+      if (email && newCert) {
         try {
           await sendCertificateNotification({
             to: email,
@@ -254,6 +258,21 @@ export default function IssueCertificatePage() {
           // No bloqueamos el flujo principal si el correo falla
         }
       }
+
+      await logActivity({
+        orgId: organization.id,
+        userId: membership!.user_id,
+        userEmail: user?.email || 'unknown',
+        action: 'ISSUE_CERTIFICATE',
+        entityType: 'certificate',
+        details: { 
+          certificate_id: newCert?.id, 
+          folio: folio,
+          recipient: recipientName,
+          type: formData.type,
+          cost: formData.cost
+        }
+      });
 
       router.push('/dashboard/certificates');
     } catch (err) {
