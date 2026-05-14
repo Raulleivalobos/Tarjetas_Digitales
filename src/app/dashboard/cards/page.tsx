@@ -148,8 +148,9 @@ export default function CardsPage() {
         setCards(cards.map(c => selectedIds.includes(c.id) ? { ...c, status: newStatus } : c));
         setSelectedIds([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      alert(`Error al actualizar estado: ${error.message}`);
     } finally {
       setIsUpdating(false);
     }
@@ -184,6 +185,7 @@ export default function CardsPage() {
       }
     } catch (error: any) {
       console.error(error);
+      alert(`Error al anular: ${error.message}`);
     } finally {
       setIsUpdating(false);
     }

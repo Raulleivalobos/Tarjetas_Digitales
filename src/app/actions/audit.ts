@@ -38,7 +38,7 @@ export async function logActivity({
 
     if (error) {
       console.error('FAILED TO LOG ACTIVITY:', error);
-      return { success: false, error: error.message };
+      throw new Error(`Audit Log Error: ${error.message}`);
     }
     
     console.log('Successfully logged activity:', action);
