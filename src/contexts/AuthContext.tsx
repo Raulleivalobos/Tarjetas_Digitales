@@ -207,7 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMembership(null);
     setMemberships([]);
     localStorage.removeItem('last_org_id');
-    supabase.auth.signOut().catch(() => {});
+    await supabase.auth.signOut().catch(() => {});
   };
 
   const refreshOrganization = async () => {
