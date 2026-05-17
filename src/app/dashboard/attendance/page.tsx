@@ -11,7 +11,10 @@ import { logActivity } from '@/app/actions/audit';
 
 export default function AttendancePage() {
   const { organization, user, membership, loading: authLoading } = useAuth();
-  const isReadOnly = ['viewer', 'auditor'].includes(membership?.role || '');
+  const isViewer = ['viewer', 'auditor'].includes(membership?.role || '');
+  const isValidator = membership?.role === 'validator';
+  const canCreate = !isViewer && !isValidator;
+  const canScan = !isViewer;
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const [meetings, setMeetings] = useState<any[]>([]);
@@ -105,12 +108,12 @@ export default function AttendancePage() {
           <p className="text-slate-400 mt-1">Crea reuniones y registra la asistencia de tus socios con QR</p>
         </div>
         <div className="flex gap-3">
-          {activeMeeting && !isReadOnly && (
+          {activeMeeting && canScan && (
             <Link href={`/dashboard/attendance/${activeMeeting.id}`} className="px-4 py-2.5 rounded-xl bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-all font-bold text-sm flex items-center gap-2">
               <QrCode className="w-4 h-4" /> Registrar Asistencia QR
             </Link>
           )}
-          {!isReadOnly && (
+          {canCreate && (
             <button onClick={() => setShowCreate(true)} className="px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm flex items-center gap-2 transition-all">
               <Plus className="w-4 h-4" /> Nueva Reunión
             </button>
@@ -150,12 +153,16 @@ export default function AttendancePage() {
                     <p className="text-2xl font-black text-white">{m.attendeeCount}<span className="text-slate-500 text-sm">/{totalBeneficiaries}</span></p>
                     <p className="text-[10px] text-brand-400 font-bold">{pct}% asistencia</p>
                   </div>
-                  {m.status === 'active' && !isReadOnly && (
+                  {m.status === 'active' && (
                     <>
-                      <Link href={`/dashboard/attendance/${m.id}`} className="px-3 py-2 rounded-xl bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-all text-xs font-bold flex items-center gap-1.5">
-                        <QrCode className="w-4 h-4" /> Escanear QR
-                      </Link>
-                      <button onClick={() => closeMeeting(m.id)} className="p-2 rounded-xl bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-all" title="Cerrar reunión"><CheckCircle className="w-4 h-4" /></button>
+                      {canScan && (
+                        <Link href={`/dashboard/attendance/${m.id}`} className="px-3 py-2 rounded-xl bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-all text-xs font-bold flex items-center gap-1.5">
+                          <QrCode className="w-4 h-4" /> Escanear QR
+                        </Link>
+                      )}
+                      {canCreate && (
+                        <button onClick={() => closeMeeting(m.id)} className="p-2 rounded-xl bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-all" title="Cerrar reunión"><CheckCircle className="w-4 h-4" /></button>
+                      )}
                     </>
                   )}
                   <Link href={`/dashboard/attendance/${m.id}`} className="p-2 rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 transition-all" title="Ver detalle"><Eye className="w-4 h-4" /></Link>

@@ -90,44 +90,55 @@ export default function DashboardLayout({
     }
   };
 
-  const isMunicipalRole = ['municipal_admin', 'municipal_viewer'].includes(membership?.role || '');
+  const role = membership?.role || '';
+  const isMunicipalRole = ['municipal_admin', 'municipal_viewer'].includes(role);
   const isMunicipalOrg = organization?.org_type === 'municipality';
   const isMunicipal = isMunicipalOrg || isMunicipalRole;
 
   const navigation = [
-    // Si es municipal, el Panel Municipal es su pantalla principal de entrada
     ...(isMunicipal ? [
       { name: 'Panel Municipal', href: '/dashboard/municipal', icon: Building2 },
     ] : [
       { name: 'Panel', href: '/dashboard', icon: LayoutDashboard },
     ]),
-    
-    // Solo mostrar herramientas operativas si NO es un perfil puramente municipal o de lectura
-    ...(!isMunicipal && !['viewer', 'auditor'].includes(membership?.role || '') ? [
-      { name: 'Diseños', href: '/dashboard/designs', icon: Palette },
-      { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
-      { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
-      { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
-      { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
-      { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
-      { name: 'Validar QR', href: '/dashboard/scanner', icon: QrCode },
-      { name: 'Emitir', href: '/dashboard/issue', icon: Upload },
-    ] : []),
-
-    // Secciones para Auditor / Visualizador (Acceso a listas pero no a herramientas de edición/escaneo)
-    ...(['viewer', 'auditor'].includes(membership?.role || '') ? [
-      { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
-      { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
-      { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
-      { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
-      { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
-    ] : []),
-    
-    // Configuración: No disponible para visualizadores simples
-    ...(!['viewer', 'municipal_viewer'].includes(membership?.role || '') ? [
-      { name: 'Configuración', href: '/dashboard/settings', icon: Settings },
-    ] : []),
   ];
+
+  if (!isMunicipal) {
+    if (['owner', 'admin'].includes(role)) {
+      navigation.push(
+        { name: 'Diseños', href: '/dashboard/designs', icon: Palette },
+        { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
+        { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
+        { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
+        { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
+        { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
+        { name: 'Validar QR', href: '/dashboard/scanner', icon: QrCode },
+        { name: 'Emitir', href: '/dashboard/issue', icon: Upload }
+      );
+    } else if (role === 'validator') {
+      navigation.push(
+        { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
+        { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
+        { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
+        { name: 'Validar QR', href: '/dashboard/scanner', icon: QrCode }
+      );
+    } else if (['viewer', 'auditor'].includes(role)) {
+      navigation.push(
+        { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
+        { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
+        { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
+        { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
+        { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList }
+      );
+    }
+  }
+
+  // Configuración
+  if (!['viewer', 'municipal_viewer', 'validator'].includes(role)) {
+    navigation.push(
+      { name: 'Configuración', href: '/dashboard/settings', icon: Settings }
+    );
+  }
 
   useEffect(() => {
     if (!loading) {

@@ -456,14 +456,14 @@ export default function SettingsPage() {
 
   if (!organization) return null;
 
-  if (['viewer', 'municipal_viewer'].includes(membership?.role || '')) {
+  if (['viewer', 'municipal_viewer', 'validator'].includes(membership?.role || '')) {
     return (
       <div className="min-h-[400px] flex flex-col items-center justify-center p-8 text-center animate-fade-in">
         <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
           <AlertCircle className="w-8 h-8 text-red-500" />
         </div>
         <h2 className="text-xl font-bold text-white mb-2">Acceso Denegado</h2>
-        <p className="text-slate-400 max-w-md">Tu perfil de visualizador no tiene permisos para acceder a las configuraciones del sistema.</p>
+        <p className="text-slate-400 max-w-md">Tu perfil no tiene permisos para acceder a las configuraciones del sistema.</p>
       </div>
     );
   }
