@@ -330,12 +330,20 @@ export default function CardsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {selectedIds.length === 1 && (
-              <button
-                onClick={() => setSelectedCard(cards.find(c => c.id === selectedIds[0]) || null)}
-                className="btn-primary px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.2)]"
-              >
-                <Eye className="w-4 h-4" /> Vista Previa
-              </button>
+              <>
+                <button
+                  onClick={() => setSelectedCard(cards.find(c => c.id === selectedIds[0]) || null)}
+                  className="btn-primary px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.2)]"
+                >
+                  <Eye className="w-4 h-4" /> Vista Previa
+                </button>
+                <button
+                  onClick={() => handleSendWhatsApp(cards.find(c => c.id === selectedIds[0])!)}
+                  className="btn-ghost bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] hover:bg-[#25D366]/20 hover:text-[#25D366] px-4 py-2 text-xs font-bold flex items-center gap-2"
+                >
+                  <MessageCircle className="w-4 h-4" /> WhatsApp
+                </button>
+              </>
             )}
             <button
               onClick={handleBulkResendEmail}

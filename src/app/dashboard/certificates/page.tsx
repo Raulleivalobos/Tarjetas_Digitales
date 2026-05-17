@@ -49,7 +49,7 @@ export default function CertificatesPage() {
     try {
       let query = supabase
         .from('certificates')
-        .select('*, beneficiaries(full_name, rut)')
+        .select('*, beneficiaries(full_name, rut, phone)')
         .eq('org_id', organization.id)
         .order('issued_at', { ascending: false });
 
