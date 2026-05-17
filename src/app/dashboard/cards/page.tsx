@@ -223,6 +223,47 @@ export default function CardsPage() {
     }
   };
 
+  const handleBulkResendEmail = async () => {
+    const cardsToEmail = cards.filter(c => selectedIds.includes(c.id));
+    const validCards = cardsToEmail.filter(c => c.beneficiary?.email);
+    
+    if (validCards.length === 0) {
+      alert('Ninguno de los beneficiarios seleccionados tiene un correo electrónico registrado.');
+      return;
+    }
+
+    if (!confirm(`Se enviarán correos a ${validCards.length} socio(s). ¿Deseas continuar?`)) return;
+
+    setResending('bulk');
+    let successCount = 0;
+    
+    try {
+      const baseUrl = window.location.origin;
+      
+      for (const card of validCards) {
+        const cardUrl = `${baseUrl}/validate/${organization?.slug}/${card.id}`;
+        const { success } = await sendCertificateNotification({
+          to: card.beneficiary.email!,
+          name: card.beneficiary.full_name,
+          type: 'Tarjeta Digital',
+          folio: card.card_number || card.id.split('-')[0],
+          rut: card.beneficiary.rut,
+          orgName: organization?.name || 'SkardKey',
+          url: cardUrl
+        });
+        if (success) successCount++;
+      }
+
+      alert(`Se enviaron ${successCount} de ${validCards.length} correos exitosamente.`);
+    } catch (err) {
+      console.error('Error in bulk resend:', err);
+      alert('Ocurrió un error durante el envío masivo.');
+    } finally {
+      setResending(null);
+      setSelectedIds([]);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -263,9 +304,21 @@ export default function CardsPage() {
                 onClick={() => setSelectedCard(cards.find(c => c.id === selectedIds[0]) || null)}
                 className="btn-primary px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.2)]"
               >
-                <Eye className="w-4 h-4" /> Ver Tarjeta
+                <Eye className="w-4 h-4" /> Vista Previa
               </button>
             )}
+            <button
+              onClick={handleBulkResendEmail}
+              disabled={resending === 'bulk'}
+              className="btn-ghost bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 px-4 py-2 text-xs font-bold flex items-center gap-2"
+            >
+              {resending === 'bulk' ? (
+                 <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
+              ) : (
+                 <Mail className="w-4 h-4" />
+              )}
+              Enviar Correo{selectedIds.length > 1 ? 's' : ''}
+            </button>
             {isAdmin && (
               <>
                 <button
@@ -287,7 +340,7 @@ export default function CardsPage() {
                   disabled={isUpdating}
                   className="btn-ghost bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 px-4 py-2 text-xs font-bold flex items-center gap-2"
                 >
-                  <ShieldAlert className="w-4 h-4" /> Revocar
+                  <ShieldAlert className="w-4 h-4" /> Anular
                 </button>
               </>
             )}
