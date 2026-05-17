@@ -41,6 +41,10 @@ function IssuePageContent() {
     rut: '', 
     email: '',
     phone: '',
+    address: '',
+    address_number: '',
+    id_socio: '',
+    issued_date: new Date().toISOString().split('T')[0],
     comuna: '',
     type: 'basic', // basic or blockchain
     language: 'es',
@@ -142,6 +146,9 @@ function IssuePageContent() {
               full_name: data.full_name || prev.full_name,
               email: data.email || prev.email,
               phone: data.phone || prev.phone,
+              address: data.address || prev.address,
+              address_number: data.address_number || prev.address_number,
+              id_socio: (data.custom_fields as any)?.['ID Socio'] || prev.id_socio,
               comuna: data.comuna || prev.comuna,
               status: data.status || prev.status,
               customFields: { ...prev.customFields, ...(data.custom_fields || {}) }
@@ -219,6 +226,10 @@ function IssuePageContent() {
         finalPhotoUrl = publicUrlData.publicUrl;
       }
 
+      // Build custom_fields including id_socio
+      const builtCustomFields = { ...manualForm.customFields };
+      if (manualForm.id_socio) builtCustomFields['ID Socio'] = manualForm.id_socio;
+
       if (!beneficiaryId) {
         const { data: ben, error: insertError } = await supabase
           .from('beneficiaries')
@@ -230,9 +241,11 @@ function IssuePageContent() {
             rut: cleanRut,
             email: manualForm.email || null,
             phone: manualForm.phone || null,
+            address: manualForm.address || null,
+            address_number: manualForm.address_number || null,
             comuna: manualForm.comuna || null,
             photo_url: finalPhotoUrl,
-            custom_fields: { ...manualForm.customFields },
+            custom_fields: builtCustomFields,
             status: manualForm.status === 'inactive' ? 'inactive' : 'active'
           })
           .select()
@@ -249,9 +262,11 @@ function IssuePageContent() {
             full_name: manualForm.full_name,
             email: manualForm.email || null,
             phone: manualForm.phone || null,
+            address: manualForm.address || null,
+            address_number: manualForm.address_number || null,
             comuna: manualForm.comuna || null,
             photo_url: finalPhotoUrl || undefined,
-            custom_fields: { ...manualForm.customFields },
+            custom_fields: builtCustomFields,
             status: manualForm.status === 'inactive' ? 'inactive' : 'active'
           })
           .eq('id', beneficiaryId);
@@ -1027,6 +1042,26 @@ function IssuePageContent() {
                     <h3 className="text-[10px] font-black text-white uppercase tracking-widest font-mono">Ubicación</h3>
                   </div>
                   <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Dirección (Calle / Pasaje)</label>
+                    <input
+                      type="text"
+                      value={manualForm.address || ''}
+                      onChange={e => setManualForm({...manualForm, address: e.target.value})}
+                      className="glass-input w-full px-4 py-2.5 text-xs"
+                      placeholder="Ej. Av. Las Flores"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Nro. Dirección</label>
+                    <input
+                      type="text"
+                      value={manualForm.address_number || ''}
+                      onChange={e => setManualForm({...manualForm, address_number: e.target.value})}
+                      className="glass-input w-full px-4 py-2.5 text-xs font-mono"
+                      placeholder="Ej. 123, 45-B"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Comuna</label>
                     <input
                       type="text"
@@ -1034,6 +1069,41 @@ function IssuePageContent() {
                       onChange={e => setManualForm({...manualForm, comuna: e.target.value})}
                       className="glass-input w-full px-4 py-2.5 text-xs"
                       placeholder="Ej. Puente Alto"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* ID Socio + Fecha Emisión */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="glass-card-solid p-6 border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Fingerprint className="w-4 h-4 text-slate-500" />
+                    <h3 className="text-[10px] font-black text-white uppercase tracking-widest font-mono">ID Socio</h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Número de Socio</label>
+                    <input
+                      type="text"
+                      value={manualForm.id_socio || ''}
+                      onChange={e => setManualForm({...manualForm, id_socio: e.target.value, customFields: { ...manualForm.customFields, 'ID Socio': e.target.value }})}
+                      className="glass-input w-full px-4 py-2.5 text-xs font-mono font-bold text-brand-400"
+                      placeholder="Ej. 001, 1234"
+                    />
+                  </div>
+                </div>
+                <div className="glass-card-solid p-6 border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Calendar className="w-4 h-4 text-slate-500" />
+                    <h3 className="text-[10px] font-black text-white uppercase tracking-widest font-mono">Fecha Emisión</h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Fecha en la Tarjeta</label>
+                    <input
+                      type="date"
+                      value={manualForm.issued_date || ''}
+                      onChange={e => setManualForm({...manualForm, issued_date: e.target.value, customFields: { ...manualForm.customFields, 'Fecha': e.target.value, 'Fecha Emisión': e.target.value }})}
+                      className="glass-input w-full px-4 py-2.5 text-xs font-mono"
                     />
                   </div>
                 </div>
