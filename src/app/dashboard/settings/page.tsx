@@ -695,10 +695,12 @@ export default function SettingsPage() {
                       ) : (
                         <Building2 className="w-12 h-12 text-slate-700" />
                       )}
-                      <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                        <input type="file" className="hidden" onChange={handleLogoUpload} accept="image/*" />
-                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">Cambiar Logo</span>
-                      </label>
+                      {!isReadOnly && (
+                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                          <input type="file" className="hidden" onChange={handleLogoUpload} accept="image/*" />
+                          <span className="text-[10px] font-bold text-white uppercase tracking-widest">Cambiar Logo</span>
+                        </label>
+                      )}
                       {uploading && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                           <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent animate-spin rounded-full" />
@@ -807,10 +809,12 @@ export default function SettingsPage() {
                           ) : (
                             <div className="text-[10px] text-slate-600 text-center px-2">Sin firma</div>
                           )}
-                          <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                            <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'president')} accept="image/*" />
-                            <span className="text-[9px] font-bold text-white uppercase tracking-tighter text-center px-1">Cambiar Firma</span>
-                          </label>
+                          {!isReadOnly && (
+                            <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                              <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'president')} accept="image/*" />
+                              <span className="text-[9px] font-bold text-white uppercase tracking-tighter text-center px-1">Cambiar Firma</span>
+                            </label>
+                          )}
                           {uploading && (
                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                               <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent animate-spin rounded-full" />
@@ -825,11 +829,13 @@ export default function SettingsPage() {
                             className="glass-input w-full px-3 py-2 text-sm"
                             placeholder="Nombre completo"
                           />
-                          <label className="w-full py-2 px-3 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer border border-brand-500/20 transition-all">
-                            <Upload className="w-3.5 h-3.5" />
-                            Subir Firma
-                            <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'president')} accept="image/*" />
-                          </label>
+                          {!isReadOnly && (
+                            <label className="w-full py-2 px-3 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer border border-brand-500/20 transition-all">
+                              <Upload className="w-3.5 h-3.5" />
+                              Subir Firma
+                              <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'president')} accept="image/*" />
+                            </label>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -852,10 +858,12 @@ export default function SettingsPage() {
                           ) : (
                             <div className="text-[10px] text-slate-600 text-center px-2">Sin firma</div>
                           )}
-                          <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                            <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'secretary')} accept="image/*" />
-                            <span className="text-[9px] font-bold text-white uppercase tracking-tighter text-center px-1">Cambiar Firma</span>
-                          </label>
+                          {!isReadOnly && (
+                            <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                              <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'secretary')} accept="image/*" />
+                              <span className="text-[9px] font-bold text-white uppercase tracking-tighter text-center px-1">Cambiar Firma</span>
+                            </label>
+                          )}
                           {uploading && (
                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                               <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent animate-spin rounded-full" />
@@ -870,11 +878,13 @@ export default function SettingsPage() {
                             className="glass-input w-full px-3 py-2 text-sm"
                             placeholder="Nombre completo"
                           />
-                          <label className="w-full py-2 px-3 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer border border-brand-500/20 transition-all">
-                            <Upload className="w-3.5 h-3.5" />
-                            Subir Firma
-                            <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'secretary')} accept="image/*" />
-                          </label>
+                          {!isReadOnly && (
+                            <label className="w-full py-2 px-3 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer border border-brand-500/20 transition-all">
+                              <Upload className="w-3.5 h-3.5" />
+                              Subir Firma
+                              <input type="file" className="hidden" onChange={(e) => handleSignatureUpload(e, 'secretary')} accept="image/*" />
+                            </label>
+                          )}
                         </div>
                       </div>
                     </div>
