@@ -61,7 +61,7 @@ export default function BeneficiariesPage() {
     }
 
     if (search) {
-      query = query.or(`full_name.ilike.%${search}%,rut.ilike.%${search}%,email.ilike.%${search}%`);
+      query = query.or(`full_name.ilike.%${search}%,rut.ilike.%${search}%,email.ilike.%${search}%,address.ilike.%${search}%,address_number.ilike.%${search}%`);
     }
 
     const { data, error } = await query;
@@ -224,19 +224,49 @@ export default function BeneficiariesPage() {
               <span className="hidden sm:inline">PDF</span>
             </button>
           </div>
-
-          {/* Modify selected button */}
-          {selectedIds.size === 1 && !isReadOnly && (
-            <Link
-              href={`/dashboard/beneficiaries/${Array.from(selectedIds)[0]}/edit`}
-              className="btn-primary px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest font-mono flex items-center gap-2 shadow-[0_0_20px_rgba(99,102,241,0.2)]"
-            >
-              <Edit className="w-4 h-4" />
-              <span>Modificar Datos</span>
-            </Link>
-          )}
         </div>
       </div>
+
+      {/* Action Bar for Selection */}
+      {selectedIds.size > 0 && (
+        <div className="glass-card-solid bg-brand-500/10 border-brand-500/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in slide-in-from-top-4 fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center">
+              <CheckSquare className="w-4 h-4 text-brand-400" />
+            </div>
+            <span className="text-sm font-bold text-brand-300">{selectedIds.size} socio(s) seleccionado(s)</span>
+            <button onClick={() => setSelectedIds(new Set())} className="text-[10px] uppercase font-bold text-slate-400 hover:text-white transition-colors ml-2 bg-white/5 px-2 py-1 rounded">Desmarcar</button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedIds.size === 1 && !isReadOnly && (
+              <Link
+                href={`/dashboard/beneficiaries/${Array.from(selectedIds)[0]}/edit`}
+                className="btn-primary px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.2)]"
+              >
+                <Edit className="w-4 h-4" /> Modificar
+              </Link>
+            )}
+            {selectedIds.size === 1 && (
+              <Link
+                href={`/dashboard/beneficiaries/${Array.from(selectedIds)[0]}`}
+                className="btn-ghost px-4 py-2 text-xs font-bold flex items-center gap-2 border border-white/10"
+              >
+                <Eye className="w-4 h-4" /> Ver Detalle
+              </Link>
+            )}
+            {!isReadOnly && (
+              <button
+                onClick={() => setDeleteModal(Array.from(selectedIds)[0])}
+                disabled={selectedIds.size > 1}
+                title={selectedIds.size > 1 ? "Solo puedes eliminar de a 1 por ahora" : "Eliminar"}
+                className="btn-ghost bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 px-4 py-2 text-xs font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="w-4 h-4" /> Eliminar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="glass-card p-4">
@@ -245,7 +275,7 @@ export default function BeneficiariesPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
-              placeholder="Buscar por nombre, RUT o email..."
+              placeholder="Buscar por nombre, RUT, email, dirección o nro..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="glass-input w-full pl-11 pr-4 py-2.5 text-sm"
