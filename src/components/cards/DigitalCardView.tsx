@@ -114,6 +114,9 @@ export function DigitalCardView({
           else if (keyUpper === 'FECHA' || keyUpper === 'FECHA EMISIÓN') val = customVal || formatDate(card.issued_at) || val;
           else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO') val = customVal || (card.status === 'active' ? 'Activo' : card.status) || val;
           else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') val = customVal || beneficiary.email || val;
+          else if (keyUpper === 'DIRECCIÓN' || keyUpper === 'DIRECCION' || keyUpper === 'DOMICILIO') {
+            val = customVal || [beneficiary.address, beneficiary.address_number].filter(Boolean).join(' ') || val;
+          }
           else if (keyUpper && (keyUpper.includes('TARJETA') || keyUpper.includes('Nº') || keyUpper.includes('N°'))) {
             val = card.card_number || val;
             // Forzar un tamaño de fuente pequeño y forzar un ancho mínimo para que quepa en una sola línea
