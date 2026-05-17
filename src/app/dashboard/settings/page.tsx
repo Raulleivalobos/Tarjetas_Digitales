@@ -991,14 +991,19 @@ export default function SettingsPage() {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            {member.role === 'owner' ? (
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border bg-purple-500/10 text-purple-400 border-purple-500/20">
+                            {member.role === 'owner' || isReadOnly ? (
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${
+                                member.role === 'owner' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                member.role === 'admin' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                member.role === 'validator' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                member.role === 'auditor' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                              }`}>
                                 {roleDescriptions[member.role]?.title || member.role}
                               </span>
                             ) : (
                               <select
                                 value={member.role}
-                                disabled={isReadOnly}
                                 onChange={(e) => handleRoleChange(member.id, e.target.value as Role)}
                                 className={`inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border bg-transparent cursor-pointer hover:bg-white/5 transition-colors focus:outline-none ${
                                   member.role === 'admin' ? 'text-blue-400 border-blue-500/20' :
