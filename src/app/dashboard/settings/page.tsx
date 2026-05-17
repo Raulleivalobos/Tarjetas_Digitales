@@ -180,8 +180,8 @@ export default function SettingsPage() {
       const reportData = reportLogs.map((log: any) => ({
         fecha: new Date(log.created_at).toLocaleString('es-CL'),
         usuario: log.user_email || 'Desconocido',
-        accion: log.action.replace(/_/g, ' '),
-        entidad: log.entity_type,
+        accion: formatLogAction(log.action),
+        entidad: log.entity_type === 'membership' ? 'Acceso a Org' : log.entity_type === 'digital_card' ? 'Tarjeta Digital' : log.entity_type === 'settings' ? 'Configuración' : log.entity_type,
         detalle: formatLogDetails(log.action, log.details)
       }));
 
@@ -215,22 +215,35 @@ export default function SettingsPage() {
     }
   };
 
+  const formatLogAction = (action: string) => {
+    const actions: Record<string, string> = {
+      'UPDATE_MEMBER_ROLE': 'Cambio de Rol',
+      'MEMBER_ADDED': 'Usuario Añadido',
+      'REMOVE_MEMBER': 'Usuario Eliminado',
+      'ORG_SETTINGS_UPDATED': 'Configuración Modificada',
+      'CARD_ISSUED': 'Tarjeta Emitida',
+      'CARD_STATUS_CHANGED': 'Estado Tarjeta',
+      'CARD_REVOKED': 'Tarjeta Revocada'
+    };
+    return actions[action] || action.replace(/_/g, ' ');
+  };
+
   const formatLogDetails = (action: string, details: any) => {
     if (!details) return '-';
     try {
       const parsed = typeof details === 'string' ? JSON.parse(details) : details;
       
-      if (action === 'MEMBER_UPDATED') {
-        const o = roleDescriptions[parsed.oldRole as Role]?.title || parsed.oldRole;
-        const n = roleDescriptions[parsed.newRole as Role]?.title || parsed.newRole;
-        return `Rol actualizado a ${parsed.targetUserEmail || 'usuario'}: de ${o} a ${n}`;
+      if (action === 'UPDATE_MEMBER_ROLE') {
+        const o = roleDescriptions[parsed.old_role as Role]?.title || parsed.old_role || 'desconocido';
+        const n = roleDescriptions[parsed.new_role as Role]?.title || parsed.new_role;
+        return `Rol actualizado a ${parsed.target_email || 'usuario'}: de ${o} a ${n}`;
       }
       if (action === 'MEMBER_ADDED') {
         const r = roleDescriptions[parsed.role as Role]?.title || parsed.role;
         return `Invitado con rol: ${r}`;
       }
-      if (action === 'MEMBER_REMOVED') {
-        return `Acceso revocado a: ${parsed.targetUserEmail || 'usuario'}`;
+      if (action === 'REMOVE_MEMBER') {
+        return `Acceso revocado a: ${parsed.target_email || 'usuario'}`;
       }
       if (action === 'ORG_SETTINGS_UPDATED') {
         return `Configuraciones de la organización modificadas`;
@@ -408,11 +421,13 @@ export default function SettingsPage() {
   };
 
   const handleRoleChange = async (memberId: string, newRole: Role) => {
+    const member = members.find(m => m.id === memberId);
     try {
-      const result = await updateMemberRole(memberId, newRole, currentUser!.id, currentUser!.email!, organization.id);
+      const result = await updateMemberRole(memberId, newRole, currentUser!.id, currentUser!.email!, organization.id, member?.email, member?.role);
       if (result.success) {
         setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
         setMessage({ text: 'Rol actualizado correctamente', type: 'success' });
+        fetchLogs(); // Optionally refresh logs to show the new event immediately
       } else {
         setMessage({ text: `Error al actualizar rol: ${result.error}`, type: 'error' });
       }
@@ -426,7 +441,7 @@ export default function SettingsPage() {
     if (!window.confirm(`¿Estás seguro de que deseas eliminar el acceso a ${email}?`)) return;
     
     try {
-      const result = await removeOrgMember(memberId, currentUser!.id, currentUser!.email!, organization.id);
+      const result = await removeOrgMember(memberId, currentUser!.id, currentUser!.email!, organization.id, email);
       if (result.success) {
         setMembers(prev => prev.filter(m => m.id !== memberId));
         setMessage({ text: 'Acceso revocado correctamente', type: 'success' });
@@ -1070,14 +1085,18 @@ export default function SettingsPage() {
                             <td className="px-6 py-4">
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${
                                 log.action.includes('DELETE') || log.action.includes('REMOVE') ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                log.action.includes('CREATE') || log.action.includes('ISSUE') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                log.action.includes('CREATE') || log.action.includes('ISSUED') || log.action.includes('ADDED') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                                 'bg-brand-500/10 text-brand-400 border-brand-500/20'
                               }`}>
-                                {log.action.replace(/_/g, ' ')}
+                                {formatLogAction(log.action)}
                               </span>
                             </td>
                             <td className="px-6 py-4">
-                              <div className="text-xs text-slate-400 capitalize">{log.entity_type}</div>
+                              <div className="text-xs text-slate-400 capitalize">
+                                {log.entity_type === 'membership' ? 'Acceso a Org' : 
+                                 log.entity_type === 'digital_card' ? 'Tarjeta Digital' : 
+                                 log.entity_type === 'settings' ? 'Configuración' : log.entity_type}
+                              </div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="text-[10px] text-slate-500 font-mono max-w-[250px] truncate" title={JSON.stringify(log.details)}>

@@ -47,7 +47,9 @@ export async function updateMemberRole(
   newRole: string,
   adminId: string,
   adminEmail: string,
-  orgId: string
+  orgId: string,
+  targetEmail?: string,
+  oldRole?: string
 ) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -70,7 +72,7 @@ export async function updateMemberRole(
       action: 'UPDATE_MEMBER_ROLE',
       entityType: 'membership',
       entityId: memberId,
-      details: { new_role: newRole }
+      details: { new_role: newRole, old_role: oldRole, target_email: targetEmail }
     });
 
     return { success: true };
@@ -84,7 +86,8 @@ export async function removeOrgMember(
   memberId: string,
   adminId: string,
   adminEmail: string,
-  orgId: string
+  orgId: string,
+  targetEmail?: string
 ) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -106,7 +109,8 @@ export async function removeOrgMember(
       userEmail: adminEmail,
       action: 'REMOVE_MEMBER',
       entityType: 'membership',
-      entityId: memberId
+      entityId: memberId,
+      details: { target_email: targetEmail }
     });
 
     return { success: true };
