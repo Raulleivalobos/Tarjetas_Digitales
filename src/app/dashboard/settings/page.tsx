@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef} from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCircle, CheckCircle2, Upload, Trash2, FileText, DollarSign, Plus, Key, RefreshCw } from 'lucide-react';
+import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCircle, CheckCircle2, Upload, Trash2, FileText, DollarSign, Plus, Key, RefreshCw, FileDown } from 'lucide-react';
 import { CHILE_DATA } from '@/lib/chile-data';
+import { exportReportToPDF } from '@/lib/pdfGenerator';
 
 import { inviteUserToOrg } from '@/app/actions/invite';
 import { getOrgMembers, updateMemberRole, removeOrgMember } from '@/app/actions/org';
@@ -40,6 +41,9 @@ export default function SettingsPage() {
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [municipalities, setMunicipalities] = useState<any[]>([]);
+  const [showLogReport, setShowLogReport] = useState(false);
+  const [logDateRange, setLogDateRange] = useState({ start: '', end: '' });
+  const [generatingLogReport, setGeneratingLogReport] = useState(false);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   
@@ -142,6 +146,110 @@ export default function SettingsPage() {
       console.error('Failed to fetch members:', err);
     } finally {
       setLoadingMembers(false);
+    }
+  };
+
+  const handleGenerateLogReport = async () => {
+    if (!organization) return;
+    setGeneratingLogReport(true);
+    
+    try {
+      let query = supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('org_id', organization.id)
+        .order('created_at', { ascending: false });
+
+      if (logDateRange.start) {
+        query = query.gte('created_at', `${logDateRange.start}T00:00:00Z`);
+      }
+      if (logDateRange.end) {
+        query = query.lte('created_at', `${logDateRange.end}T23:59:59Z`);
+      }
+
+      const { data: reportLogs, error } = await query;
+      
+      if (error) throw error;
+      
+      if (!reportLogs || reportLogs.length === 0) {
+        setMessage({ text: 'No hay registros en este rango de fechas.', type: 'error' });
+        setGeneratingLogReport(false);
+        return;
+      }
+
+      const reportData = reportLogs.map((log: any) => ({
+        fecha: new Date(log.created_at).toLocaleString('es-CL'),
+        usuario: log.user_email || 'Desconocido',
+        accion: log.action.replace(/_/g, ' '),
+        entidad: log.entity_type,
+        detalle: formatLogDetails(log.action, log.details)
+      }));
+
+      await exportReportToPDF({
+        filename: `Auditoria_${organization.slug}_${new Date().getTime()}`,
+        title: 'Reporte de Registro de Actividad',
+        subtitle: 'Historial de auditoría y cambios en la plataforma',
+        orgName: organization.name,
+        logoUrl: organization.logo_url || undefined,
+        dateRange: logDateRange.start || logDateRange.end ? logDateRange : undefined,
+        summary: [
+          { label: 'Total de Registros', value: reportLogs.length.toString() },
+          { label: 'Fecha de Emisión', value: new Date().toLocaleDateString('es-CL') }
+        ],
+        columns: [
+          { header: 'Fecha y Hora', key: 'fecha', width: 15 },
+          { header: 'Usuario', key: 'usuario', width: 20 },
+          { header: 'Acción', key: 'accion', width: 15 },
+          { header: 'Entidad', key: 'entidad', width: 15 },
+          { header: 'Detalle', key: 'detalle', width: 35 }
+        ],
+        data: reportData
+      });
+      
+      setShowLogReport(false);
+    } catch (err) {
+      console.error('Error al generar reporte de logs:', err);
+      setMessage({ text: 'Hubo un error al generar el reporte PDF.', type: 'error' });
+    } finally {
+      setGeneratingLogReport(false);
+    }
+  };
+
+  const formatLogDetails = (action: string, details: any) => {
+    if (!details) return '-';
+    try {
+      const parsed = typeof details === 'string' ? JSON.parse(details) : details;
+      
+      if (action === 'MEMBER_UPDATED') {
+        const o = roleDescriptions[parsed.oldRole as Role]?.title || parsed.oldRole;
+        const n = roleDescriptions[parsed.newRole as Role]?.title || parsed.newRole;
+        return `Rol actualizado a ${parsed.targetUserEmail || 'usuario'}: de ${o} a ${n}`;
+      }
+      if (action === 'MEMBER_ADDED') {
+        const r = roleDescriptions[parsed.role as Role]?.title || parsed.role;
+        return `Invitado con rol: ${r}`;
+      }
+      if (action === 'MEMBER_REMOVED') {
+        return `Acceso revocado a: ${parsed.targetUserEmail || 'usuario'}`;
+      }
+      if (action === 'ORG_SETTINGS_UPDATED') {
+        return `Configuraciones de la organización modificadas`;
+      }
+      if (action === 'CARD_STATUS_CHANGED' || action === 'CARD_REVOKED') {
+         return `Estado de tarjeta ${parsed.cardNumber || ''} cambiado a ${parsed.newStatus || parsed.status || 'inactiva'}`;
+      }
+      if (action === 'CARD_ISSUED') {
+         return `Tarjeta ${parsed.cardNumber || ''} emitida`;
+      }
+
+      if (typeof parsed === 'object') {
+        return Object.entries(parsed)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join(', ');
+      }
+      return String(parsed);
+    } catch (e) {
+      return String(details);
     }
   };
 
@@ -904,14 +1012,23 @@ export default function SettingsPage() {
                   </h2>
                   <p className="text-slate-500 text-sm mt-1">Historial de acciones críticas realizadas por los colaboradores.</p>
                 </div>
-                <button 
-                  onClick={fetchLogs}
-                  disabled={loadingLogs}
-                  className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-white transition-all"
-                  title="Actualizar registro"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loadingLogs ? 'animate-spin' : ''}`} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setShowLogReport(true)}
+                    className="p-2 rounded-lg bg-white/5 text-brand-400 hover:text-brand-300 hover:bg-brand-500/10 transition-all flex items-center gap-2 text-xs font-bold border border-white/5"
+                    title="Exportar Reporte PDF"
+                  >
+                    <FileDown className="w-4 h-4" /> Exportar
+                  </button>
+                  <button 
+                    onClick={fetchLogs}
+                    disabled={loadingLogs}
+                    className="p-2 rounded-lg bg-white/5 text-slate-400 hover:text-white transition-all"
+                    title="Actualizar registro"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loadingLogs ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
               </div>
 
               <div className="glass-card overflow-hidden">
@@ -963,8 +1080,8 @@ export default function SettingsPage() {
                               <div className="text-xs text-slate-400 capitalize">{log.entity_type}</div>
                             </td>
                             <td className="px-6 py-4">
-                              <div className="text-[10px] text-slate-500 font-mono max-w-[200px] truncate" title={JSON.stringify(log.details)}>
-                                {log.details ? (typeof log.details === 'string' ? log.details : JSON.stringify(log.details)) : '-'}
+                              <div className="text-[10px] text-slate-500 font-mono max-w-[250px] truncate" title={JSON.stringify(log.details)}>
+                                {formatLogDetails(log.action, log.details)}
                               </div>
                             </td>
                           </tr>
@@ -978,6 +1095,73 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Log Report Modal */}
+      {showLogReport && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 md:pt-24 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+          <div className="glass-card w-full max-w-lg p-6 space-y-6 animate-in slide-in-from-top-8 duration-300 my-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <FileDown className="w-5 h-5 text-brand-400" />
+                Exportar Registro de Actividad
+              </h2>
+              <button onClick={() => setShowLogReport(false)} className="text-slate-500 hover:text-white">
+                <Plus className="w-5 h-5 rotate-45" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Fecha Desde (Opcional)</label>
+                  <input 
+                    type="date" 
+                    value={logDateRange.start}
+                    onChange={(e) => setLogDateRange({ ...logDateRange, start: e.target.value })}
+                    className="glass-input w-full px-3 py-2 text-sm" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Fecha Hasta (Opcional)</label>
+                  <input 
+                    type="date" 
+                    value={logDateRange.end}
+                    onChange={(e) => setLogDateRange({ ...logDateRange, end: e.target.value })}
+                    className="glass-input w-full px-3 py-2 text-sm" 
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
+                <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                <p className="text-[10px] text-blue-300/80 leading-tight">
+                  Se generará un documento PDF con todos los movimientos de seguridad realizados en la plataforma durante el rango de fechas seleccionado.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button 
+                onClick={() => setShowLogReport(false)}
+                className="flex-1 btn-ghost py-2.5 text-sm font-bold border border-white/5"
+              >
+                Cancelar
+              </button>
+              <button 
+                disabled={generatingLogReport}
+                className="flex-1 btn-primary py-2.5 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                onClick={handleGenerateLogReport}
+              >
+                {generatingLogReport ? (
+                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Generando...</>
+                ) : (
+                  <><FileDown className="w-4 h-4" /> Descargar PDF</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
