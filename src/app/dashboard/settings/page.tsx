@@ -84,12 +84,12 @@ export default function SettingsPage() {
   const [inviteRole, setInviteRole] = useState<Role>('validator');
 
   useEffect(() => {
-    if (organization) {
+    if (organization?.id) {
       if (activeTab === 'members') fetchMembers();
       if (activeTab === 'security') fetchLogs();
       if (activeTab === 'general') fetchMunicipalities();
     }
-  }, [activeTab, organization]);
+  }, [activeTab, organization?.id]);
 
   const fetchMunicipalities = async () => {
     const { data } = await supabase

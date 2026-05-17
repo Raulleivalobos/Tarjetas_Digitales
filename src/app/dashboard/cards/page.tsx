@@ -52,7 +52,7 @@ export default function CardsPage() {
 
   useEffect(() => {
     const fetchCards = async () => {
-      if (!organization) {
+      if (!organization?.id) {
         if (!authLoading) setLoading(false);
         return;
       }
@@ -107,7 +107,7 @@ export default function CardsPage() {
     };
 
     fetchCards();
-  }, [organization, statusFilter, search, authLoading]);
+  }, [organization?.id, statusFilter, search, authLoading]);
 
   const toggleSelectAll = () => {
     if (selectedIds.length === cards.length) {

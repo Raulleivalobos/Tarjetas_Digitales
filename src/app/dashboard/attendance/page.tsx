@@ -21,12 +21,12 @@ export default function AttendancePage() {
   const [totalBeneficiaries, setTotalBeneficiaries] = useState(0);
 
   useEffect(() => {
-    if (organization) {
+    if (organization?.id) {
       loadData();
     } else if (!authLoading) {
       setLoading(false);
     }
-  }, [organization, authLoading]);
+  }, [organization?.id, authLoading]);
 
   async function loadData() {
     if (!organization) return;

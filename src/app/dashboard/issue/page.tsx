@@ -112,7 +112,7 @@ function IssuePageContent() {
     
     loadDesigns();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organization]);
+  }, [organization?.id]);
 
   // Bulk State
   const [file, setFile] = useState<File | null>(null);
@@ -533,19 +533,17 @@ function IssuePageContent() {
 
     if (ext === 'csv') {
       const Papa = (await import('papaparse')).default;
-      const validUrl = new URL(url).toString();
-      const response = await fetch(validUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
+      const text = await file.text();
+      const parsed = Papa.parse<BulkUploadRow>(text, { 
+        header: true, 
+        skipEmptyLines: true,
+        transformHeader: (h) => h.trim().toLowerCase() 
       });
-      const text = await response.text();
-      const parsed = Papa.parse<BulkUploadRow>(text, { header: true, skipEmptyLines: true });
       dataToProcess = fixExcelDates(parsed.data);
     } else {
       const XLSX = await import('xlsx');
       const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: 'array', cellDates: false });
+      const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       dataToProcess = fixExcelDates(XLSX.utils.sheet_to_json<BulkUploadRow>(firstSheet));
     }
@@ -682,21 +680,19 @@ function IssuePageContent() {
           } else {
             currentResult.success++;
             
-            // Enviar notificación por email si existe
+            // Enviar notificación por email sin esperar (non-blocking)
             if (email && newCard) {
-              try {
-                await sendCertificateNotification({
-                  to: email,
-                  name: fullName,
-                  type: 'TARJETA DIGITAL',
-                  folio: cardNumber,
-                  rut: formatRut(cleanRut),
-                  orgName: organization.name,
-                  url: `${window.location.origin}/validate/${organization.slug}/${newCard.id}`
-                });
-              } catch (emailErr) {
+              sendCertificateNotification({
+                to: email,
+                name: fullName,
+                type: 'TARJETA DIGITAL',
+                folio: cardNumber,
+                rut: formatRut(cleanRut),
+                orgName: organization.name,
+                url: `${window.location.origin}/validate/${organization.slug}/${newCard.id}`
+              }).catch(emailErr => {
                 console.error(`Error enviando email a ${email}:`, emailErr);
-              }
+              });
             }
           }
         }

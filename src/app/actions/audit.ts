@@ -1,3 +1,5 @@
+'use server';
+
 import { createClient } from '@supabase/supabase-js';
 
 export async function logActivity({
@@ -17,12 +19,15 @@ export async function logActivity({
   entityId?: string;
   details?: any;
 }) {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    serviceKey!
-  );
+  if (!supabaseUrl || !serviceKey) {
+    console.error('Audit Log missing credentials');
+    return { success: false, error: 'Configuración de servidor incompleta' };
+  }
+
+  const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
     const { data, error } = await supabase
@@ -40,13 +45,12 @@ export async function logActivity({
 
     if (error) {
       console.error('FAILED TO LOG ACTIVITY:', error);
-      throw new Error(`Audit Log Error: ${error.message}`);
+      return { success: false, error: error.message };
     }
     
-    console.log('Successfully logged activity:', action);
     return { success: true, data };
-  } catch (err) {
+  } catch (err: any) {
     console.error('Audit log exception:', err);
-    return { success: false, error: err };
+    return { success: false, error: err.message };
   }
 }

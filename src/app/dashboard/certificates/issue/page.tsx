@@ -234,9 +234,6 @@ export default function IssueCertificatePage() {
         }
       };
 
-        }
-      }
-
       const { data: newCert, error: insertError } = await supabase.from('certificates').insert(certData).select('id').single();
       if (insertError) throw insertError;
 

@@ -70,15 +70,15 @@ export default function BeneficiariesPage() {
     }
     setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organization, statusFilter, search]);
+  }, [organization?.id, statusFilter, search]);
 
   useEffect(() => {
-    if (organization) {
+    if (organization?.id) {
       fetchBeneficiaries();
     } else if (!authLoading) {
       setLoading(false);
     }
-  }, [organization, authLoading, fetchBeneficiaries]);
+  }, [organization?.id, authLoading, fetchBeneficiaries]);
 
   const handleDelete = async (id: string) => {
     if (isReadOnly || !organization) return;

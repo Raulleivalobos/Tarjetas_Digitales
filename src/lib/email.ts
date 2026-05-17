@@ -57,3 +57,47 @@ export async function sendTransactionalEmail({ to, subject, templateId, params }
     return { success: false, error };
   }
 }
+
+/**
+ * Envía un correo electrónico con contenido HTML personalizado
+ */
+export async function sendCustomEmail({ to, subject, htmlContent }: { to: string, subject: string, htmlContent: string }) {
+  const apiKey = process.env.BREVO_API_KEY;
+
+  if (!apiKey) {
+    console.warn('⚠️ BREVO_API_KEY no configurada.');
+    return { success: false, error: 'API Key missing' };
+  }
+
+  try {
+    const response = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: {
+          name: 'SkardKey Notificaciones',
+          email: 'contacto@skardkey.cl',
+        },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ Error de Brevo:', errorData);
+      return { success: false, error: errorData };
+    }
+
+    const data = await response.json();
+    return { success: true, messageId: data.messageId };
+  } catch (error) {
+    console.error('❌ Error enviando email custom:', error);
+    return { success: false, error };
+  }
+}

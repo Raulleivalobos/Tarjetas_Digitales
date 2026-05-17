@@ -10,7 +10,7 @@ import { formatDate } from '@/lib/utils';
 import { logActivity } from '@/app/actions/audit';
 
 export default function BenefitsPage() {
-  const { organization, loading: authLoading, membership } = useAuth();
+  const { organization, user, loading: authLoading, membership } = useAuth();
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const [benefits, setBenefits] = useState<any[]>([]);
@@ -30,12 +30,12 @@ export default function BenefitsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    if (organization) {
+    if (organization?.id) {
       loadData();
     } else if (!authLoading) {
       setLoading(false);
     }
-  }, [organization, authLoading]);
+  }, [organization?.id, authLoading]);
 
   async function loadData() {
     if (!organization) return;

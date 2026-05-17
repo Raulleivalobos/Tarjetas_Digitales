@@ -64,14 +64,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (activeMember) {
-        setMembership({
+        const newMembership = {
           id: activeMember.id,
           org_id: activeMember.org_id,
           user_id: activeMember.user_id,
           role: activeMember.role,
           created_at: activeMember.created_at,
+        };
+        
+        setMembership(prev => {
+          return JSON.stringify(prev) === JSON.stringify(newMembership) ? prev : newMembership;
         });
-        setOrganization(activeMember.organizations);
+        
+        setOrganization(prev => {
+          return JSON.stringify(prev) === JSON.stringify(activeMember.organizations) ? prev : activeMember.organizations;
+        });
+        
         localStorage.setItem('last_org_id', activeMember.org_id);
       } else {
         // Si tiene múltiples y no hay preferencia, obligar a seleccionar

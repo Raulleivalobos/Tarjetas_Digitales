@@ -88,7 +88,7 @@ export default function DesignsPage() {
 
   // Load designs from Supabase
   const loadDesigns = useCallback(async () => {
-    if (!organization) {
+    if (!organization?.id) {
       if (!authLoading) setLoading(false);
       return;
     }
@@ -108,7 +108,7 @@ export default function DesignsPage() {
     } finally {
       setLoading(false);
     }
-  }, [organization, authLoading, supabase]);
+  }, [organization?.id, authLoading, supabase]);
 
   useEffect(() => {
     loadDesigns();
