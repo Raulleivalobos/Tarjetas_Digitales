@@ -22,7 +22,8 @@ import {
   AlertTriangle,
   Download,
   Mail,
-  ShieldAlert
+  ShieldAlert,
+  MessageCircle
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { exportElementToPDF } from '@/lib/pdfGenerator';
@@ -224,6 +225,32 @@ export default function CardsPage() {
     } finally {
       setResending(null);
     }
+  };
+
+  const handleSendWhatsApp = (item: CardWithBeneficiary) => {
+    if (!item.beneficiary?.phone) {
+      alert('El beneficiario no tiene un número de teléfono registrado.');
+      return;
+    }
+    
+    // Clean phone number (remove +, spaces, etc)
+    let phone = item.beneficiary.phone.replace(/\D/g, '');
+    
+    // Add 569 if it's missing (Chile format common case)
+    if (phone.length === 8) phone = `569${phone}`;
+    if (phone.length === 9 && phone.startsWith('9')) phone = `56${phone}`;
+    
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}/validate/${organization?.slug}/${item.id}`;
+    
+    const firstName = item.beneficiary.full_name.split(' ')[0] || 'Socio(a)';
+    const orgName = organization?.name || 'nuestra organización';
+    const message = `¡Hola ${firstName}! 🌟 Tu Tarjeta Digital de ${orgName} ya está lista. Puedes visualizarla y descargarla en el siguiente enlace oficial: ${url}`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleBulkResendEmail = async () => {
@@ -516,6 +543,13 @@ export default function CardsPage() {
                   <td className="text-xs text-slate-400">{formatDate(c.issued_at)}</td>
                   <td className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => handleSendWhatsApp(c)}
+                        title="Enviar por WhatsApp"
+                        className="p-2 rounded-lg text-slate-400 hover:text-[#25D366] hover:bg-[#25D366]/10 transition-all"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => handleResendEmail(c)}
                         disabled={resending === c.id}

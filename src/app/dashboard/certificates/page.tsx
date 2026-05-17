@@ -18,7 +18,8 @@ import {
   DollarSign,
   UserPlus,
   Calendar,
-  FileDown
+  FileDown,
+  MessageCircle
 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { formatDateTime } from '@/lib/utils';
@@ -134,6 +135,37 @@ export default function CertificatesPage() {
     }
   };
 
+  const handleSendWhatsApp = (cert: Certificate) => {
+    // Both active member and resident certificates might have phone numbers in different structures
+    const phoneSource = cert.resident_data?.phone || (cert as any).beneficiaries?.phone;
+    
+    if (!phoneSource) {
+      alert('El receptor no tiene un número de teléfono registrado.');
+      return;
+    }
+    
+    let phone = phoneSource.replace(/\D/g, '');
+    if (phone.length === 8) phone = `569${phone}`;
+    if (phone.length === 9 && phone.startsWith('9')) phone = `56${phone}`;
+    
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}/validate/${organization?.slug}/${cert.id}`;
+    
+    const fullName = cert.resident_data?.full_name || (cert as any).beneficiaries?.full_name || 'Vecino(a)';
+    const firstName = fullName.split(' ')[0];
+    const orgName = organization?.name || 'nuestra organización';
+    
+    const typeLabel = cert.type === 'socio_activo' || cert.type === 'socio_inactivo' 
+      ? 'Certificado de Socio' 
+      : 'Certificado de Residencia';
+
+    const message = `¡Hola ${firstName}! 📄 Tu ${typeLabel} de ${orgName} ya está disponible. Puedes visualizarlo y descargarlo en el siguiente enlace oficial: ${url}`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+  };
 
   useEffect(() => {
     if (organization) {
@@ -351,6 +383,13 @@ export default function CertificatesPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleSendWhatsApp(cert)}
+                          title="Enviar por WhatsApp"
+                          className="p-2 text-slate-400 hover:text-[#25D366] hover:bg-[#25D366]/10 rounded-lg transition-colors"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </button>
                         <Link 
                           href={`/dashboard/certificates/${cert.id}`}
                           className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" 
