@@ -123,6 +123,7 @@ function IssuePageContent() {
   const [processing, setProcessing] = useState(false);
   const [preview, setPreview] = useState<BulkUploadRow[]>([]);
   const [result, setResult] = useState<BulkUploadResult | null>(null);
+  const [sendMassEmail, setSendMassEmail] = useState(false);
 
   // Auto-fetch beneficiary data when a valid RUT is typed
   useEffect(() => {
@@ -729,7 +730,7 @@ function IssuePageContent() {
             currentResult.success++;
             
             // Enviar notificación por email sin esperar (non-blocking)
-            if (email && newCard) {
+            if (email && newCard && sendMassEmail) {
               sendCertificateNotification({
                 to: email,
                 name: fullName,
@@ -1450,13 +1451,38 @@ function IssuePageContent() {
                       </div>
                     )}
 
-                    <div className="flex justify-end gap-4 pt-6 border-t border-brand-500/10 mt-6">
-                      <button onClick={() => processUpload('draft')} className="btn-secondary px-6 py-2.5 text-sm">
-                        Cargar para más tarde
-                      </button>
-                      <button onClick={() => processUpload('active')} className="btn-primary px-6 py-2.5 text-sm">
-                        Emitir Todos
-                      </button>
+                    <div className="flex flex-col xl:flex-row justify-between gap-4 pt-6 border-t border-brand-500/10 mt-6 items-center">
+                      <div className="flex flex-wrap justify-center items-center gap-4 bg-surface-950 p-3 rounded-xl border border-white/5">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input 
+                            type="radio" 
+                            name="emailSetting" 
+                            checked={!sendMassEmail}
+                            onChange={() => setSendMassEmail(false)}
+                            className="w-4 h-4 text-brand-500 bg-surface-900 border-white/20 focus:ring-brand-500/50"
+                          />
+                          <span className="text-sm text-slate-300 font-medium">Sin envío de correo</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input 
+                            type="radio" 
+                            name="emailSetting" 
+                            checked={sendMassEmail}
+                            onChange={() => setSendMassEmail(true)}
+                            className="w-4 h-4 text-brand-500 bg-surface-900 border-white/20 focus:ring-brand-500/50"
+                          />
+                          <span className="text-sm text-emerald-400 font-medium flex items-center gap-1.5"><Mail className="w-4 h-4"/> Con envío masivo</span>
+                        </label>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <button onClick={() => processUpload('draft')} className="btn-secondary px-6 py-2.5 text-sm">
+                          Cargar para más tarde
+                        </button>
+                        <button onClick={() => processUpload('active')} className="btn-primary px-6 py-2.5 text-sm">
+                          Emitir Todos
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
