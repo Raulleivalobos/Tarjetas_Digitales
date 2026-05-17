@@ -11,6 +11,7 @@ import { logActivity } from '@/app/actions/audit';
 
 export default function AttendancePage() {
   const { organization, user, membership, loading: authLoading } = useAuth();
+  const isReadOnly = ['viewer', 'auditor'].includes(membership?.role || '');
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
   const [meetings, setMeetings] = useState<any[]>([]);
@@ -104,14 +105,16 @@ export default function AttendancePage() {
           <p className="text-slate-400 mt-1">Crea reuniones y registra la asistencia de tus socios con QR</p>
         </div>
         <div className="flex gap-3">
-          {activeMeeting && (
+          {activeMeeting && !isReadOnly && (
             <Link href={`/dashboard/attendance/${activeMeeting.id}`} className="px-4 py-2.5 rounded-xl bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-all font-bold text-sm flex items-center gap-2">
               <QrCode className="w-4 h-4" /> Registrar Asistencia QR
             </Link>
           )}
-          <button onClick={() => setShowCreate(true)} className="px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm flex items-center gap-2 transition-all">
-            <Plus className="w-4 h-4" /> Nueva Reunión
-          </button>
+          {!isReadOnly && (
+            <button onClick={() => setShowCreate(true)} className="px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm flex items-center gap-2 transition-all">
+              <Plus className="w-4 h-4" /> Nueva Reunión
+            </button>
+          )}
         </div>
       </div>
 
@@ -147,7 +150,7 @@ export default function AttendancePage() {
                     <p className="text-2xl font-black text-white">{m.attendeeCount}<span className="text-slate-500 text-sm">/{totalBeneficiaries}</span></p>
                     <p className="text-[10px] text-brand-400 font-bold">{pct}% asistencia</p>
                   </div>
-                  {m.status === 'active' && (
+                  {m.status === 'active' && !isReadOnly && (
                     <>
                       <Link href={`/dashboard/attendance/${m.id}`} className="px-3 py-2 rounded-xl bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-all text-xs font-bold flex items-center gap-1.5">
                         <QrCode className="w-4 h-4" /> Escanear QR

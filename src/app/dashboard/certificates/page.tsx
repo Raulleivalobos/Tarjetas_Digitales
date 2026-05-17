@@ -29,7 +29,8 @@ import { Certificate, CertificateType } from '@/lib/types';
 import { exportReportToPDF } from '@/lib/pdfGenerator';
 
 export default function CertificatesPage() {
-  const { organization, loading: authLoading } = useAuth();
+  const { organization, loading: authLoading, membership } = useAuth();
+  const isReadOnly = ['viewer', 'auditor'].includes(membership?.role || '');
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -210,13 +211,15 @@ export default function CertificatesPage() {
           <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">Certificados de Residencia</h1>
           <p className="text-slate-400 mt-1 text-sm">Gestiona y emite certificados oficiales para socios y residentes.</p>
         </div>
-        <Link 
-          href="/dashboard/certificates/issue" 
-          className="btn-primary px-5 py-2.5 flex items-center justify-center gap-2 text-sm font-bold"
-        >
-          <Plus className="w-4 h-4" />
-          Emitir Certificado
-        </Link>
+        {!isReadOnly && (
+          <Link 
+            href="/dashboard/certificates/issue" 
+            className="btn-primary px-5 py-2.5 flex items-center justify-center gap-2 text-sm font-bold"
+          >
+            <Plus className="w-4 h-4" />
+            Emitir Certificado
+          </Link>
+        )}
         <button 
           onClick={() => setShowReport(true)}
           className="btn-ghost px-5 py-2.5 flex items-center justify-center gap-2 text-sm font-bold border border-white/10"

@@ -117,12 +117,16 @@ export default function DashboardLayout({
     // Secciones para Auditor / Visualizador (Acceso a listas pero no a herramientas de edición/escaneo)
     ...(['viewer', 'auditor'].includes(membership?.role || '') ? [
       { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
+      { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
       { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
       { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
       { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
     ] : []),
     
-    { name: 'Configuración', href: '/dashboard/settings', icon: Settings },
+    // Configuración: No disponible para visualizadores simples
+    ...(!['viewer', 'municipal_viewer'].includes(membership?.role || '') ? [
+      { name: 'Configuración', href: '/dashboard/settings', icon: Settings },
+    ] : []),
   ];
 
   useEffect(() => {
