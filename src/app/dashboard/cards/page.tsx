@@ -247,6 +247,54 @@ export default function CardsPage() {
         </div>
       </div>
 
+      {/* Action Bar for Selection */}
+      {selectedIds.length > 0 && (
+        <div className="glass-card-solid bg-brand-500/10 border-brand-500/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in slide-in-from-top-4 fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center">
+              <CheckSquare className="w-4 h-4 text-brand-400" />
+            </div>
+            <span className="text-sm font-bold text-brand-300">{selectedIds.length} tarjeta(s) seleccionada(s)</span>
+            <button onClick={() => setSelectedIds([])} className="text-[10px] uppercase font-bold text-slate-400 hover:text-white transition-colors ml-2 bg-white/5 px-2 py-1 rounded">Desmarcar</button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedIds.length === 1 && (
+              <button
+                onClick={() => setSelectedCard(cards.find(c => c.id === selectedIds[0]) || null)}
+                className="btn-primary px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.2)]"
+              >
+                <Eye className="w-4 h-4" /> Ver Tarjeta
+              </button>
+            )}
+            {isAdmin && (
+              <>
+                <button
+                  onClick={() => handleBulkStatusChange('active')}
+                  disabled={isUpdating}
+                  className="btn-ghost bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 px-4 py-2 text-xs font-bold flex items-center gap-2"
+                >
+                  <CheckSquare className="w-4 h-4" /> Activar
+                </button>
+                <button
+                  onClick={() => handleBulkStatusChange('inactive')}
+                  disabled={isUpdating}
+                  className="btn-ghost bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 px-4 py-2 text-xs font-bold flex items-center gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4" /> Desactivar
+                </button>
+                <button
+                  onClick={() => handleRevokeCards(selectedIds)}
+                  disabled={isUpdating}
+                  className="btn-ghost bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 px-4 py-2 text-xs font-bold flex items-center gap-2"
+                >
+                  <ShieldAlert className="w-4 h-4" /> Revocar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="glass-card p-4">
         <div className="flex flex-col sm:flex-row gap-3">
@@ -254,7 +302,7 @@ export default function CardsPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
-              placeholder="Buscar por nombre, RUT o número de tarjeta..."
+              placeholder="Buscar por nombre, RUT, tarjeta, dirección o nro..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="glass-input w-full pl-11 pr-4 py-2.5 text-sm"
@@ -382,6 +430,8 @@ export default function CardsPage() {
                   </th>
                 )}
                 <th>Beneficiario</th>
+                <th>Dirección</th>
+                <th>Nro.</th>
                 <th>N° Tarjeta</th>
                 <th>Estado</th>
                 <th>Emitida</th>
@@ -403,6 +453,8 @@ export default function CardsPage() {
                     </td>
                   )}
                   <td className="font-medium text-white">{c.beneficiary?.full_name}</td>
+                  <td className="text-xs text-slate-400 max-w-[150px] truncate">{c.beneficiary?.address || (c.beneficiary?.custom_fields as any)?.['Dirección'] || '-'}</td>
+                  <td className="text-xs font-mono text-slate-400">{c.beneficiary?.address_number || '-'}</td>
                   <td className="font-mono text-xs text-slate-400">{c.card_number}</td>
                   <td><StatusBadge status={c.status} size="sm" /></td>
                   <td className="text-xs text-slate-400">{formatDate(c.issued_at)}</td>
