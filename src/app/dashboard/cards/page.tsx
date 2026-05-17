@@ -93,7 +93,10 @@ export default function CardsPage() {
               (c: CardWithBeneficiary) =>
                 c.beneficiary?.full_name?.toLowerCase().includes(s) ||
                 c.beneficiary?.rut?.includes(s) ||
-                c.card_number?.toLowerCase().includes(s)
+                c.card_number?.toLowerCase().includes(s) ||
+                c.beneficiary?.address?.toLowerCase().includes(s) ||
+                c.beneficiary?.address_number?.toLowerCase().includes(s) ||
+                (c.beneficiary?.custom_fields as any)?.['Dirección']?.toLowerCase().includes(s)
             );
           }
 
