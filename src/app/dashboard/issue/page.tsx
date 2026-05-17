@@ -226,9 +226,27 @@ function IssuePageContent() {
         finalPhotoUrl = publicUrlData.publicUrl;
       }
 
-      // Build custom_fields including id_socio
+      // Build custom_fields including id_socio and auto-sync all standard design attributes
       const builtCustomFields = { ...manualForm.customFields };
       if (manualForm.id_socio) builtCustomFields['ID Socio'] = manualForm.id_socio;
+      // Auto-sync standard attributes so the card design template gets all values
+      builtCustomFields['Nombre Receptor'] = manualForm.full_name;
+      builtCustomFields['Nombre'] = manualForm.full_name;
+      builtCustomFields['RUT'] = formatRut(cleanRut);
+      builtCustomFields['Status Socio'] = manualForm.status === 'inactive' ? 'Inactivo' : 'Activo';
+      builtCustomFields['Estado'] = builtCustomFields['Status Socio'];
+      builtCustomFields['Email'] = manualForm.email || '';
+      builtCustomFields['Correo'] = manualForm.email || '';
+      if (manualForm.address || manualForm.address_number) {
+        builtCustomFields['Dirección'] = [manualForm.address, manualForm.address_number].filter(Boolean).join(' ');
+      }
+      if (manualForm.issued_date) {
+        const [y, m, d] = manualForm.issued_date.split('-');
+        const formatted = `${d}-${m}-${y}`;
+        builtCustomFields['Fecha'] = formatted;
+        builtCustomFields['Fecha Emisión'] = formatted;
+        builtCustomFields['Válida desde'] = formatted;
+      }
 
       if (!beneficiaryId) {
         const { data: ben, error: insertError } = await supabase
@@ -1148,69 +1166,7 @@ function IssuePageContent() {
                 </div>
               </div>
 
-              {/* Atributos dinámicos del diseño seleccionado */}
-              {selectedDesign && (selectedDesign.attributes || []).filter(a => a.active).length > 0 && (
-                <div className="space-y-4 pt-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <FileText className="w-4 h-4 text-brand-400" />
-                    <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] font-mono">Atributos del Diseño</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-8 rounded-3xl border border-brand-500/10 bg-brand-500/[0.02] relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/5 blur-3xl pointer-events-none" />
-                    {selectedDesign.attributes
-                      .filter(attr => attr.active)
-                      .map(attr => {
-                        const keyUpper = attr.label?.trim().toUpperCase();
-                        let placeholder = attr.placeholder || 'Valor...';
-                        let hint = '';
-
-                        if (keyUpper === 'NOMBRE RECEPTOR' || keyUpper === 'NOMBRE') {
-                          placeholder = manualForm.full_name || 'Autocompletado...';
-                          hint = 'Auto-sync con Identidad';
-                        } else if (keyUpper === 'RUT') {
-                          placeholder = formatRut(manualForm.rut) || 'Autocompletado...';
-                          hint = 'Auto-sync con RUT';
-                        } else if (keyUpper === 'ID SOCIO') {
-                          placeholder = 'Ej. 1234';
-                          hint = 'Nº correlativo único';
-                        } else if (keyUpper === 'FECHA') {
-                          placeholder = 'DD-MM-AAAA';
-                          hint = 'Fecha de emisión';
-                        } else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO') {
-                          const defaultStatus = manualForm.status === 'inactive' ? 'Inactivo' : 'Activo';
-                          placeholder = defaultStatus;
-                          hint = `Estado: ${defaultStatus}`;
-                        } else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') {
-                          placeholder = manualForm.email || 'Autocompletado...';
-                          hint = 'Auto-sync con Email';
-                        } else if (keyUpper === 'FOTO') {
-                          placeholder = photoFile ? 'Foto cargada' : 'URL o Foto arriba';
-                          hint = 'Usa el selector superior';
-                        }
-
-                        return (
-                          <div key={attr.id} className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                              {attr.label}
-                            </label>
-                            <input
-                              type="text"
-                              value={manualForm.customFields[attr.label] || ''}
-                              onChange={e => setManualForm({
-                                ...manualForm, 
-                                customFields: { ...manualForm.customFields, [attr.label]: e.target.value }
-                              })}
-                              className="glass-input w-full px-4 py-2.5 text-xs focus:ring-1 focus:ring-brand-500/30 transition-all font-medium"
-                              placeholder={placeholder}
-                              autoComplete="off"
-                            />
-                            {hint && <p className="text-[9px] font-bold text-brand-500/50 uppercase tracking-tighter font-mono">{hint}</p>}
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
+              {/* Los atributos del diseño se auto-sincronizan desde los campos del formulario */}
             </div>
             </div>
 
