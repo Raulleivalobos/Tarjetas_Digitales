@@ -91,13 +91,19 @@ export default function CardsPage() {
           if (search) {
             const s = search.toLowerCase();
             mapped = mapped.filter(
-              (c: CardWithBeneficiary) =>
-                c.beneficiary?.full_name?.toLowerCase().includes(s) ||
-                c.beneficiary?.rut?.includes(s) ||
-                c.card_number?.toLowerCase().includes(s) ||
-                c.beneficiary?.address?.toLowerCase().includes(s) ||
-                c.beneficiary?.address_number?.toLowerCase().includes(s) ||
-                (c.beneficiary?.custom_fields as any)?.['Dirección']?.toLowerCase().includes(s)
+              (c: CardWithBeneficiary) => {
+                const combinedString = `
+                  ${c.beneficiary?.full_name || ''} 
+                  ${c.beneficiary?.rut || ''} 
+                  ${c.card_number || ''} 
+                  ${c.beneficiary?.address || ''} 
+                  ${c.beneficiary?.address_number || ''} 
+                  ${(c.beneficiary?.custom_fields as any)?.['Dirección'] || ''}
+                `.toLowerCase();
+                
+                const searchTerms = s.split(' ').filter(Boolean);
+                return searchTerms.every(term => combinedString.includes(term));
+              }
             );
           }
 
