@@ -203,11 +203,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     // Forzado instantáneo para evitar cuelgues
+    setUser(null);
+    setSession(null);
     setOrganization(null);
     setMembership(null);
     setMemberships([]);
     localStorage.removeItem('last_org_id');
-    await supabase.auth.signOut().catch(() => {});
+    
+    // Limpieza forzada del token de Supabase en caso de que el request falle o se cuelgue
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    try {
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise(resolve => setTimeout(resolve, 800))
+      ]);
+    } catch (e) {
+      console.warn("SignOut timeout or error", e);
+    }
   };
 
   const refreshOrganization = async () => {
