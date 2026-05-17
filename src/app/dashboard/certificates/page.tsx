@@ -149,7 +149,7 @@ export default function CertificatesPage() {
     if (phone.length === 9 && phone.startsWith('9')) phone = `56${phone}`;
     
     const baseUrl = window.location.origin;
-    const url = `${baseUrl}/validate/${organization?.slug}/${cert.id}`;
+    const url = `${baseUrl}/validate/cert/${cert.id}`;
     
     const fullName = cert.resident_data?.full_name || (cert as any).beneficiaries?.full_name || 'Vecino(a)';
     const firstName = fullName.split(' ')[0];
