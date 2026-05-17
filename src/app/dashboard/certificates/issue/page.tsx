@@ -319,7 +319,9 @@ export default function IssueCertificatePage() {
             const replacements: Record<string, string> = {
               '\\[Nombre receptor\\]': recipientName || '',
               '\\[RUT receptor\\]': formattedRut,
-              '\\[Dirección receptor\\]': formData.type === 'residente' ? formData.resident_data.address : (selectedBeneficiary?.address || (selectedBeneficiary?.custom_fields as any)?.['Dirección'] || (selectedBeneficiary?.custom_fields as any)?.address || 'No registrado'),
+              '\\[Dirección receptor\\]': formData.type === 'residente'
+                ? [formData.resident_data.address, formData.resident_data.address_number].filter(Boolean).join(' ')
+                : [selectedBeneficiary?.address, (selectedBeneficiary as any)?.address_number].filter(Boolean).join(' ') || (selectedBeneficiary?.custom_fields as any)?.['Dirección'] || 'No registrado',
               '\\[Villa receptor\\]': organization?.villa || organization?.settings?.villa || organization?.name || '',
               '\\[Comuna\\]': organization?.settings?.commune || organization?.commune || '',
               '\\[Provincia\\]': organization?.settings?.province || '',
@@ -454,7 +456,8 @@ export default function IssueCertificatePage() {
                 <input type="text" value={formData.resident_data.full_name} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, full_name: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="Nombre Completo *" />
                 <input type="text" value={formData.resident_data.rut} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, rut: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="RUT" />
                 <input type="email" required value={formData.resident_data.email} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, email: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="Correo Electrónico *" />
-                <input type="text" value={formData.resident_data.address} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, address: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="Dirección" />
+                <input type="text" value={formData.resident_data.address} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, address: e.target.value }})} className="glass-input w-full px-4 py-2" placeholder="Dirección (Calle / Pasaje)" />
+                <input type="text" value={formData.resident_data.address_number || ''} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, address_number: e.target.value }})} className="glass-input w-full px-4 py-2 font-mono" placeholder="Nro. Dirección" />
                 <input type="text" value={formData.resident_data.villa} onChange={(e) => setFormData({ ...formData, resident_data: { ...formData.resident_data, villa: e.target.value }})} className="glass-input w-full px-4 py-2 md:col-span-2" placeholder="Villa o Parque" />
               </div>
             </div>

@@ -591,8 +591,19 @@ function IssuePageContent() {
         const photoUrlToSave = rawPhotoUrl ? convertGoogleDriveUrl(rawPhotoUrl) : null;
         
         // Collect custom fields from extra columns
-        const STANDARD_KEYS = ['first_name', 'last_name', 'full_name', 'nombre', 'nombres', 'apellidos', 'rut', 'documento', 'email', 'correo', 'phone', 'telefono', 'celular', 'comuna', 'photo_url', 'foto', 'photo', 'imagen', 'image'];
+        const STANDARD_KEYS = ['first_name', 'last_name', 'full_name', 'nombre', 'nombres', 'apellidos', 'rut', 'documento', 'email', 'correo', 'phone', 'telefono', 'celular', 'address', 'dirección', 'direccion', 'address_number', 'nro dirección', 'nro direccion', 'número', 'numero', 'comuna', 'photo_url', 'foto', 'photo', 'imagen', 'image'];
         const customFieldsToSave: Record<string, string> = {};
+
+        // Extract address and address_number from row data
+        const ADDRESS_KEYS = ['address', 'dirección', 'direccion'];
+        const ADDRESS_NUMBER_KEYS = ['address_number', 'nro dirección', 'nro direccion', 'número', 'numero'];
+        let rowAddress = '';
+        let rowAddressNumber = '';
+        for (const [key, val] of Object.entries(rowData)) {
+          if (val && ADDRESS_KEYS.includes(key.toLowerCase().trim())) rowAddress = String(val);
+          if (val && ADDRESS_NUMBER_KEYS.includes(key.toLowerCase().trim())) rowAddressNumber = String(val);
+        }
+
         for (const [key, val] of Object.entries(rowData)) {
           if (val && !STANDARD_KEYS.includes(key.toLowerCase())) {
             customFieldsToSave[key] = String(val);
@@ -631,6 +642,8 @@ function IssuePageContent() {
               rut: cleanRut,
               email: email || null,
               phone: normalizedPhone || null,
+              address: rowAddress || null,
+              address_number: rowAddressNumber || null,
               comuna: comuna || null,
               photo_url: photoUrlToSave,
               custom_fields: customFieldsToSave
@@ -650,6 +663,8 @@ function IssuePageContent() {
               full_name: fullName || 'Sin Nombre',
               email: email || null,
               phone: normalizedPhone || null,
+              address: rowAddress || undefined,
+              address_number: rowAddressNumber || undefined,
               comuna: comuna || null,
               photo_url: photoUrlToSave || undefined,
               custom_fields: customFieldsToSave,

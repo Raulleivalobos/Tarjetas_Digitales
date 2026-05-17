@@ -111,7 +111,7 @@ export default function BeneficiariesPage() {
   };
 
   const exportCSV = () => {
-    const headers = ['ID Socio', 'RUT', 'Nombres', 'Apellidos', 'Nombre Completo', 'Dirección', 'Comuna', 'Email', 'Teléfono', 'Estado', 'Fecha Registro'];
+    const headers = ['ID Socio', 'RUT', 'Nombres', 'Apellidos', 'Nombre Completo', 'Dirección', 'Nro Dirección', 'Comuna', 'Email', 'Teléfono', 'Estado', 'Fecha Registro'];
     const rows = beneficiaries.map((b) => [
       b.id.substring(0, 8),
       formatRut(b.rut),
@@ -119,6 +119,7 @@ export default function BeneficiariesPage() {
       b.last_name || '',
       b.full_name,
       b.address || '',
+      (b as any).address_number || '',
       b.comuna || '',
       b.email || '',
       b.phone || '',
@@ -326,7 +327,8 @@ export default function BeneficiariesPage() {
                     <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono w-32">RUT</th>
                     <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono min-w-[120px]">Nombres</th>
                     <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono min-w-[120px]">Apellidos</th>
-                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono min-w-[160px]">Dirección</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono min-w-[140px]">Dirección</th>
+                    <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono w-20">Nro.</th>
                     <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono w-28">Comuna</th>
                     <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono min-w-[160px]">Correo</th>
                     <th className="px-3 py-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] font-mono w-32">Celular</th>
@@ -386,8 +388,13 @@ export default function BeneficiariesPage() {
                         </span>
                       </td>
                       <td className="px-3 py-4">
-                        <span className="text-slate-400 text-[11px] font-medium truncate max-w-[180px] block leading-tight">
+                        <span className="text-slate-400 text-[11px] font-medium truncate max-w-[160px] block leading-tight">
                           {person.address || (person.custom_fields as any)?.['Dirección'] || '-'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-4">
+                        <span className="text-slate-400 text-[11px] font-mono font-medium">
+                          {person.address_number || '-'}
                         </span>
                       </td>
                       <td className="px-3 py-4">
@@ -487,11 +494,13 @@ export default function BeneficiariesPage() {
                           <span className="text-[11px] text-slate-400">{person.phone}</span>
                         </div>
                       )}
-                      {(person.address || person.comuna) && (
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="w-3 h-3 text-slate-500 flex-shrink-0" />
-                          <span className="text-[11px] text-slate-400 truncate">
-                            {person.address}{person.address && person.comuna ? ', ' : ''}{person.comuna}
+                      {(person.address || person.address_number || person.comuna) && (
+                        <div className="flex items-start gap-1.5">
+                          <MapPin className="w-3 h-3 text-slate-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-[11px] text-slate-400">
+                            {[person.address, person.address_number].filter(Boolean).join(' ')}
+                            {(person.address || person.address_number) && person.comuna ? ', ' : ''}
+                            {person.comuna}
                           </span>
                         </div>
                       )}

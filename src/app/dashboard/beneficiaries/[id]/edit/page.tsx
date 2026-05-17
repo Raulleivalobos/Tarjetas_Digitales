@@ -51,6 +51,7 @@ export default function EditBeneficiaryPage() {
     email: '',
     phone: '',
     address: '',
+    address_number: '',
     comuna: '',
     id_socio: '',
     date_of_birth: '',
@@ -94,6 +95,7 @@ export default function EditBeneficiaryPage() {
             email: data.email || '',
             phone: data.phone || '',
             address: address,
+            address_number: data.address_number || '',
             comuna: data.comuna || '',
             id_socio: idSocio,
             date_of_birth: data.date_of_birth ? new Date(data.date_of_birth).toISOString().split('T')[0] : '',
@@ -205,6 +207,7 @@ export default function EditBeneficiaryPage() {
           email: form.email || null,
           phone: form.phone || null,
           address: form.address || null,
+          address_number: form.address_number || null,
           comuna: form.comuna || null,
           date_of_birth: form.date_of_birth || null,
           photo_url: photoUrl || (photoPreview?.startsWith('http') ? photoPreview : null),
@@ -440,13 +443,23 @@ export default function EditBeneficiaryPage() {
               
               <div className="space-y-4">
                 <div className="space-y-2">
-                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Dirección Completa</label>
+                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Dirección (Calle / Pasaje)</label>
                    <input
                     type="text"
                     value={form.address}
                     onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
-                    placeholder="Nombre Calle, Nº Casa/Depto"
+                    placeholder="Ej: Av. Las Flores"
                     className="glass-input w-full px-4 py-3 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">Nro. Dirección</label>
+                   <input
+                    type="text"
+                    value={form.address_number}
+                    onChange={(e) => setForm((prev) => ({ ...prev, address_number: e.target.value }))}
+                    placeholder="Ej: 123, 45-B, Depto 2"
+                    className="glass-input w-full px-4 py-3 text-sm font-mono"
                   />
                 </div>
                 <div className="space-y-2">

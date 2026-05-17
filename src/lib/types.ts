@@ -52,6 +52,7 @@ export interface Beneficiary {
   phone: string | null;
   photo_url: string | null;
   address: string | null;
+  address_number: string | null;
   comuna: string | null;
   date_of_birth: string | null;
   custom_fields: Record<string, unknown>;
@@ -134,6 +135,7 @@ export interface BeneficiaryFormData {
   phone?: string;
   photo_url?: string;
   address?: string;
+  address_number?: string;
   date_of_birth?: string;
   custom_fields?: Record<string, unknown>;
   status?: 'active' | 'inactive' | 'blocked';
@@ -194,6 +196,7 @@ export interface BulkUploadRow {
   email?: string;
   phone?: string;
   address?: string;
+  address_number?: string;
   date_of_birth?: string;
   [key: string]: string | undefined;
 }
@@ -256,6 +259,7 @@ export interface Certificate {
     full_name: string;
     rut: string;
     address: string;
+    address_number?: string;
     villa: string;
   };
   issued_at: string;
@@ -273,6 +277,7 @@ export interface CertificateFormData {
     full_name: string;
     rut: string;
     address: string;
+    address_number?: string;
     villa: string;
   };
 }
