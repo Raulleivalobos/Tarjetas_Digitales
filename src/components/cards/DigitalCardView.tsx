@@ -115,7 +115,8 @@ export function DigitalCardView({
           else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO') val = customVal || (card.status === 'active' ? 'Activo' : card.status) || val;
           else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') val = customVal || beneficiary.email || val;
           else if (keyUpper === 'DIRECCIÓN' || keyUpper === 'DIRECCION' || keyUpper === 'DOMICILIO') {
-            val = customVal || [beneficiary.address, beneficiary.address_number].filter(Boolean).join(' ') || val;
+            const combined = [beneficiary.address, beneficiary.address_number].filter(Boolean).join(' ');
+            val = combined || customVal || val;
           }
           else if (keyUpper && (keyUpper.includes('TARJETA') || keyUpper.includes('Nº') || keyUpper.includes('N°'))) {
             val = card.card_number || val;
