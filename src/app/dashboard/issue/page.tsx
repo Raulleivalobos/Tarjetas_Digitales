@@ -782,8 +782,8 @@ function IssuePageContent() {
   // Build template headers from selected design's ACTIVE attributes only
   const getTemplateColumns = (): { headers: string[]; examples: string[] } => {
     // Always include base required fields
-    const headers = ['first_name', 'last_name', 'rut', 'email', 'phone', 'comuna'];
-    const examples = ['Juan Andrés', 'Pérez González', '12.345.678-9', 'juan@ejemplo.com', '+56912345678', 'Puente Alto'];
+    const headers = ['Nombres', 'Apellidos', 'rut', 'email', 'Nro Celular (+56)', 'Dirección', 'Nro Dirección', 'comuna'];
+    const examples = ['Juan Andrés', 'Pérez González', '12.345.678-9', 'juan@ejemplo.com', '951495297', 'Av. Las Flores', '123', 'Puente Alto'];
 
     if (selectedDesign && selectedDesign.attributes) {
       const SKIP_KEYS = ['NOMBRE', 'NOMBRE RECEPTOR', 'FULL_NAME', 'RUT', 'EMAIL', 'CORREO'];
@@ -1308,21 +1308,35 @@ function IssuePageContent() {
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
                     <div>
-                      <p className="text-xs font-bold text-slate-300">full_name <span className="text-red-400 text-[10px] ml-1">(REQUERIDO)</span></p>
-                      <p className="text-[10px] text-slate-500">Nombre completo del socio.</p>
+                      <p className="text-xs font-bold text-slate-300">Nombres / Apellidos <span className="text-red-400 text-[10px] ml-1">(REQUERIDO)</span></p>
+                      <p className="text-[10px] text-slate-500">Nombre completo del socio separado en dos columnas.</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
                     <div>
-                      <p className="text-xs font-bold text-slate-300">rut <span className="text-red-400 text-[10px] ml-1">(REQUERIDO)</span></p>
+                      <p className="text-xs font-bold text-slate-300">RUT <span className="text-red-400 text-[10px] ml-1">(REQUERIDO)</span></p>
                       <p className="text-[10px] text-slate-500">Formato: 12.345.678-9 o 123456789</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-600 shrink-0" />
                     <div>
-                      <p className="text-xs font-bold text-slate-400">email <span className="text-slate-600 text-[10px] ml-1">(Opcional)</span></p>
+                      <p className="text-xs font-bold text-slate-400">Nro Celular (+56) <span className="text-slate-600 text-[10px] ml-1">(Opcional)</span></p>
+                      <p className="text-[10px] text-slate-600">Celular del socio (Ej: 951495297).</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-600 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-400">Dirección / Nro Dirección <span className="text-slate-600 text-[10px] ml-1">(Opcional)</span></p>
+                      <p className="text-[10px] text-slate-600">Textos de la calle en Dirección, y solo el número en Nro Dirección.</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-600 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-400">Email <span className="text-slate-600 text-[10px] ml-1">(Opcional)</span></p>
                       <p className="text-[10px] text-slate-600">Correo electrónico del socio.</p>
                     </div>
                   </li>
