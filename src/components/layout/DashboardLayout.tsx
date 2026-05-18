@@ -165,11 +165,22 @@ export default function DashboardLayout({
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+          <p className="text-slate-400 text-sm">Cerrando sesión...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSignOut = async () => {
-    await signOut();
+    // Redirect immediately so the user never sees a blank screen
     window.location.href = '/login';
+    // Sign out in the background while the redirect is happening
+    signOut();
   };
 
   return (
