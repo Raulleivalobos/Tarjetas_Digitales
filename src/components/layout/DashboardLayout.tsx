@@ -133,7 +133,13 @@ export default function DashboardLayout({
     }
   }
 
-  // Configuración
+  // Configuración y Organizaciones
+  if (['owner', 'admin'].includes(role)) {
+    navigation.push(
+      { name: 'Organizaciones', href: '/dashboard/organizations', icon: Building2 }
+    );
+  }
+  
   if (!['viewer', 'municipal_viewer', 'validator'].includes(role)) {
     navigation.push(
       { name: 'Configuración', href: '/dashboard/settings', icon: Settings }
