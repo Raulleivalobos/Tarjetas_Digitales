@@ -192,7 +192,12 @@ export default function DashboardPage() {
 
       setLoading(true);
       try {
-        const results = await Promise.allSettled([
+        // Timeout: if Supabase doesn't respond in 8s, show the dashboard with empty data
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Dashboard data fetch timeout')), 8000)
+        );
+
+        const dataFetch = Promise.allSettled([
           supabase.from('beneficiaries').select('*', { count: 'exact', head: true }).eq('org_id', organization.id),
           supabase.from('beneficiaries').select('*', { count: 'exact', head: true }).eq('org_id', organization.id).eq('status', 'active'),
           supabase.from('digital_cards').select('*', { count: 'exact', head: true }).eq('org_id', organization.id).eq('status', 'active'),
@@ -203,6 +208,8 @@ export default function DashboardPage() {
           supabase.from('beneficiaries').select('id, full_name, rut, status, created_at').eq('org_id', organization.id).order('created_at', { ascending: false }).limit(5),
           supabase.from('certificates').select('*, beneficiaries(full_name)').eq('org_id', organization.id).order('folio', { ascending: false }).limit(3),
         ]);
+
+        const results = await Promise.race([dataFetch, timeout]);
 
         const getValue = (idx: number, key: 'count' | 'data' = 'count') => {
           const res = results[idx];

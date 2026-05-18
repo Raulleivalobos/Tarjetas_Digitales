@@ -33,22 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
-  // Guard against concurrent fetchOrganization calls
-  const fetchingRef = useRef(false);
-  // Cache last fetched org id to avoid redundant fetches
-  const lastFetchedUserRef = useRef<string | null>(null);
-
   const fetchOrganization = useCallback(async (userId: string, preferredOrgId?: string) => {
-    // Prevent concurrent calls
-    if (fetchingRef.current && !preferredOrgId) return;
-    fetchingRef.current = true;
-
     try {
-      // Skip re-fetching if we already loaded this user's data (unless switching org)
-      if (!preferredOrgId && lastFetchedUserRef.current === userId && memberships.length > 0) {
-        return;
-      }
-
       const { data: allMemberships } = await supabase
         .from('org_members')
         .select('*, organizations(*)')
@@ -58,12 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setMemberships([]);
         setOrganization(null);
         setMembership(null);
-        lastFetchedUserRef.current = userId;
         return;
       }
 
       setMemberships(allMemberships);
-      lastFetchedUserRef.current = userId;
 
       // Determine which organization to activate
       const lastOrgId = preferredOrgId || localStorage.getItem('last_org_id');
@@ -93,18 +77,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);
-    } finally {
-      fetchingRef.current = false;
     }
-  }, [supabase, memberships.length]);
+  }, [supabase]);
 
   useEffect(() => {
-    // Hard cap: if loading takes > 4s, force-stop to prevent infinite spinner
+    // Hard cap: if loading takes > 3s, force-stop to prevent infinite spinner
     const failsafe = setTimeout(() => {
       setLoading(false);
-    }, 4000);
+    }, 3000);
 
     let isMounted = true;
+    let initialSessionHandled = false;
 
     const getSession = async () => {
       setLoading(true);
@@ -120,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (currentSession?.user) {
           await fetchOrganization(currentSession.user.id);
         }
+        initialSessionHandled = true;
       } catch (err) {
         console.error('Error in initial session fetch:', err);
       } finally {
@@ -138,9 +122,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setOrganization(null);
           setMembership(null);
           setMemberships([]);
-          lastFetchedUserRef.current = null;
           localStorage.removeItem('last_org_id');
           setLoading(false);
+          return;
+        }
+
+        // Skip INITIAL_SESSION if getSession already handled it (prevents double-fetch)
+        if (event === 'INITIAL_SESSION' && initialSessionHandled) {
           return;
         }
 
