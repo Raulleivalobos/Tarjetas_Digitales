@@ -2,7 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    optimizePackageImports: ['lucide-react', 'framer-motion'],
+    optimizePackageImports: [
+      'lucide-react',
+      'framer-motion',
+      'recharts',
+      'qrcode.react',
+    ],
   },
   typescript: {
     ignoreBuildErrors: true,
@@ -29,10 +34,48 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Performance: compress responses
+  compress: true,
+  // Performance: use SWC minifier (default in Next 16, explicit for clarity)
+  swcMinify: true,
+  // Performance: set powered-by header off to reduce response size
+  poweredByHeader: false,
   turbopack: {
     root: __dirname,
   },
   outputFileTracingRoot: __dirname,
+  // HTTP caching headers for static assets
+  async headers() {
+    return [
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/icons/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

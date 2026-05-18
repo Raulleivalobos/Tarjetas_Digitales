@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef} from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { StatsCard } from '@/components/ui/StatsCard';
@@ -21,18 +21,96 @@ import {
   Building2,
 } from 'lucide-react';
 import Link from 'next/link';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
+import dynamic from 'next/dynamic';
+
+// Lazy-load Recharts — it's ~150KB gzipped. Load only when the dashboard mounts.
+const LazyAreaChart = dynamic(() => import('recharts').then(mod => {
+  const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = mod;
+  // Return a wrapper component
+  return { default: function DashboardAreaChart({ data }: { data: any[] }) {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data}>
+          <defs>
+            <linearGradient id="colorBeneficiarios" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="colorBeneficios" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.06)" vertical={false} />
+          <XAxis 
+            dataKey="name" 
+            stroke="#475569" 
+            fontSize={10} 
+            tickLine={false} 
+            axisLine={false} 
+            tick={{ fill: '#64748b', fontStyle: 'normal', fontWeight: 'bold' }} 
+          />
+          <YAxis 
+            stroke="#475569" 
+            fontSize={10} 
+            tickLine={false} 
+            axisLine={false}
+            tick={{ fill: '#64748b', fontStyle: 'normal', fontWeight: 'bold' }}
+          />
+          <Tooltip
+            formatter={(value: number) => value.toLocaleString('es-CL')}
+            contentStyle={{
+              background: 'rgba(2, 6, 23, 0.95)',
+              border: '1px solid rgba(99, 102, 241, 0.3)',
+              borderRadius: '8px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+              color: '#e2e8f0',
+              fontSize: '11px',
+              fontFamily: 'JetBrains Mono, monospace',
+            }}
+            itemStyle={{ padding: '2px 0' }}
+          />
+          <Area type="monotone" dataKey="beneficiarios" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorBeneficiarios)" />
+          <Area type="monotone" dataKey="beneficios" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorBeneficios)" />
+        </AreaChart>
+      </ResponsiveContainer>
+    );
+  }};
+}), { ssr: false, loading: () => <div className="h-72 skeleton rounded-xl" /> });
+
+const LazyPieChart = dynamic(() => import('recharts').then(mod => {
+  const { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } = mod;
+  return { default: function DashboardPieChart({ data }: { data: { name: string; value: number; color: string }[] }) {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={50}
+            outerRadius={75}
+            paddingAngle={4}
+            dataKey="value"
+            stroke="none"
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{
+              background: 'rgba(15,23,42,0.95)',
+              border: '1px solid rgba(99,102,241,0.2)',
+              borderRadius: '12px',
+              color: '#e2e8f0',
+            }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  }};
+}), { ssr: false, loading: () => <div className="h-48 skeleton rounded-xl" /> });
 
 interface DashboardData {
   totalBeneficiaries: number;
@@ -294,51 +372,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="h-72 min-h-[288px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorBeneficiarios" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorBeneficios" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.06)" vertical={false} />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="#475569" 
-                  fontSize={10} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{ fill: '#64748b', fontStyle: 'normal', fontWeight: 'bold' }} 
-                />
-                <YAxis 
-                  stroke="#475569" 
-                  fontSize={10} 
-                  tickLine={false} 
-                  axisLine={false}
-                  tick={{ fill: '#64748b', fontStyle: 'normal', fontWeight: 'bold' }}
-                />
-                <Tooltip
-                  formatter={(value: number) => value.toLocaleString('es-CL')}
-                  contentStyle={{
-                    background: 'rgba(2, 6, 23, 0.95)',
-                    border: '1px solid rgba(99, 102, 241, 0.3)',
-                    borderRadius: '8px',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-                    color: '#e2e8f0',
-                    fontSize: '11px',
-                    fontFamily: 'JetBrains Mono, monospace',
-                  }}
-                  itemStyle={{ padding: '2px 0' }}
-                />
-                <Area type="monotone" dataKey="beneficiarios" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorBeneficiarios)" />
-                <Area type="monotone" dataKey="beneficios" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorBeneficios)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <LazyAreaChart data={chartData} />
           </div>
           
           {/* Blueprint decorations */}
@@ -350,32 +384,7 @@ export default function DashboardPage() {
           <h3 className="text-lg font-bold text-white tracking-tight mb-1">Estado</h3>
           <p className="text-sm text-slate-300 mb-6">Distribución de beneficiarios</p>
           <div className="h-48 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={75}
-                  paddingAngle={4}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: 'rgba(15,23,42,0.95)',
-                    border: '1px solid rgba(99,102,241,0.2)',
-                    borderRadius: '12px',
-                    color: '#e2e8f0',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <LazyPieChart data={statusData} />
           </div>
           <div className="space-y-3 mt-4">
             {statusData.map((item) => (
