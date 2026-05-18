@@ -8,10 +8,10 @@ import {
 } from 'lucide-react';
 
 const AUDIENCES = [
-  { icon: Users, title: 'Juntas de Vecinos', desc: 'Carnets vecinales digitales con QR. Control de socios y beneficios comunitarios.', href: '/soluciones/juntas-de-vecinos', color: 'from-emerald-500/20 to-emerald-600/5', border: 'border-emerald-500/20', iconColor: 'text-emerald-400' },
+  { icon: Users, title: 'Juntas de Vecinos', desc: '100% Gratuito en Chile. Carnets vecinales digitales con QR, control de socios y asambleas.', href: '/soluciones/juntas-de-vecinos', color: 'from-emerald-500/20 to-emerald-600/5', border: 'border-emerald-500/20', iconColor: 'text-emerald-400' },
   { icon: Briefcase, title: 'Bienestar de Empresas', desc: 'Gestión de beneficios corporativos con trazabilidad y reportes automáticos.', href: '/soluciones/bienestar-empresas', color: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-500/20', iconColor: 'text-blue-400' },
   { icon: Building2, title: 'Sindicatos', desc: 'Credenciales digitales para afiliados. Padrón actualizado y control de asambleas.', href: '/soluciones/sindicatos', color: 'from-amber-500/20 to-amber-600/5', border: 'border-amber-500/20', iconColor: 'text-amber-400' },
-  { icon: Landmark, title: 'Corporaciones Municipales', desc: 'Identidad digital ciudadana. Transparencia en subsidios y beneficios sociales.', href: '/soluciones/corporaciones-municipales', color: 'from-purple-500/20 to-purple-600/5', border: 'border-purple-500/20', iconColor: 'text-purple-400' },
+  { icon: Landmark, title: 'Corporaciones Municipales', desc: 'Alineado a Ley N° 21.180 (Cero Papel). Digitaliza subsidios, beneficios sociales e identidad comunal.', href: '/soluciones/corporaciones-municipales', color: 'from-purple-500/20 to-purple-600/5', border: 'border-purple-500/20', iconColor: 'text-purple-400' },
 ];
 
 const FEATURES = [
@@ -52,9 +52,15 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Text */}
             <div>
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-xs text-brand-300 font-medium mb-6 animate-fade-in">
-                <Sparkles className="w-3.5 h-3.5" />
-                Plataforma de identidad digital inteligente
+              <div className="flex flex-wrap items-center gap-3 mb-6 animate-fade-in">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-xs text-brand-300 font-medium">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Plataforma de identidad digital inteligente
+                </div>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  100% Gratis para Juntas de Vecinos
+                </div>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] mb-6">
@@ -215,6 +221,61 @@ export default function LandingPage() {
             <Link href="/como-funciona" className="btn-secondary px-8 py-3 text-sm inline-flex items-center gap-2">
               Ver más detalles <ChevronRight className="w-4 h-4" />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ LEY 21.180 (CERO PAPEL) ═══════════════ */}
+      <section className="relative py-16 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-brand-900/40 via-surface-900 to-purple-900/20 border border-brand-500/20 p-8 md:p-12 lg:p-16 shadow-2xl shadow-brand-500/10">
+            {/* Elemento decorativo de fondo */}
+            <div className="absolute top-0 right-0 p-12 opacity-[0.05] pointer-events-none transform translate-x-1/4 -translate-y-1/4">
+              <Landmark className="w-[400px] h-[400px]" />
+            </div>
+            
+            <div className="relative z-10 max-w-3xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-bold mb-6 tracking-wide uppercase">
+                <CheckCircle2 className="w-4 h-4" />
+                Colaboración Estatal y Social
+              </div>
+              
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-white mb-6 leading-tight">
+                Impulsa la Ley de Transformación Digital del Estado
+              </h2>
+              
+              <p className="text-lg text-slate-300 leading-relaxed mb-10">
+                La <strong className="text-white">Ley N° 21.180 (Cero Papel)</strong> exige a los órganos de la Administración del Estado en Chile realizar sus procedimientos en formato electrónico. SkardKey es la herramienta perfecta para liderar este cambio.
+              </p>
+              
+              <div className="grid sm:grid-cols-2 gap-8 mb-10">
+                <div className="flex items-start gap-4 p-5 rounded-2xl bg-surface-900/50 border border-white/5 hover:bg-surface-800/50 transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-brand-500/20 flex items-center justify-center flex-shrink-0 border border-brand-500/20">
+                    <Building2 className="w-6 h-6 text-brand-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white mb-2">Para Municipalidades</h3>
+                    <p className="text-sm text-slate-400 leading-relaxed">Moderniza padrones, subsidios y atenciones sociales. Elimina el gasto en credenciales físicas y acelera el servicio al vecino con validaciones QR en terreno.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4 p-5 rounded-2xl bg-surface-900/50 border border-white/5 hover:bg-surface-800/50 transition-colors relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+                  <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0 border border-emerald-500/20 relative z-10">
+                    <Users className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div className="relative z-10">
+                    <h3 className="text-base font-bold text-emerald-400 mb-2">Gratis para Juntas de Vecinos</h3>
+                    <p className="text-sm text-slate-400 leading-relaxed">Apoyamos a las comunidades de Chile ofreciendo acceso total <strong className="text-slate-200">sin costo alguno</strong>. Profesionaliza tu junta, controla beneficios y empodera a tus vecinos.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <Link href="/contacto" className="btn-primary px-8 py-4 text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25">
+                <span className="relative z-10">Inicia tu Transformación Digital</span>
+                <ArrowRight className="w-4 h-4 relative z-10" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
