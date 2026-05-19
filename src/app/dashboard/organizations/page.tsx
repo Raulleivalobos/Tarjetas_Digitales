@@ -6,13 +6,24 @@ import { Building2, Plus, ArrowRight, CheckCircle, AlertCircle, Copy } from 'luc
 import { createClient } from '@/lib/supabase/client';
 
 export default function OrganizationsPage() {
-  const { user, memberships, refreshOrganization, switchOrganization } = useAuth();
+  const { user, membership, memberships, refreshOrganization, switchOrganization } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [newOrgName, setNewOrgName] = useState('');
   const [templateOrgId, setTemplateOrgId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Protect the route
+  if (membership?.role !== 'owner') {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+        <AlertCircle className="w-16 h-16 text-red-500/50 mb-4" />
+        <h2 className="text-2xl font-bold text-white mb-2">Acceso Denegado</h2>
+        <p className="text-slate-400">Esta sección es exclusiva para Propietarios de la plataforma.</p>
+      </div>
+    );
+  }
 
   // Solo mostrar organizaciones donde es owner o admin para usar como plantilla
   const templateOrgs = memberships.filter(m => m.role === 'owner' || m.role === 'admin');
