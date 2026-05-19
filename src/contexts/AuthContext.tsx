@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useRef, useCallback, us
 import { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { Organization, OrgMember } from '@/lib/types';
+import { signOutAction } from '@/app/actions/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -221,11 +222,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     try {
-      // Don't race this with a small timeout, otherwise the browser might reload 
-      // before Supabase has a chance to delete the server-side cookies.
+      // 1. Clear local Supabase JS client state
       await supabase.auth.signOut();
     } catch (e) {
-      console.warn("SignOut error", e);
+      console.warn("Client SignOut error", e);
+    }
+
+    try {
+      // 2. Clear server-side HTTP cookies using a Server Action.
+      // We wrap it in a 1.2s timeout so that even if the network is sluggish,
+      // the process continues and doesn't leave the user stuck.
+      await Promise.race([
+        signOutAction(),
+        new Promise(resolve => setTimeout(resolve, 1200))
+      ]);
+    } catch (e) {
+      console.warn("Server SignOut error", e);
     }
   }, [supabase]);
 

@@ -150,7 +150,7 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push('/login');
+        window.location.href = '/login';
       } else if (!organization && memberships.length > 0 && pathname !== '/dashboard/select') {
         // Si hay membresías pero ninguna activa (ej: recién logueado con múltiples orgs), ir a selección
         router.push('/dashboard/select');

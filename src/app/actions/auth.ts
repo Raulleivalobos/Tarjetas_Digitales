@@ -18,3 +18,12 @@ export async function sendResetPasswordEmail(email: string) {
 
   return { success: true };
 }
+
+/**
+ * Acción de servidor para cerrar sesión y limpiar las cookies del servidor
+ */
+export async function signOutAction() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  return { success: true };
+}
