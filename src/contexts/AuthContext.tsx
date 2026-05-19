@@ -205,22 +205,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   const signOut = useCallback(async () => {
-    // Instant UI reset to prevent "stuck" screen
-    setUser(null);
-    setSession(null);
-    setOrganization(null);
-    setMembership(null);
-    setMemberships([]);
-    lastFetchedUserRef.current = null;
-    localStorage.removeItem('last_org_id');
-
-    // Force-clear Supabase auth tokens
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
-        localStorage.removeItem(key);
-      }
-    });
-
     try {
       // 1. Clear local Supabase JS client state
       await supabase.auth.signOut();
@@ -230,15 +214,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // 2. Clear server-side HTTP cookies using a Server Action.
-      // We wrap it in a 1.2s timeout so that even if the network is sluggish,
+      // We wrap it in a 1.5s timeout so that even if the network is sluggish,
       // the process continues and doesn't leave the user stuck.
       await Promise.race([
         signOutAction(),
-        new Promise(resolve => setTimeout(resolve, 1200))
+        new Promise(resolve => setTimeout(resolve, 1500))
       ]);
     } catch (e) {
       console.warn("Server SignOut error", e);
     }
+
+    // Force-clear Supabase auth tokens
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        localStorage.removeItem(key);
+      }
+    });
+    localStorage.removeItem('last_org_id');
+
+    // 3. Update React state at the very end to trigger unmount/redirects
+    setUser(null);
+    setSession(null);
+    setOrganization(null);
+    setMembership(null);
+    setMemberships([]);
   }, [supabase]);
 
   const refreshOrganization = useCallback(async () => {

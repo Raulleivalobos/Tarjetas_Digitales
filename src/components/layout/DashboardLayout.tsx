@@ -36,6 +36,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showForcePassword, setShowForcePassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -150,7 +151,7 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        window.location.href = '/login';
+        window.location.href = '/';
       } else if (!organization && memberships.length > 0 && pathname !== '/dashboard/select') {
         // Si hay membresías pero ninguna activa (ej: recién logueado con múltiples orgs), ir a selección
         router.push('/dashboard/select');
@@ -172,7 +173,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (!user) {
+  if (!user || isLoggingOut) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -184,10 +185,11 @@ export default function DashboardLayout({
   }
 
   const handleSignOut = async () => {
-    // Wait for Supabase to clear the session and cookies first
+    setIsLoggingOut(true);
+    // Wait for Supabase to clear the session and cookies completely
     await signOut();
-    // Then redirect to login (the 'Cerrando sesión' spinner will show in the meantime)
-    window.location.href = '/login';
+    // Redirect to the home landing page (www.skardkey.cl)
+    window.location.href = '/';
   };
 
   return (
