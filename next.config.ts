@@ -36,8 +36,6 @@ const nextConfig: NextConfig = {
   },
   // Performance: compress responses
   compress: true,
-  // Performance: use SWC minifier (default in Next 16, explicit for clarity)
-  swcMinify: true,
   // Performance: set powered-by header off to reduce response size
   poweredByHeader: false,
   turbopack: {
