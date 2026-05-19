@@ -221,12 +221,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     try {
-      await Promise.race([
-        supabase.auth.signOut(),
-        new Promise(resolve => setTimeout(resolve, 800))
-      ]);
+      // Don't race this with a small timeout, otherwise the browser might reload 
+      // before Supabase has a chance to delete the server-side cookies.
+      await supabase.auth.signOut();
     } catch (e) {
-      console.warn("SignOut timeout or error", e);
+      console.warn("SignOut error", e);
     }
   }, [supabase]);
 
