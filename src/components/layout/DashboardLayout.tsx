@@ -184,10 +184,10 @@ export default function DashboardLayout({
   }
 
   const handleSignOut = async () => {
-    // Redirect immediately so the user never sees a blank screen
+    // Wait for Supabase to clear the session and cookies first
+    await signOut();
+    // Then redirect to login (the 'Cerrando sesión' spinner will show in the meantime)
     window.location.href = '/login';
-    // Sign out in the background while the redirect is happening
-    signOut();
   };
 
   return (
