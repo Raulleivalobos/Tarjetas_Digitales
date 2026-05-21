@@ -49,7 +49,7 @@ export default function CardsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [streetFilter, setStreetFilter] = useState('all');
   const [streets, setStreets] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [selectedCard, setSelectedCard] = useState<CardWithBeneficiary | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -377,18 +377,28 @@ export default function CardsPage() {
           <h1 className="text-2xl lg:text-3xl font-bold text-white">Tarjetas Digitales</h1>
           <p className="text-slate-400 mt-1">Vista previa y gestión de tarjetas emitidas</p>
         </div>
-        <div className="flex items-center gap-2 bg-surface-900/50 rounded-xl p-1 border border-brand-500/10">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-brand-500/10 text-brand-400' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            <Grid3X3 className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-1 bg-surface-900/50 rounded-xl p-1 border border-brand-500/10">
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-brand-500/10 text-brand-400' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-semibold ${
+              viewMode === 'list'
+                ? 'bg-brand-500/10 text-brand-300 border border-brand-500/20'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
           >
             <List className="w-4 h-4" />
+            <span>Gestión</span>
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-semibold ${
+              viewMode === 'grid'
+                ? 'bg-brand-500/10 text-brand-300 border border-brand-500/20'
+                : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Grid3X3 className="w-4 h-4" />
+            <span>Vista Previa</span>
           </button>
         </div>
       </div>
