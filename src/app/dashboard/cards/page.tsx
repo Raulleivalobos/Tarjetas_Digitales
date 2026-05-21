@@ -23,7 +23,9 @@ import {
   Download,
   Mail,
   ShieldAlert,
-  MessageCircle
+  MessageCircle,
+  TrendingUp,
+  CheckCircle2
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { exportElementToPDF } from '@/lib/pdfGenerator';
@@ -38,11 +40,15 @@ interface CardWithBeneficiary extends DigitalCard {
 export default function CardsPage() {
   const { organization, loading: authLoading, membership, user } = useAuth();
   const isAdmin = membership?.role === 'admin' || membership?.role === 'owner';
+  const canManageDelivery = isAdmin || membership?.role === 'validator';
+
   const [cards, setCards] = useState<CardWithBeneficiary[]>([]);
   const [loading, setLoading] = useState(true);
   const [resending, setResending] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [streetFilter, setStreetFilter] = useState('all');
+  const [streets, setStreets] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedCard, setSelectedCard] = useState<CardWithBeneficiary | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -77,9 +83,8 @@ export default function CardsPage() {
           .eq('org_id', organization.id);
 
         if (!error && data) {
-          let mapped = data.map((c: any) => {
+          const mapped = data.map((c: any) => {
             const design = designs?.find((d: any) => d.id === c.metadata?.design_id);
-            // Handle cases where beneficiaries might be an array or an object
             const benData = Array.isArray(c.beneficiaries) ? c.beneficiaries[0] : c.beneficiaries;
             return {
               ...c,
@@ -88,25 +93,16 @@ export default function CardsPage() {
             };
           });
 
-          if (search) {
-            const s = search.toLowerCase();
-            mapped = mapped.filter(
-              (c: CardWithBeneficiary) => {
-                const combinedString = `
-                  ${c.beneficiary?.full_name || ''} 
-                  ${c.beneficiary?.rut || ''} 
-                  ${c.card_number || ''} 
-                  ${c.beneficiary?.address || ''} 
-                  ${c.beneficiary?.address_number || ''} 
-                  ${(c.beneficiary?.custom_fields as any)?.['Dirección'] || ''}
-                `.toLowerCase();
-                
-                const searchTerms = s.split(' ').filter(Boolean);
-                return searchTerms.every(term => combinedString.includes(term));
-              }
-            );
-          }
+          // Extract unique streets from mapped cards
+          const uniqueStreets = Array.from(
+            new Set(
+              mapped
+                .map((c: any) => (c.beneficiary?.address || (c.beneficiary?.custom_fields as any)?.['Dirección'] || '').trim())
+                .filter(Boolean)
+            )
+          ).sort() as string[];
 
+          setStreets(uniqueStreets);
           setCards(mapped);
         }
       } catch (err) {
@@ -117,13 +113,49 @@ export default function CardsPage() {
     };
 
     fetchCards();
-  }, [organization?.id, statusFilter, search, authLoading]);
+  }, [organization?.id, statusFilter, authLoading]);
+
+  // Client-side dynamic filtering for instant responsiveness and performance
+  const filteredCards = cards.filter((c) => {
+    // 1. Street Filter
+    if (streetFilter !== 'all') {
+      const address = (c.beneficiary?.address || (c.beneficiary?.custom_fields as any)?.['Dirección'] || '').trim();
+      if (streetFilter === 'no_address') {
+        if (address) return false;
+      } else {
+        if (address.toLowerCase() !== streetFilter.toLowerCase()) return false;
+      }
+    }
+
+    // 2. Search Filter
+    if (search) {
+      const s = search.toLowerCase();
+      const combinedString = `
+        ${c.beneficiary?.full_name || ''} 
+        ${c.beneficiary?.rut || ''} 
+        ${c.card_number || ''} 
+        ${c.beneficiary?.address || ''} 
+        ${c.beneficiary?.address_number || ''} 
+        ${(c.beneficiary?.custom_fields as any)?.['Dirección'] || ''}
+      `.toLowerCase();
+      
+      const searchTerms = s.split(' ').filter(Boolean);
+      if (!searchTerms.every(term => combinedString.includes(term))) return false;
+    }
+
+    return true;
+  });
+
+  // Calculate dynamic metrics based on currently filtered cards
+  const totalEmitidas = filteredCards.length;
+  const totalEntregadas = filteredCards.filter(c => c.metadata?.delivered === true).length;
+  const porcentajeEntrega = totalEmitidas > 0 ? (totalEntregadas / totalEmitidas) * 100 : 0;
 
   const toggleSelectAll = () => {
-    if (selectedIds.length === cards.length) {
+    if (selectedIds.length === filteredCards.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(cards.map(c => c.id));
+      setSelectedIds(filteredCards.map(c => c.id));
     }
   };
 
@@ -132,6 +164,43 @@ export default function CardsPage() {
       setSelectedIds(selectedIds.filter(selId => selId !== id));
     } else {
       setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleToggleDelivery = async (card: CardWithBeneficiary) => {
+    if (!canManageDelivery) return;
+    const isDelivered = !!card.metadata?.delivered;
+    const nextDeliveredState = !isDelivered;
+    const updatedMetadata = {
+      ...card.metadata,
+      delivered: nextDeliveredState,
+      delivered_at: nextDeliveredState ? new Date().toISOString() : null,
+      delivered_by: user?.email || 'unknown'
+    };
+    try {
+      const { error } = await supabase
+        .from('digital_cards')
+        .update({ metadata: updatedMetadata })
+        .eq('id', card.id);
+      if (error) throw error;
+      setCards(prev => prev.map(c => c.id === card.id ? { ...c, metadata: updatedMetadata } : c));
+      
+      // Update selected card if it is currently open in preview modal
+      if (selectedCard && selectedCard.id === card.id) {
+        setSelectedCard(prev => prev ? { ...prev, metadata: updatedMetadata } : null);
+      }
+
+      await logActivity({
+        orgId: organization!.id,
+        userId: membership!.user_id,
+        userEmail: user?.email || 'unknown',
+        action: nextDeliveredState ? 'CARD_DELIVERED' : 'CARD_DELIVERY_CANCELLED',
+        entityType: 'card',
+        details: { card_id: card.id, card_number: card.card_number, beneficiary_name: card.beneficiary?.full_name }
+      });
+    } catch (err) {
+      console.error('Error toggling delivery:', err);
+      alert('Error al actualizar el estado de entrega.');
     }
   };
 
@@ -324,6 +393,37 @@ export default function CardsPage() {
         </div>
       </div>
 
+      {/* Panel de Métricas */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="glass-card p-5 border-l-4 border-blue-500 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Tarjetas Emitidas</p>
+            <p className="text-2xl font-black text-white mt-1">{totalEmitidas}</p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+            <CreditCard className="w-6 h-6" />
+          </div>
+        </div>
+        <div className="glass-card p-5 border-l-4 border-emerald-500 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Tarjetas Entregadas</p>
+            <p className="text-2xl font-black text-white mt-1">{totalEntregadas}</p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+            <CheckCircle2 className="w-6 h-6" />
+          </div>
+        </div>
+        <div className="glass-card p-5 border-l-4 border-amber-500 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Porcentaje Entrega</p>
+            <p className="text-2xl font-black text-white mt-1">{porcentajeEntrega.toFixed(1)}%</p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+            <TrendingUp className="w-6 h-6" />
+          </div>
+        </div>
+      </div>
+
       {/* Action Bar for Selection */}
       {selectedIds.length > 0 && (
         <div className="glass-card-solid bg-brand-500/10 border-brand-500/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in slide-in-from-top-4 fade-in">
@@ -408,11 +508,22 @@ export default function CardsPage() {
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-slate-500 hidden sm:block" />
             <select
+              value={streetFilter}
+              onChange={(e) => setStreetFilter(e.target.value)}
+              className="glass-input px-4 py-2.5 text-sm min-w-[160px]"
+            >
+              <option value="all">Todas las calles</option>
+              <option value="no_address">Sin dirección</option>
+              {streets.map((street) => (
+                <option key={street} value={street}>{street}</option>
+              ))}
+            </select>
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="glass-input px-4 py-2.5 text-sm min-w-[140px]"
             >
-              <option value="all">Todas</option>
+              <option value="all">Todos los estados</option>
               <option value="draft">Borradores</option>
               <option value="active">Activas</option>
               <option value="inactive">Inactivas</option>
@@ -427,7 +538,7 @@ export default function CardsPage() {
       {/* Bulk Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="text-sm text-slate-400">
-          {cards.length} tarjeta{cards.length !== 1 ? 's' : ''} encontrada{cards.length !== 1 ? 's' : ''}
+          {filteredCards.length} de {cards.length} tarjeta{cards.length !== 1 ? 's' : ''} encontrada{cards.length !== 1 ? 's' : ''}
           {selectedIds.length > 0 && (
             <span className="ml-2 text-brand-400 font-medium">({selectedIds.length} seleccionadas)</span>
           )}
@@ -473,9 +584,17 @@ export default function CardsPage() {
             description="Las tarjetas se generan automáticamente al crear beneficiarios."
           />
         </div>
+      ) : filteredCards.length === 0 ? (
+        <div className="glass-card">
+          <EmptyState
+            icon={<CreditCard className="w-8 h-8" />}
+            title="Sin resultados"
+            description="No hay tarjetas que coincidan con los filtros seleccionados."
+          />
+        </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {cards.map((c) => (
+          {filteredCards.map((c) => (
             <div key={c.id} className="group relative">
               {organization && (
                 <DigitalCardView
@@ -518,7 +637,7 @@ export default function CardsPage() {
                 {isAdmin && (
                   <th className="w-12">
                     <button onClick={toggleSelectAll}>
-                      {selectedIds.length === cards.length && cards.length > 0 ? (
+                      {selectedIds.length === filteredCards.length && filteredCards.length > 0 ? (
                         <CheckSquare className="w-5 h-5 text-brand-400" />
                       ) : (
                         <Square className="w-5 h-5 text-slate-400" />
@@ -531,12 +650,13 @@ export default function CardsPage() {
                 <th>Nro.</th>
                 <th>N° Tarjeta</th>
                 <th>Estado</th>
+                <th>Entrega</th>
                 <th>Emitida</th>
                 <th className="text-right">Acción</th>
               </tr>
             </thead>
             <tbody>
-              {cards.map((c) => (
+              {filteredCards.map((c) => (
                 <tr key={c.id} className="hover:bg-white/[0.02]">
                   {isAdmin && (
                     <td>
@@ -554,6 +674,29 @@ export default function CardsPage() {
                   <td className="text-xs font-mono text-slate-400">{c.beneficiary?.address_number || '-'}</td>
                   <td className="font-mono text-xs text-slate-400">{c.card_number}</td>
                   <td><StatusBadge status={c.status} size="sm" /></td>
+                  <td>
+                    <button
+                      onClick={() => handleToggleDelivery(c)}
+                      disabled={!canManageDelivery}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
+                        c.metadata?.delivered
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-slate-500/10 text-slate-400 border border-slate-500/10 hover:bg-slate-500/20'
+                      } ${!canManageDelivery ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    >
+                      {c.metadata?.delivered ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Entregada</span>
+                        </>
+                      ) : (
+                        <>
+                          <Square className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Pendiente</span>
+                        </>
+                      )}
+                    </button>
+                  </td>
                   <td className="text-xs text-slate-400">{formatDate(c.issued_at)}</td>
                   <td className="text-right">
                     <div className="flex items-center justify-end gap-1">
@@ -625,6 +768,45 @@ export default function CardsPage() {
               <div>
                 <p className="text-slate-500 text-xs uppercase tracking-wider">Estado Actual</p>
                 <div className="mt-1"><StatusBadge status={selectedCard.status} size="sm" /></div>
+              </div>
+              <div>
+                <p className="text-slate-500 text-xs uppercase tracking-wider">Control de Entrega</p>
+                <div className="mt-1">
+                  <button
+                    onClick={() => handleToggleDelivery(selectedCard)}
+                    disabled={!canManageDelivery}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      selectedCard.metadata?.delivered
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'bg-slate-500/10 text-slate-400 border border-slate-500/10 hover:bg-slate-500/20'
+                    } ${!canManageDelivery ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  >
+                    {selectedCard.metadata?.delivered ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Entregada</span>
+                      </>
+                    ) : (
+                      <>
+                        <Square className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Pendiente</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <p className="text-slate-500 text-xs uppercase tracking-wider">Detalles de Entrega</p>
+                <div className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  {selectedCard.metadata?.delivered ? (
+                    <>
+                      <span>Entregado el {new Date(selectedCard.metadata.delivered_at as string).toLocaleDateString('es-CL')}</span>
+                      {!!selectedCard.metadata.delivered_by && <span> por <span className="text-slate-300 font-medium">{selectedCard.metadata.delivered_by as string}</span></span>}
+                    </>
+                  ) : (
+                    <span>Pendiente de entrega física en terreno.</span>
+                  )}
+                </div>
               </div>
             </div>
             

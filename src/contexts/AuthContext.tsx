@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
+  const lastFetchedUserRef = useRef<string | null>(null);
 
   const fetchOrganization = useCallback(async (userId: string, preferredOrgId?: string) => {
     try {
@@ -54,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const lastOrgId = preferredOrgId || localStorage.getItem('last_org_id');
 
       // 1. If there's a saved preference, find it
-      let activeMember = lastOrgId ? allMemberships.find(m => m.org_id === lastOrgId) : null;
+      let activeMember = lastOrgId ? allMemberships.find((m: any) => m.org_id === lastOrgId) : null;
 
       // 2. If no preference and only ONE org, auto-select
       if (!activeMember && allMemberships.length === 1) {
@@ -82,10 +83,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   useEffect(() => {
-    // Hard cap: if loading takes > 3s, force-stop to prevent infinite spinner
+    // Hard cap: if loading takes > 8s, force-stop to prevent infinite spinner
     const failsafe = setTimeout(() => {
       setLoading(false);
-    }, 3000);
+    }, 8000);
 
     let isMounted = true;
     let initialSessionHandled = false;
@@ -114,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      async (event: any, newSession: any) => {
         if (!isMounted) return;
 
         if (event === 'SIGNED_OUT') {

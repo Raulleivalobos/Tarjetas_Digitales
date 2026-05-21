@@ -151,7 +151,7 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        window.location.href = '/';
+        window.location.href = 'https://www.skardkey.cl';
       } else if (!organization && memberships.length > 0 && pathname !== '/dashboard/select') {
         // Si hay membresías pero ninguna activa (ej: recién logueado con múltiples orgs), ir a selección
         router.push('/dashboard/select');
@@ -189,7 +189,7 @@ export default function DashboardLayout({
     // Wait for Supabase to clear the session and cookies completely
     await signOut();
     // Redirect to the home landing page (www.skardkey.cl)
-    window.location.href = '/';
+    window.location.href = 'https://www.skardkey.cl';
   };
 
   return (

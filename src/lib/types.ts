@@ -68,7 +68,7 @@ export interface DigitalCard {
   org_id: string;
   card_number: string;
   qr_code: string;
-  status: 'active' | 'expired' | 'blocked' | 'revoked' | 'draft';
+  status: 'active' | 'inactive' | 'expired' | 'blocked' | 'revoked' | 'draft';
   issued_at: string;
   expires_at: string | null;
   metadata: Record<string, unknown>;

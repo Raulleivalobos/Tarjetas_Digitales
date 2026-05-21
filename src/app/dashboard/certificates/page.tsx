@@ -82,7 +82,7 @@ export default function CertificatesPage() {
         folio: c.folio?.toString().padStart(6, '0') || '-',
         receptor: c.resident_data?.full_name || c.beneficiaries?.full_name || 'Desconocido',
         tipo: c.type === 'socio_activo' ? 'Socio Activo' : c.type === 'socio_inactivo' ? 'Socio Inactivo' : 'Residente',
-        costo: `$${c.cost.toLocaleString('es-CL')}`,
+        costo: `$${(c.cost || 0).toLocaleString('es-CL')}`,
         fecha: new Date(c.issued_at).toLocaleDateString('es-CL')
       }));
 
@@ -90,17 +90,17 @@ export default function CertificatesPage() {
         { 
           type: 'Socio Activo', 
           count: certificates.filter(c => c.type === 'socio_activo').length,
-          total: certificates.filter(c => c.type === 'socio_activo').reduce((acc, c) => acc + c.cost, 0)
+          total: certificates.filter(c => c.type === 'socio_activo').reduce((acc, c) => acc + (c.cost || 0), 0)
         },
         { 
           type: 'Socio Inactivo', 
           count: certificates.filter(c => c.type === 'socio_inactivo').length,
-          total: certificates.filter(c => c.type === 'socio_inactivo').reduce((acc, c) => acc + c.cost, 0)
+          total: certificates.filter(c => c.type === 'socio_inactivo').reduce((acc, c) => acc + (c.cost || 0), 0)
         },
         { 
           type: 'Residente', 
           count: certificates.filter(c => c.type === 'residente').length,
-          total: certificates.filter(c => c.type === 'residente').reduce((acc, c) => acc + c.cost, 0)
+          total: certificates.filter(c => c.type === 'residente').reduce((acc, c) => acc + (c.cost || 0), 0)
         }
       ].filter(item => item.count > 0);
 
@@ -116,7 +116,7 @@ export default function CertificatesPage() {
           { label: 'Socios Activos', value: certificates.filter(c => c.type === 'socio_activo').length.toString() },
           { label: 'Socios Inactivos', value: certificates.filter(c => c.type === 'socio_inactivo').length.toString() },
           { label: 'Residentes', value: certificates.filter(c => c.type === 'residente').length.toString() },
-          { label: 'Recaudación', value: `$${certificates.reduce((acc, curr) => acc + curr.cost, 0).toLocaleString('es-CL')}` }
+          { label: 'Recaudación', value: `$${certificates.reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('es-CL')}` }
         ],
         footerSummary,
         columns: [
@@ -138,7 +138,7 @@ export default function CertificatesPage() {
 
   const handleSendWhatsApp = (cert: Certificate) => {
     // Both active member and resident certificates might have phone numbers in different structures
-    const phoneSource = cert.resident_data?.phone || (cert as any).beneficiaries?.phone;
+    const phoneSource = (cert.resident_data as any)?.phone || (cert as any).beneficiaries?.phone;
     
     if (!phoneSource) {
       alert('El receptor no tiene un número de teléfono registrado.');
@@ -302,7 +302,7 @@ export default function CertificatesPage() {
             <div>
               <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Recaudación</p>
               <p className="text-xl font-bold text-white">
-                ${certificates.reduce((acc, curr) => acc + curr.cost, 0).toLocaleString('es-CL')}
+                ${certificates.reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('es-CL')}
               </p>
             </div>
           </div>
@@ -379,7 +379,7 @@ export default function CertificatesPage() {
                       {formatDateTime(cert.issued_at)}
                     </td>
                     <td className="px-6 py-4 font-bold text-white">
-                      ${cert.cost.toLocaleString('es-CL')}
+                      ${(cert.cost || 0).toLocaleString('es-CL')}
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={cert.status} size="sm" />
@@ -468,7 +468,7 @@ export default function CertificatesPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-400">Total Recaudado:</span>
-                  <span className="text-emerald-400 font-black">${certificates.reduce((acc, curr) => acc + curr.cost, 0).toLocaleString('es-CL')}</span>
+                  <span className="text-emerald-400 font-black">${certificates.reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('es-CL')}</span>
                 </div>
               </div>
 
