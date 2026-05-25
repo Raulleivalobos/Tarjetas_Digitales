@@ -434,18 +434,22 @@ function IssuePageContent() {
             if (keyUpper === 'NOMBRE RECEPTOR' || keyUpper === 'NOMBRE') val = customVal || manualForm.full_name || val;
             else if (keyUpper === 'NOMBRE INSTITUCIÓN' || keyUpper === 'ORGANIZACION') val = customVal || organization?.name || val;
             else if (keyUpper === 'RUT') val = customVal || formatRut(manualForm.rut) || val;
-            else if (keyUpper === 'ID SOCIO') val = customVal || val;
+            else if (keyUpper === 'ID SOCIO' || keyUpper === 'NRO DE SOCIO' || keyUpper === 'NRO SOCIO') val = customVal || manualForm.id_socio || val;
             else if (keyUpper === 'FECHA' || keyUpper === 'FECHA EMISIÓN' || keyUpper === 'VÁLIDA DESDE') val = customVal || manualForm.expiryDate || previewDate;
             else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO' || keyUpper === 'STATUS') {
               const defaultStatus = manualForm.status === 'inactive' ? 'Inactivo' : 'Activo';
               val = customVal || defaultStatus;
             }
             else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') val = customVal || manualForm.email || val;
-            else if (keyUpper === 'N° TARJETA' || keyUpper === 'NRO TARJETA' || keyUpper === 'HASH') {
+            else if (keyUpper === 'N° TARJETA' || keyUpper === 'NRO TARJETA' || keyUpper === 'NRO DE TARJETA' || keyUpper === 'HASH') {
               val = customVal || 'CS-PREVIEW-001';
             }
             else if (keyUpper === 'RUT INSTITUCIÓN' || keyUpper === 'RUT INSTITUCION') val = (organization?.settings as any)?.rut || val;
-            else if (keyUpper === 'DIRECCIÓN INSTITUCIÓN' || keyUpper === 'DIRECCION') val = (organization?.settings as any)?.address || val;
+            else if (keyUpper === 'DIRECCIÓN INSTITUCIÓN' || keyUpper === 'DIRECCION INSTITUCION') val = (organization?.settings as any)?.address || val;
+            else if (keyUpper === 'DIRECCIÓN RECEPTOR' || keyUpper === 'DIRECCION RECEPTOR' || keyUpper === 'DIRECCIÓN' || keyUpper === 'DIRECCION') {
+              const addr = [manualForm.address, manualForm.address_number].filter(Boolean).join(' ');
+              val = customVal || addr || val;
+            }
             else if (keyUpper === 'COMUNA') val = (organization?.settings as any)?.commune || val;
             else if (keyUpper === 'REGIÓN' || keyUpper === 'REGION') val = (organization?.settings as any)?.region || val;
             else if (keyUpper === 'VILLA' || keyUpper === 'POBLACIÓN') val = (organization?.settings as any)?.villa || val;

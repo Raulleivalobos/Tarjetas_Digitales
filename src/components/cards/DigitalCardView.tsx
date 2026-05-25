@@ -110,15 +110,15 @@ export function DigitalCardView({
           if (keyUpper === 'NOMBRE RECEPTOR' || keyUpper === 'NOMBRE') val = customVal || beneficiary.full_name || val;
           else if (keyUpper === 'NOMBRE INSTITUCIÓN' || keyUpper === 'ORGANIZACION') val = customVal || organization.name || val;
           else if (keyUpper === 'RUT') val = customVal || formatRut(beneficiary.rut) || val;
-          else if (keyUpper === 'ID SOCIO') val = customVal || val;
+          else if (keyUpper === 'ID SOCIO' || keyUpper === 'NRO DE SOCIO' || keyUpper === 'NRO SOCIO') val = customVal || val;
           else if (keyUpper === 'FECHA' || keyUpper === 'FECHA EMISIÓN') val = customVal || formatDate(card.issued_at) || val;
           else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO') val = customVal || (card.status === 'active' ? 'Activo' : card.status) || val;
           else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') val = customVal || beneficiary.email || val;
-          else if (keyUpper === 'DIRECCIÓN' || keyUpper === 'DIRECCION' || keyUpper === 'DOMICILIO') {
+          else if (keyUpper === 'DIRECCIÓN RECEPTOR' || keyUpper === 'DIRECCION RECEPTOR' || keyUpper === 'DIRECCIÓN' || keyUpper === 'DIRECCION' || keyUpper === 'DOMICILIO') {
             const combined = [beneficiary.address, beneficiary.address_number].filter(Boolean).join(' ');
             val = combined || customVal || val;
           }
-          else if (keyUpper && (keyUpper.includes('TARJETA') || keyUpper.includes('Nº') || keyUpper.includes('N°'))) {
+          else if (keyUpper && (keyUpper.includes('TARJETA') || keyUpper.includes('Nº') || keyUpper.includes('N°') || keyUpper.includes('NRO') || keyUpper === 'HASH')) {
             val = card.card_number || val;
             // Forzar un tamaño de fuente pequeño y forzar un ancho mínimo para que quepa en una sola línea
             if (el.data.fontSize > 8) el.data.fontSize = 8;
