@@ -685,18 +685,37 @@ function CardDesignEditorContent() {
   }, [design?.id]); // Only run when a new design is loaded
   const [saved, setSaved] = useState(false);
   const [unsaved, setUnsaved] = useState(false);
-  const [history, setHistory] = useState<CardDesign[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
   const [isSaving, setIsSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isGlitching, setIsGlitching] = useState(false);
 
-  // Save to history
+  // History tracking with refs to avoid stale closure bugs
+  const historyRef = useRef<CardDesign[]>([]);
+  const historyIndexRef = useRef(-1);
+  const [, forceHistoryRender] = useState(0);
+  const history = historyRef.current;
+  const historyIndex = historyIndexRef.current;
+
+  // Initialize history when design loads
+  const historyInitialized = useRef(false);
+  useEffect(() => {
+    if (design && !isLoading && !historyInitialized.current) {
+      historyRef.current = [design];
+      historyIndexRef.current = 0;
+      historyInitialized.current = true;
+      forceHistoryRender(n => n + 1);
+    }
+  }, [design, isLoading]);
+
+  // Save to history (uses refs, no stale closures)
   const pushHistory = useCallback((newDesign: CardDesign) => {
-    setHistory((prev) => [...prev.slice(0, historyIndex + 1), newDesign]);
-    setHistoryIndex((prev) => prev + 1);
-  }, [historyIndex]);
+    const idx = historyIndexRef.current;
+    const newHistory = [...historyRef.current.slice(0, idx + 1), newDesign];
+    historyRef.current = newHistory;
+    historyIndexRef.current = idx + 1;
+    forceHistoryRender(n => n + 1);
+  }, []);
 
   // Update design
   const updateDesign = useCallback(
@@ -843,18 +862,23 @@ function CardDesignEditorContent() {
     }
   }, [design, isLoading, updateDesign]);
 
-  // Undo / Redo
+  // Undo / Redo (uses refs for correct index)
   const handleUndo = () => {
-    if (historyIndex > 0) {
-      setHistoryIndex((prev) => prev - 1);
-      setDesign(history[historyIndex - 1]);
+    const idx = historyIndexRef.current;
+    if (idx > 0) {
+      historyIndexRef.current = idx - 1;
+      setDesign(historyRef.current[idx - 1]);
+      forceHistoryRender(n => n + 1);
     }
   };
 
   const handleRedo = () => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex((prev) => prev + 1);
-      setDesign(history[historyIndex + 1]);
+    const idx = historyIndexRef.current;
+    const len = historyRef.current.length;
+    if (idx < len - 1) {
+      historyIndexRef.current = idx + 1;
+      setDesign(historyRef.current[idx + 1]);
+      forceHistoryRender(n => n + 1);
     }
   };
 
