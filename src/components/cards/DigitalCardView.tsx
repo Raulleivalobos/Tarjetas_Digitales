@@ -41,10 +41,10 @@ export function DigitalCardView({
     const baseScale = compact ? 0.7 : 1;
     
     const updateScale = () => {
-      if (containerRef.current) {
-        const containerWidth = containerRef.current.clientWidth;
+      if (containerRef.current && containerRef.current.parentElement) {
+        const parentWidth = containerRef.current.parentElement.clientWidth;
         // Restar margen para que no toque los bordes de la pantalla
-        const availableWidth = Math.max(200, containerWidth - 16); 
+        const availableWidth = Math.max(200, parentWidth - 32); 
         const neededScale = availableWidth / design.width;
         setResponsiveScale(Math.min(baseScale, neededScale));
       }
@@ -52,7 +52,9 @@ export function DigitalCardView({
 
     updateScale();
     const observer = new ResizeObserver(updateScale);
-    if (containerRef.current) observer.observe(containerRef.current);
+    if (containerRef.current && containerRef.current.parentElement) {
+      observer.observe(containerRef.current.parentElement);
+    }
     
     return () => observer.disconnect();
   }, [design, compact]);
@@ -174,7 +176,7 @@ export function DigitalCardView({
     };
 
     return (
-      <div ref={containerRef} className={`relative overflow-hidden flex justify-center items-center w-full ${compact ? 'max-w-[320px] mx-auto' : ''}`}>
+      <div ref={containerRef} className={`relative flex justify-center items-center w-full`}>
         <CanvasPreview 
           design={populatedDesign} 
           selectedElementId={null} 
