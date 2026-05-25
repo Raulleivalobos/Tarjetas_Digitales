@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Beneficiary, DigitalCard, Organization } from '@/lib/types';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { QRCodeDisplay } from '@/components/ui/QRCodeDisplay';
@@ -28,11 +28,34 @@ export function DigitalCardView({
 }: DigitalCardViewProps & { design?: any }) {
   const [mounted, setMounted] = useState(false);
   const [qrData, setQrData] = useState<string>('');
+  const [responsiveScale, setResponsiveScale] = useState(compact ? 0.7 : 1);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
     setQrData(generateQRData(card.id, organization.slug));
   }, [card.id, organization.slug]);
+
+  useEffect(() => {
+    if (!design) return;
+    const baseScale = compact ? 0.7 : 1;
+    
+    const updateScale = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        // Restar margen para que no toque los bordes de la pantalla
+        const availableWidth = Math.max(200, containerWidth - 16); 
+        const neededScale = availableWidth / design.width;
+        setResponsiveScale(Math.min(baseScale, neededScale));
+      }
+    };
+
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    if (containerRef.current) observer.observe(containerRef.current);
+    
+    return () => observer.disconnect();
+  }, [design, compact]);
 
   if (!mounted) return null; // Prevent hydration mismatch
 
@@ -151,11 +174,11 @@ export function DigitalCardView({
     };
 
     return (
-      <div className={`relative overflow-hidden flex justify-center items-center ${compact ? 'w-full max-w-[280px] mx-auto' : 'w-full'}`}>
+      <div ref={containerRef} className={`relative overflow-hidden flex justify-center items-center w-full ${compact ? 'max-w-[320px] mx-auto' : ''}`}>
         <CanvasPreview 
           design={populatedDesign} 
           selectedElementId={null} 
-          scale={compact ? 0.7 : 1}
+          scale={responsiveScale}
           readOnly={true}
         />
       </div>
