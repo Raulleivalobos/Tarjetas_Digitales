@@ -754,77 +754,87 @@ function CardDesignEditorContent() {
       }
     }
 
-    // 2. Folio & Valor & Footer Enforcement
-    const hasFolioAndValor = design.elements.some(el => el.type === 'text' && el.data.content.includes('Folio :'));
-    const hasFooter = design.elements.some(el => el.type === 'text' && el.data.content.includes('Art. 210'));
+    // 2. Folio & Valor & Footer Enforcement — ONLY for certificates
+    if (design.design_type === 'certificate') {
+      const hasFolioAndValor = design.elements.some(el => el.type === 'text' && el.data.content.includes('Folio :'));
+      const hasFooter = design.elements.some(el => el.type === 'text' && el.data.content.includes('Art. 210'));
 
-    if (!hasFolioAndValor) {
-      newElements = newElements.filter(el => !(el.type === 'text' && (el.data.content.includes('Folio') || el.data.content.includes('Valor') || el.data.content.includes('Precio'))));
-      newElements.push({
-        type: 'text',
-        data: {
-          id: 'forced-folio-editor',
-          content: 'Folio : [Folio]',
-          x: 72,
-          y: 4,
-          fontSize: 12,
-          fontFamily: "'Inter', sans-serif",
-          fontWeight: '700',
-          color: '#0f172a',
-          textAlign: 'right',
-          isAttribute: false,
-          width: 25,
-          rotation: 0,
-          opacity: 1,
-          letterSpacing: 0,
-          lineHeight: 1.2,
-        }
-      });
-      newElements.push({
-        type: 'text',
-        data: {
-          id: 'forced-precio-editor',
-          content: 'Precio $ : [Valor]',
-          x: 72,
-          y: 7,
-          fontSize: 12,
-          fontFamily: "'Inter', sans-serif",
-          fontWeight: '700',
-          color: '#0f172a',
-          textAlign: 'right',
-          isAttribute: false,
-          width: 25,
-          rotation: 0,
-          opacity: 1,
-          letterSpacing: 0,
-          lineHeight: 1.2,
-        }
-      });
-      needsUpdate = true;
-    }
+      if (!hasFolioAndValor) {
+        newElements = newElements.filter(el => !(el.type === 'text' && (el.data.content.includes('Folio') || el.data.content.includes('Valor') || el.data.content.includes('Precio'))));
+        newElements.push({
+          type: 'text',
+          data: {
+            id: 'forced-folio-editor',
+            content: 'Folio : [Folio]',
+            x: 72,
+            y: 4,
+            fontSize: 12,
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: '700',
+            color: '#0f172a',
+            textAlign: 'right',
+            isAttribute: false,
+            width: 25,
+            rotation: 0,
+            opacity: 1,
+            letterSpacing: 0,
+            lineHeight: 1.2,
+          }
+        });
+        newElements.push({
+          type: 'text',
+          data: {
+            id: 'forced-precio-editor',
+            content: 'Precio $ : [Valor]',
+            x: 72,
+            y: 7,
+            fontSize: 12,
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: '700',
+            color: '#0f172a',
+            textAlign: 'right',
+            isAttribute: false,
+            width: 25,
+            rotation: 0,
+            opacity: 1,
+            letterSpacing: 0,
+            lineHeight: 1.2,
+          }
+        });
+        needsUpdate = true;
+      }
 
-    if (!hasFooter) {
-      newElements.push({
-        type: 'text',
-        data: {
-          id: 'forced-footer-editor',
-          content: 'Datos declarados bajo responsabilidad exclusiva del titular. Su falsedad constituye delito penado por el Art. 210 del Código Penal, eximiendo a la emisora de toda responsabilidad. Validación exclusiva vía código QR.',
-          x: 10,
-          y: 94,
-          fontSize: 8,
-          fontFamily: "'Inter', sans-serif",
-          fontWeight: '400',
-          color: '#64748b',
-          textAlign: 'center',
-          isAttribute: false,
-          width: 80,
-          rotation: 0,
-          opacity: 1,
-          letterSpacing: 0,
-          lineHeight: 1.4,
-        }
-      });
-      needsUpdate = true;
+      if (!hasFooter) {
+        newElements.push({
+          type: 'text',
+          data: {
+            id: 'forced-footer-editor',
+            content: 'Datos declarados bajo responsabilidad exclusiva del titular. Su falsedad constituye delito penado por el Art. 210 del Código Penal, eximiendo a la emisora de toda responsabilidad. Validación exclusiva vía código QR.',
+            x: 10,
+            y: 94,
+            fontSize: 8,
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: '400',
+            color: '#64748b',
+            textAlign: 'center',
+            isAttribute: false,
+            width: 80,
+            rotation: 0,
+            opacity: 1,
+            letterSpacing: 0,
+            lineHeight: 1.4,
+          }
+        });
+        needsUpdate = true;
+      }
+    } else {
+      // For cards: strip any certificate-only elements that may have leaked from a cloned design
+      const certOnlyPatterns = ['Folio', 'Valor', 'Precio', 'Art. 210'];
+      const hadCertElements = newElements.some(el => el.type === 'text' && certOnlyPatterns.some(p => el.data.content.includes(p)));
+      if (hadCertElements) {
+        newElements = newElements.filter(el => !(el.type === 'text' && certOnlyPatterns.some(p => el.data.content.includes(p))));
+        needsUpdate = true;
+      }
     }
 
     migrationDone.current = true;
