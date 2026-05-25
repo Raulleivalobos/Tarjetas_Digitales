@@ -25,6 +25,7 @@ import {
   Lock,
   Save,
   AlertCircle,
+  Wallet,
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -132,6 +133,9 @@ export default function DashboardLayout({
         { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList }
       );
     }
+    navigation.push(
+      { name: 'Finanzas', href: '/dashboard/finance', icon: Wallet }
+    );
   }
 
   // Organizaciones (Solo Propietario)
