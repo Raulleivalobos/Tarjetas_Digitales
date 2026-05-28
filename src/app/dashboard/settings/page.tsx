@@ -197,11 +197,11 @@ export default function SettingsPage() {
           { label: 'Fecha de Emisión', value: new Date().toLocaleDateString('es-CL') }
         ],
         columns: [
-          { header: 'Fecha y Hora', key: 'fecha', width: 15 },
-          { header: 'Usuario', key: 'usuario', width: 20 },
-          { header: 'Acción', key: 'accion', width: 15 },
-          { header: 'Entidad', key: 'entidad', width: 15 },
-          { header: 'Detalle', key: 'detalle', width: 35 }
+          { header: 'Fecha / Hora', key: 'fecha', width: 15 },
+          { header: 'Usuario (Actor)', key: 'usuario', width: 20 },
+          { header: 'Acción Realizada', key: 'accion', width: 20 },
+          { header: 'Objeto Afectado', key: 'entidad', width: 15 },
+          { header: 'Detalle del Cambio', key: 'detalle', width: 30 }
         ],
         data: reportData
       });
@@ -1078,11 +1078,11 @@ export default function SettingsPage() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-brand-500/10 bg-brand-500/[0.02]">
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha y Hora</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Usuario</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Acción</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Entidad</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Detalles</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha / Hora</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Usuario (Actor)</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Acción Realizada</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Objeto Afectado</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Detalle del Cambio</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -1092,41 +1092,42 @@ export default function SettingsPage() {
                         <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">No hay actividad registrada aún.</td></tr>
                       ) : (
                         logs.map((log) => (
-                          <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-xs text-slate-300">
+                          <tr key={log.id} className="hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0">
+                            <td className="px-6 py-5 whitespace-nowrap align-top">
+                              <div className="text-sm font-medium text-slate-300">
                                 {new Date(log.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                               </div>
-                              <div className="text-[10px] text-slate-500 font-mono">
-                                {new Date(log.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                              <div className="text-sm text-slate-500 mt-1">
+                                {new Date(log.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: true })}
                               </div>
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="text-xs font-bold text-white truncate max-w-[150px]" title={log.user_email}>
+                            <td className="px-6 py-5 align-top">
+                              <div className="text-sm text-slate-300 font-medium truncate max-w-[150px]" title={log.user_email}>
                                 {log.user_email?.split('@')[0]}
                               </div>
-                              <div className="text-[10px] text-slate-500 truncate max-w-[150px]">
-                                {log.user_email}
+                              <div className="text-xs text-slate-500 mt-1">
+                                ({log.user_email?.includes('admin') || log.action.includes('ORG_SETTINGS') ? 'Admin' : 'Usuario'})
                               </div>
                             </td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${
-                                log.action.includes('DELETE') || log.action.includes('REMOVE') ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                log.action.includes('CREATE') || log.action.includes('ISSUED') || log.action.includes('ADDED') ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                                'bg-brand-500/10 text-brand-400 border-brand-500/20'
-                              }`}>
+                            <td className="px-6 py-5 align-top">
+                              <div className="text-sm text-slate-300 font-medium">
                                 {formatLogAction(log.action)}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="text-xs text-slate-400 capitalize">
-                                {log.entity_type === 'membership' ? 'Acceso a Org' : 
-                                 log.entity_type === 'digital_card' ? 'Tarjeta Digital' : 
-                                 log.entity_type === 'settings' ? 'Configuración' : log.entity_type}
                               </div>
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="text-[10px] text-slate-500 font-mono max-w-[250px] truncate" title={JSON.stringify(log.details)}>
+                            <td className="px-6 py-5 align-top">
+                              <div className="inline-flex items-center px-2.5 py-1.5 rounded-md bg-slate-800/80 border border-slate-700/50 text-xs text-slate-300">
+                                <span className="text-slate-500 mr-1.5 capitalize font-medium">
+                                  {log.entity_type === 'membership' ? 'Rol:' : 
+                                   log.entity_type === 'digital_card' ? 'Tarjeta:' : 
+                                   log.entity_type === 'settings' ? 'Módulo:' : 'Objeto:'}
+                                </span>
+                                <span className="font-mono text-slate-300">
+                                  {log.entity_type === 'settings' ? 'Configuración' : log.entity_type}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-5 align-top">
+                              <div className="text-sm text-slate-400 max-w-sm leading-relaxed whitespace-pre-wrap">
                                 {formatLogDetails(log.action, log.details)}
                               </div>
                             </td>
