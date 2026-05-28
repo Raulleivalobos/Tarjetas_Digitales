@@ -8,10 +8,10 @@ import {
 } from 'lucide-react';
 
 const AUDIENCES = [
-  { icon: Users, title: 'Juntas de Vecinos', desc: '100% Gratuito en Chile. Carnets vecinales digitales con QR, control de socios y asambleas.', href: '/soluciones/juntas-de-vecinos', color: 'from-emerald-500/20 to-emerald-600/5', border: 'border-emerald-500/20', iconColor: 'text-emerald-400' },
-  { icon: Briefcase, title: 'Bienestar de Empresas', desc: 'Gestión de beneficios corporativos con trazabilidad y reportes automáticos.', href: '/soluciones/bienestar-empresas', color: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-500/20', iconColor: 'text-blue-400' },
-  { icon: Building2, title: 'Sindicatos', desc: 'Credenciales digitales para afiliados. Padrón actualizado y control de asambleas.', href: '/soluciones/sindicatos', color: 'from-amber-500/20 to-amber-600/5', border: 'border-amber-500/20', iconColor: 'text-amber-400' },
-  { icon: Landmark, title: 'Corporaciones Municipales', desc: 'Alineado a Ley N° 21.180 (Cero Papel). Digitaliza subsidios, beneficios sociales e identidad comunal.', href: '/soluciones/corporaciones-municipales', color: 'from-purple-500/20 to-purple-600/5', border: 'border-purple-500/20', iconColor: 'text-purple-400' },
+  { icon: Users, title: 'Juntas de Vecinos', desc: '100% Gratuito en Chile. Carnets vecinales digitales con QR, control de socios y asambleas.', href: '/como-funciona?tab=vecinos', color: 'from-emerald-500/20 to-emerald-600/5', border: 'border-emerald-500/20', iconColor: 'text-emerald-400' },
+  { icon: Briefcase, title: 'Bienestar de Empresas', desc: 'Gestión de beneficios corporativos con trazabilidad y reportes automáticos.', href: '/como-funciona?tab=bienestar', color: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-500/20', iconColor: 'text-blue-400' },
+  { icon: Building2, title: 'Sindicatos', desc: 'Credenciales digitales para afiliados. Padrón actualizado y control de asambleas.', href: '/como-funciona?tab=sindicatos', color: 'from-amber-500/20 to-amber-600/5', border: 'border-amber-500/20', iconColor: 'text-amber-400' },
+  { icon: Landmark, title: 'Corporaciones Municipales', desc: 'Alineado a Ley N° 21.180 (Cero Papel). Digitaliza subsidios, beneficios sociales e identidad comunal.', href: '/como-funciona?tab=municipios', color: 'from-purple-500/20 to-purple-600/5', border: 'border-purple-500/20', iconColor: 'text-purple-400' },
 ];
 
 const FEATURES = [

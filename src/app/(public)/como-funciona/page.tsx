@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   Building2, Briefcase, Landmark, Users, ArrowRight,
   CheckCircle2, ChevronRight, RefreshCw, LogIn,
@@ -112,8 +113,21 @@ const INITIAL_BENEFICIARIES = [
   { name: 'Luis Rojas Valdés', rut: '18.456.789-K', status: 'pending', id: '3' },
 ];
 
-export default function ComoFuncionaPage() {
+function ComoFuncionaContent() {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get('tab');
+
   const [activeSector, setActiveSector] = useState(SECTORS[0]);
+
+  useEffect(() => {
+    if (tab) {
+      const foundSector = SECTORS.find((s) => s.id === tab);
+      if (foundSector) {
+        setActiveSector(foundSector);
+        setCardColor(foundSector.defaultColor);
+      }
+    }
+  }, [tab]);
   const [activeStep, setActiveStep] = useState(1);
   
   // Paso 1 - Login state
@@ -860,5 +874,13 @@ export default function ComoFuncionaPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+export default function ComoFuncionaPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-24 pb-20 bg-[#020617]" />}>
+      <ComoFuncionaContent />
+    </Suspense>
   );
 }

@@ -15,10 +15,10 @@ import {
 } from 'lucide-react';
 
 const SOLUTIONS = [
-  { href: '/soluciones/juntas-de-vecinos', label: 'Juntas de Vecinos', icon: Users, desc: 'Carnets y beneficios vecinales' },
-  { href: '/soluciones/bienestar-empresas', label: 'Bienestar de Empresas', icon: Briefcase, desc: 'Gestión de beneficios corporativos' },
-  { href: '/soluciones/sindicatos', label: 'Sindicatos', icon: Building2, desc: 'Credenciales y padrón digital' },
-  { href: '/soluciones/corporaciones-municipales', label: 'Corporaciones Municipales', icon: Landmark, desc: 'Identidad digital ciudadana' },
+  { href: '/como-funciona?tab=vecinos', label: 'Juntas de Vecinos', icon: Users, desc: 'Carnets y beneficios vecinales' },
+  { href: '/como-funciona?tab=bienestar', label: 'Bienestar de Empresas', icon: Briefcase, desc: 'Gestión de beneficios corporativos' },
+  { href: '/como-funciona?tab=sindicatos', label: 'Sindicatos', icon: Building2, desc: 'Credenciales y padrón digital' },
+  { href: '/como-funciona?tab=municipios', label: 'Corporaciones Municipales', icon: Landmark, desc: 'Identidad digital ciudadana' },
 ];
 
 const NAV_LINKS = [

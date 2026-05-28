@@ -14,10 +14,10 @@ const PRODUCT_LINKS = [
 ];
 
 const SOLUTION_LINKS = [
-  { href: '/soluciones/juntas-de-vecinos', label: 'Juntas de Vecinos' },
-  { href: '/soluciones/bienestar-empresas', label: 'Bienestar de Empresas' },
-  { href: '/soluciones/sindicatos', label: 'Sindicatos' },
-  { href: '/soluciones/corporaciones-municipales', label: 'Corporaciones Municipales' },
+  { href: '/como-funciona?tab=vecinos', label: 'Juntas de Vecinos' },
+  { href: '/como-funciona?tab=bienestar', label: 'Bienestar de Empresas' },
+  { href: '/como-funciona?tab=sindicatos', label: 'Sindicatos' },
+  { href: '/como-funciona?tab=municipios', label: 'Corporaciones Municipales' },
 ];
 
 const COMPANY_LINKS = [
