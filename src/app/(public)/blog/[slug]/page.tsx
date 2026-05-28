@@ -5,13 +5,14 @@ import { BLOG_POSTS } from '@/data/blog';
 import { ArrowLeft, Calendar, Clock, Share2, FileText, ShieldCheck, Rocket } from 'lucide-react';
 
 interface Props {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
-export function generateMetadata({ params }: Props): Metadata {
-  const post = BLOG_POSTS.find((p) => p.slug === params.slug);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const resolvedParams = await params;
+  const post = BLOG_POSTS.find((p) => p.slug === resolvedParams.slug);
   
   if (!post) {
     return {
@@ -37,8 +38,9 @@ const iconMap: Record<string, React.ElementType> = {
   Rocket
 };
 
-export default function BlogPostPage({ params }: Props) {
-  const post = BLOG_POSTS.find((p) => p.slug === params.slug);
+export default async function BlogPostPage({ params }: Props) {
+  const resolvedParams = await params;
+  const post = BLOG_POSTS.find((p) => p.slug === resolvedParams.slug);
 
   if (!post) {
     notFound();
