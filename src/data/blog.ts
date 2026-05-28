@@ -6,6 +6,7 @@ export interface BlogPost {
   readTime: string;
   category: string;
   imageIcon: string;
+  imageUrl?: string;
   content: {
     type: 'h2' | 'p' | 'ul' | 'link';
     text?: string;
@@ -23,6 +24,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readTime: '6 min',
     category: 'Legal & Cumplimiento',
     imageIcon: 'FileText',
+    imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=1200',
     content: [
       { type: 'p', text: 'La promulgación de la Ley N° 21.180 de Transformación Digital del Estado, en vigor pleno desde junio de 2022, no es simplemente una actualización administrativa, sino un cambio de paradigma legal. Esta normativa chilena establece la obligatoriedad de la tramitación electrónica en los procedimientos administrativos, con el objetivo de convertir al Estado y a todas sus organizaciones vinculadas en entes eficientes, transparentes y, fundamentalmente, reducir el uso de papel a su mínima expresión.' },
       { type: 'h2', text: 'Los Plazos y el Estado Actual en Chile' },
@@ -50,6 +52,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readTime: '7 min',
     category: 'Tecnología',
     imageIcon: 'ShieldCheck',
+    imageUrl: 'https://images.unsplash.com/photo-1642104704074-907c0698cbd9?auto=format&fit=crop&q=80&w=1200',
     content: [
       { type: 'p', text: 'Durante los últimos años, la tecnología Blockchain ha trascendido su origen en las criptomonedas (como Bitcoin y Ethereum) para convertirse en la infraestructura de seguridad más robusta del mundo empresarial e institucional. Pero, ¿qué es exactamente y cómo está revolucionando la identidad digital global?' },
       { type: 'h2', text: 'De la Confianza Centralizada a la Verdad Matemática' },
@@ -76,6 +79,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readTime: '5 min',
     category: 'Innovación',
     imageIcon: 'Rocket',
+    imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200',
     content: [
       { type: 'p', text: 'Históricamente, la transformación digital se entendía como la simple digitalización de documentos. Hoy, esa visión es obsoleta. La transformación digital moderna no se trata de tecnología, sino de un rediseño cultural y estratégico de cómo las organizaciones interactúan con sus usuarios, socios y ciudadanos.' },
       { type: 'h2', text: 'El Nuevo Estándar Post-Pandemia' },

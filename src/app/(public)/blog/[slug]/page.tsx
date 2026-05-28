@@ -106,14 +106,18 @@ export default async function BlogPostPage({ params }: Props) {
         </header>
 
         {/* Featured Image Abstract */}
-        <div className="w-full aspect-[21/9] rounded-3xl bg-gradient-to-br from-surface-900 to-surface-950 border border-white/10 mb-12 flex items-center justify-center overflow-hidden relative shadow-2xl shadow-black/50 animate-slide-up" style={{ animationDelay: '100ms' }}>
-          <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle, #6366f1 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-          <div className="absolute inset-0 bg-gradient-to-t from-surface-950 to-transparent" />
-          <IconComponent className="w-32 h-32 text-brand-500/30 relative z-10 drop-shadow-[0_0_30px_rgba(99,102,241,0.5)]" />
+        <div className="w-full aspect-[21/9] rounded-3xl border border-white/10 mb-12 flex items-center justify-center overflow-hidden relative shadow-2xl shadow-black/50 animate-slide-up" style={{ animationDelay: '100ms' }}>
+          <div className="absolute inset-0 bg-surface-950" />
+          <img 
+            src={post.imageUrl || "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200"} 
+            alt={post.title} 
+            className="absolute inset-0 w-full h-full object-cover opacity-80"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface-950 via-surface-950/20 to-transparent" />
         </div>
 
         {/* Article Body */}
-        <article className="prose prose-invert prose-brand max-w-none prose-p:text-slate-300 prose-p:leading-relaxed prose-h2:text-2xl prose-h2:font-bold prose-h2:text-white prose-h2:mt-12 prose-h2:mb-6 prose-li:text-slate-300 animate-slide-up" style={{ animationDelay: '200ms' }}>
+        <article className="prose prose-invert prose-brand max-w-none prose-p:text-slate-300 prose-p:leading-relaxed prose-p:text-justify prose-p:hyphens-auto prose-h2:text-2xl prose-h2:font-bold prose-h2:text-white prose-h2:mt-12 prose-h2:mb-6 prose-li:text-slate-300 animate-slide-up" style={{ animationDelay: '200ms' }}>
           {post.content.map((block, index) => {
             if (block.type === 'h2') {
               return <h2 key={index}>{block.text}</h2>;
