@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import {
   Check, Sparkles, Shield, Zap, Crown, Building2, Users,
-  BarChart3, Vote, ArrowRight, QrCode, FileSpreadsheet,
+  BarChart3, Wallet, ArrowRight, QrCode, FileSpreadsheet,
   Globe, Fingerprint, Lock, ChevronDown, MessageSquare,
   CreditCard, CalendarClock, Package,
 } from 'lucide-react';
@@ -14,7 +14,10 @@ import { useState } from 'react';
 const SOCIAL_FEATURES = [
   'Perfil básico de cada miembro',
   'QR dinámico para identificación',
-  'Integración con Google Sheets para asistencia',
+  'Reportes en PDF de asistencia y quórum',
+  'Integración WhatsApp (Tarjetas y Certificados)',
+  'Control y entrega de beneficios sociales',
+  'Módulo de control de Finanzas',
   'Diseñador visual de credenciales',
   'Hasta 1.000 miembros por organización',
   'Soporte por correo electrónico',
@@ -24,7 +27,6 @@ const COMMERCIAL_FEATURES = [
   'Todo lo del plan Social, sin límites',
   'Credenciales verificables en Blockchain',
   'Auditoría de uso de beneficios en tiempo real',
-  'Votación electrónica segura',
   'Módulo automático de convenios comerciales',
   'Reportes de cumplimiento para auditorías',
   'Panel analítico avanzado con exportación',
@@ -406,9 +408,9 @@ export default function PreciosPage() {
                 bg: 'bg-brand-500/10',
               },
               {
-                icon: Vote,
-                title: 'Votación Electrónica',
-                desc: 'Asambleas con quórum verificado.',
+                icon: Wallet,
+                title: 'Control de Finanzas',
+                desc: 'Gestión transparente de tesorería.',
                 color: 'text-purple-400',
                 bg: 'bg-purple-500/10',
               },
@@ -538,8 +540,9 @@ export default function PreciosPage() {
                     ['Panel de administración', true, true],
                     ['Límite de miembros', '1.000', 'Ilimitado'],
                     ['Verificación Blockchain', false, true],
-                    ['Votación electrónica', false, true],
-                    ['Auditoría de beneficios', false, true],
+                    ['Módulo de Finanzas', true, true],
+                    ['Entrega por WhatsApp', true, true],
+                    ['Control de beneficios', true, true],
                     ['Módulo de convenios', false, true],
                     ['Reportes de cumplimiento', false, true],
                     ['Soporte prioritario', false, true],

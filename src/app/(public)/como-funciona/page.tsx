@@ -27,9 +27,9 @@ const SECTORS = [
       { label: 'RUT', value: '15.678.901-2' },
     ],
     benefits: [
-      'Acceso a asambleas con quórum y voto verificado por QR.',
-      'Validación de afiliación para convenios de farmacias y recreación.',
-      'Canal digital directo para consulta de beneficios sindicales.',
+      'Acceso a asambleas con control de quórum y asistencia por QR.',
+      'Control y entrega de beneficios sociales integrados.',
+      'Sistema de reportería en PDF para asistencia.',
     ],
     adminPanelTitle: 'Panel de Control - Sindicato Metalúrgico',
     defaultColor: '#f59e0b', // Amber
