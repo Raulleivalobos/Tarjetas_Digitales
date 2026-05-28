@@ -27,8 +27,8 @@ const COMPANY_LINKS = [
 ];
 
 const LEGAL_LINKS = [
-  { href: '/privacidad', label: 'Política de Privacidad' },
-  { href: '/terminos', label: 'Términos y Condiciones' },
+  { href: '/politica-de-privacidad', label: 'Política de Privacidad' },
+  { href: '/terminos-y-condiciones', label: 'Términos y Condiciones' },
 ];
 
 export function PublicFooter() {

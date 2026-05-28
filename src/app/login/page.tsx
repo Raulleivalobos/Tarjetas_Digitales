@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [accessCode, setAccessCode] = useState('');
   const [success, setSuccess] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const router = useRouter();
 
@@ -35,6 +36,11 @@ export default function LoginPage() {
       if (isSignUp) {
         if (!orgName.trim()) {
           setError('El nombre de la organización es requerido');
+          setLoading(false);
+          return;
+        }
+        if (!acceptTerms) {
+          setError('Debes aceptar los Términos y Condiciones y la Política de Privacidad para registrarte.');
           setLoading(false);
           return;
         }
@@ -229,6 +235,27 @@ export default function LoginPage() {
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
+
+            {isSignUp && (
+              <label className="flex items-start gap-3 cursor-pointer animate-fade-in">
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-white/20 bg-white/5 text-brand-500 focus:ring-brand-500/30 focus:ring-offset-0 cursor-pointer accent-brand-500"
+                />
+                <span className="text-xs text-slate-400 leading-relaxed">
+                  Al crear mi cuenta acepto los{' '}
+                  <Link href="/terminos-y-condiciones" target="_blank" className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors">
+                    Términos y Condiciones
+                  </Link>{' '}
+                  y la{' '}
+                  <Link href="/politica-de-privacidad" target="_blank" className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors">
+                    Política de Privacidad
+                  </Link>.
+                </span>
+              </label>
+            )}
 
             <button
               type="submit"

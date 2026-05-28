@@ -10,9 +10,14 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptTerms) {
+      setError('Debes aceptar la Política de Privacidad para continuar.');
+      return;
+    }
     setLoading(true);
     setError('');
 
@@ -81,6 +86,23 @@ export default function ForgotPasswordPage() {
                     />
                   </div>
                 </div>
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptTerms}
+                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-white/20 bg-white/5 text-brand-500 focus:ring-brand-500/30 focus:ring-offset-0 cursor-pointer accent-brand-500"
+                    required
+                  />
+                  <span className="text-xs text-slate-400 leading-relaxed">
+                    He leído y acepto la{' '}
+                    <Link href="/politica-de-privacidad" target="_blank" className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors">
+                      Política de Privacidad
+                    </Link>{' '}
+                    para el tratamiento de mis datos.
+                  </span>
+                </label>
 
                 <button
                   type="submit"

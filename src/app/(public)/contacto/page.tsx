@@ -28,9 +28,14 @@ export default function ContactPage() {
     phone: '',
     message: ''
   });
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptTerms) {
+      setError('Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.');
+      return;
+    }
     setLoading(true);
     setError('');
     
@@ -227,9 +232,25 @@ export default function ContactPage() {
                   )}
                 </button>
 
-                <p className="text-[10px] text-center text-slate-500 uppercase tracking-widest">
-                  Al enviar, aceptas nuestras políticas de privacidad y contacto.
-                </p>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={acceptTerms}
+                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-white/20 bg-white/5 text-brand-500 focus:ring-brand-500/30 focus:ring-offset-0 cursor-pointer accent-brand-500"
+                    required
+                  />
+                  <span className="text-xs text-slate-400 leading-relaxed">
+                    He leído y acepto los{' '}
+                    <Link href="/terminos-y-condiciones" target="_blank" className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors">
+                      Términos y Condiciones
+                    </Link>{' '}
+                    y la{' '}
+                    <Link href="/politica-de-privacidad" target="_blank" className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors">
+                      Política de Privacidad
+                    </Link>.
+                  </span>
+                </label>
               </form>
             )}
           </div>
