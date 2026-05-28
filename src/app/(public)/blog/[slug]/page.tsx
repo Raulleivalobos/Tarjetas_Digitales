@@ -117,13 +117,13 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
 
         {/* Article Body */}
-        <article className="prose prose-invert prose-brand max-w-none prose-p:text-slate-300 prose-p:leading-relaxed prose-p:text-justify prose-p:hyphens-auto prose-h2:text-2xl prose-h2:font-bold prose-h2:text-white prose-h2:mt-12 prose-h2:mb-6 prose-li:text-slate-300 animate-slide-up" style={{ animationDelay: '200ms' }}>
+        <article className="max-w-none animate-slide-up" style={{ animationDelay: '200ms' }}>
           {post.content.map((block, index) => {
             if (block.type === 'h2') {
-              return <h2 key={index}>{block.text}</h2>;
+              return <h2 key={index} className="text-2xl md:text-3xl font-bold text-white mt-12 mb-6">{block.text}</h2>;
             }
             if (block.type === 'p') {
-              return <p key={index} className="text-lg">{block.text}</p>;
+              return <p key={index} className="text-lg text-slate-300 leading-relaxed text-justify hyphens-auto mb-6">{block.text}</p>;
             }
             if (block.type === 'ul' && block.items) {
               return (
