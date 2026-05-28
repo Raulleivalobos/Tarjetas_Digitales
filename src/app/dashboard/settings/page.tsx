@@ -234,7 +234,9 @@ export default function SettingsPage() {
       const dict: Record<string, string> = {
         'membership': 'Rol',
         'digital_card': 'Tarjeta',
-        'settings': 'Configuración'
+        'settings': 'Configuración',
+        'certificate': 'Certificado',
+        'meeting': 'Asamblea'
       };
       return { label: 'Objeto', value: dict[log.entity_type] || log.entity_type };
     } catch (e) {
@@ -250,7 +252,11 @@ export default function SettingsPage() {
       'ORG_SETTINGS_UPDATED': 'Modificación de Configuración',
       'CARD_ISSUED': 'Emisión de Tarjeta',
       'CARD_STATUS_CHANGED': 'Modificación de Estado',
-      'CARD_REVOKED': 'Revocación de Tarjeta'
+      'CARD_REVOKED': 'Revocación de Tarjeta',
+      'REISSUE_CARD': 'Reemisión de Tarjeta',
+      'REVOKE_CARDS': 'Revocación Masiva',
+      'ISSUE_CERTIFICATE': 'Emisión de Certificado',
+      'CREATE_MEETING': 'Creación de Asamblea'
     };
     return actions[action] || action.replace(/_/g, ' ');
   };
