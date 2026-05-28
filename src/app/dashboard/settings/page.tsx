@@ -181,7 +181,7 @@ export default function SettingsPage() {
         fecha: new Date(log.created_at).toLocaleString('es-CL'),
         usuario: log.user_email || 'Desconocido',
         accion: formatLogAction(log.action),
-        entidad: log.entity_type === 'membership' ? 'Acceso a Org' : log.entity_type === 'digital_card' ? 'Tarjeta Digital' : log.entity_type === 'settings' ? 'Configuración' : log.entity_type,
+        entidad: `${formatLogEntity(log).label}: ${formatLogEntity(log).value}`,
         detalle: formatLogDetails(log.action, log.details)
       }));
 
@@ -215,15 +215,42 @@ export default function SettingsPage() {
     }
   };
 
+  const formatLogEntity = (log: any) => {
+    try {
+      const details = typeof log.details === 'string' ? JSON.parse(log.details) : (log.details || {});
+      
+      if (log.entity_type === 'membership' || log.action.includes('MEMBER')) {
+        const rol = details.new_role || details.role || details.old_role;
+        const nombreRol = rol ? (roleDescriptions[rol as Role]?.title || rol) : 'Usuario';
+        return { label: 'Rol', value: nombreRol };
+      }
+      if (log.entity_type === 'digital_card' || log.action.includes('CARD')) {
+        return { label: 'Tarjeta', value: details.cardNumber || 'Digital' };
+      }
+      if (log.entity_type === 'settings') {
+        return { label: 'Módulo', value: 'Configuración' };
+      }
+      
+      const dict: Record<string, string> = {
+        'membership': 'Rol',
+        'digital_card': 'Tarjeta',
+        'settings': 'Configuración'
+      };
+      return { label: 'Objeto', value: dict[log.entity_type] || log.entity_type };
+    } catch (e) {
+      return { label: 'Objeto', value: log.entity_type };
+    }
+  };
+
   const formatLogAction = (action: string) => {
     const actions: Record<string, string> = {
-      'UPDATE_MEMBER_ROLE': 'Cambio de Rol',
-      'MEMBER_ADDED': 'Usuario Añadido',
-      'REMOVE_MEMBER': 'Usuario Eliminado',
-      'ORG_SETTINGS_UPDATED': 'Configuración Modificada',
-      'CARD_ISSUED': 'Tarjeta Emitida',
-      'CARD_STATUS_CHANGED': 'Estado Tarjeta',
-      'CARD_REVOKED': 'Tarjeta Revocada'
+      'UPDATE_MEMBER_ROLE': 'Modificación de Permiso',
+      'MEMBER_ADDED': 'Asignación de Rol',
+      'REMOVE_MEMBER': 'Revocación de Permiso',
+      'ORG_SETTINGS_UPDATED': 'Modificación de Configuración',
+      'CARD_ISSUED': 'Emisión de Tarjeta',
+      'CARD_STATUS_CHANGED': 'Modificación de Estado',
+      'CARD_REVOKED': 'Revocación de Tarjeta'
     };
     return actions[action] || action.replace(/_/g, ' ');
   };
@@ -1117,12 +1144,10 @@ export default function SettingsPage() {
                             <td className="px-6 py-5 align-top">
                               <div className="inline-flex items-center px-2.5 py-1.5 rounded-md bg-slate-800/80 border border-slate-700/50 text-xs text-slate-300">
                                 <span className="text-slate-500 mr-1.5 capitalize font-medium">
-                                  {log.entity_type === 'membership' ? 'Rol:' : 
-                                   log.entity_type === 'digital_card' ? 'Tarjeta:' : 
-                                   log.entity_type === 'settings' ? 'Módulo:' : 'Objeto:'}
+                                  {formatLogEntity(log).label}:
                                 </span>
                                 <span className="font-mono text-slate-300">
-                                  {log.entity_type === 'settings' ? 'Configuración' : log.entity_type}
+                                  {formatLogEntity(log).value}
                                 </span>
                               </div>
                             </td>
