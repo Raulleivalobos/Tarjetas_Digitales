@@ -212,23 +212,30 @@ export default function FinancePage() {
 
       const { data, error } = await supabase
         .from('finance_settings')
-        .insert({
+        .upsert({
           org_id: organization.id,
           period_year: periodYear,
           initial_bank_balance: bankBal,
           initial_cash_balance: cashBal,
-          created_by: user?.id || membership?.user_id
+        }, {
+          onConflict: 'org_id,period_year'
         })
         .select()
         .single();
 
       if (error) throw error;
-      setSettings(data);
-      showNotification('Módulo de Finanzas inicializado correctamente para el período.', 'success');
-      await fetchFinanceData();
+      
+      if (data) {
+        setSettings(data);
+        showNotification('Módulo de Finanzas inicializado correctamente para el período.', 'success');
+        await fetchFinanceData();
+      } else {
+        throw new Error('No se recibieron datos de respuesta al guardar la configuración.');
+      }
     } catch (err: any) {
       console.error('Error initialising balances:', err);
-      showNotification(err.message || 'Error al inicializar saldos', 'error');
+      const errorMsg = err?.message || err?.details || 'Error al inicializar saldos. Verifica que las tablas de finanzas estén configuradas en la base de datos.';
+      showNotification(errorMsg, 'error');
     } finally {
       setSaving(false);
     }
