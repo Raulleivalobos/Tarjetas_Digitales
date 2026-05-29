@@ -143,6 +143,98 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ═══════════════ SOBRE NOSOTROS (PREVIEW) ═══════════════ */}
+      <section className="relative py-24 lg:py-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold text-brand-400 uppercase tracking-widest mb-3">Sobre SkardKey</p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
+              Redefiniendo la{' '}
+              <span className="bg-gradient-to-r from-brand-400 via-purple-400 to-brand-300 bg-clip-text text-transparent">
+                Identidad Digital Inteligente
+              </span>{' '}
+              en Chile
+            </h2>
+          </div>
+
+          {/* Image + Text */}
+          <div className="grid lg:grid-cols-2 gap-10 items-center mb-16">
+            {/* Hero Image */}
+            <div className="relative aspect-[4/3] rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-black/40">
+              <img
+                src="/images/skardkey-about-hero.png"
+                alt="SkardKey - Identidad Digital y Beneficios"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#020617]/80 via-transparent to-transparent" />
+            </div>
+
+            {/* Text */}
+            <div className="space-y-5">
+              <p className="text-lg text-slate-300 leading-relaxed text-justify hyphens-auto">
+                En SkardKey, somos una plataforma tecnológica dedicada a transformar la gestión de
+                organizaciones y empresas a través de soluciones avanzadas de identidad digital
+                inteligente y administración de beneficios. Nacimos con el propósito de erradicar la
+                burocracia, optimizar los procesos de auditoría interna y acelerar la modernización
+                comunitaria y corporativa en Chile.
+              </p>
+              <p className="text-base text-slate-400 leading-relaxed text-justify hyphens-auto">
+                Desarrollamos un ecosistema robusto que conecta a instituciones con sus miembros de
+                manera segura, transparente y eficiente. Mediante el uso de credenciales con códigos QR
+                dinámicos y arquitectura preparada para la descentralización con tecnología Blockchain,
+                elevamos el estándar de control, auditoría logística y seguridad de la información.
+              </p>
+              <Link
+                href="/nosotros"
+                className="inline-flex items-center gap-2 text-sm text-brand-400 font-semibold hover:text-brand-300 transition-colors mt-2"
+              >
+                Conoce más sobre nosotros <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Misión & Visión Cards */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Misión */}
+            <div className="group relative p-7 rounded-3xl bg-gradient-to-br from-surface-900/80 to-surface-950/60 border border-white/[0.06] hover:border-brand-500/20 transition-all duration-500 overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-brand-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-brand-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Nuestra Misión</h3>
+                </div>
+                <p className="text-sm text-slate-400 leading-relaxed text-justify hyphens-auto border-l-2 border-brand-500/30 pl-4 italic">
+                  &ldquo;Acelerar la transformación digital en Chile proporcionando a comunidades,
+                  sindicatos, departamentos de bienestar y corporaciones municipales una herramienta
+                  de identidad digital accesible y de alta seguridad.&rdquo;
+                </p>
+              </div>
+            </div>
+
+            {/* Visión */}
+            <div className="group relative p-7 rounded-3xl bg-gradient-to-br from-surface-900/80 to-surface-950/60 border border-white/[0.06] hover:border-purple-500/20 transition-all duration-500 overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                    <Globe className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Nuestra Visión</h3>
+                </div>
+                <p className="text-sm text-slate-400 leading-relaxed text-justify hyphens-auto border-l-2 border-purple-500/30 pl-4 italic">
+                  &ldquo;Ser la plataforma líder de identidad digital y Web3 en Latinoamérica,
+                  reconocidos por democratizar el acceso a tecnología de clase mundial e impulsar
+                  comunidades más conectadas, seguras y preparadas para el futuro digital.&rdquo;
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════════════ PARA QUIÉN ═══════════════ */}
       <section className="relative py-24 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
