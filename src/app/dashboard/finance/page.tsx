@@ -121,9 +121,29 @@ export default function FinancePage() {
 
   // Pre-loaded List of Lucide Icons for selection
   const iconOptions = [
-    'Tag', 'Utensils', 'Truck', 'Megaphone', 'Gift', 'Home', 'PenTool', 
-    'Landmark', 'Trash2', 'Trophy', 'Settings', 'Cpu', 'Wrench', 'Coffee', 
-    'TrendingUp', 'Users', 'Key', 'Award', 'Heart', 'FileText', 'Activity', 'Shield', 'AlertTriangle'
+    { id: 'Tag', label: 'Etiqueta / General' },
+    { id: 'Utensils', label: 'Alimentación / Comidas' },
+    { id: 'Truck', label: 'Transporte / Flete' },
+    { id: 'Megaphone', label: 'Marketing / Publicidad' },
+    { id: 'Gift', label: 'Donaciones / Regalos' },
+    { id: 'Home', label: 'Infraestructura / Arriendo' },
+    { id: 'PenTool', label: 'Diseño / Creatividad' },
+    { id: 'Landmark', label: 'Trámites Legales / Impuestos' },
+    { id: 'Trash2', label: 'Desechos / Aseo' },
+    { id: 'Trophy', label: 'Premios / Reconocimientos' },
+    { id: 'Settings', label: 'Herramientas / Mantenimiento' },
+    { id: 'Cpu', label: 'Tecnología / Equipamiento' },
+    { id: 'Wrench', label: 'Reparaciones' },
+    { id: 'Coffee', label: 'Insumos de Oficina' },
+    { id: 'TrendingUp', label: 'Inversión / Rentabilidad' },
+    { id: 'Users', label: 'Personal / Honorarios' },
+    { id: 'Key', label: 'Seguros / Claves' },
+    { id: 'Award', label: 'Certificaciones' },
+    { id: 'Heart', label: 'Salud / Beneficios Médicos' },
+    { id: 'FileText', label: 'Documentos / Papelería' },
+    { id: 'Activity', label: 'Eventos / Actividades' },
+    { id: 'Shield', label: 'Seguridad' },
+    { id: 'AlertTriangle', label: 'Imprevistos / Emergencias' }
   ];
 
   // Fetch initial ledger data
@@ -1476,7 +1496,7 @@ export default function FinancePage() {
                       disabled={isReadOnly}
                     >
                       {iconOptions.map(icon => (
-                        <option key={icon} value={icon}>{icon}</option>
+                        <option key={icon.id} value={icon.id}>{icon.label}</option>
                       ))}
                     </select>
                   </div>
