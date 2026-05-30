@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef} from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
+import dynamic from 'next/dynamic';
+import ManagementAlerts from '@/components/municipal/ManagementAlerts';
+import type { JJVVMapData } from '@/components/municipal/TerritorialMap';
 import { 
   Building2, 
   Users, 
   CreditCard, 
   Gift, 
   BarChart3, 
-  Map as MapIcon, 
   TrendingUp,
   ArrowUpRight,
   Search,
@@ -18,6 +20,22 @@ import {
   Zap
 } from 'lucide-react';
 import Link from 'next/link';
+
+// Dynamic import: Leaflet requires `window` — disable SSR
+const TerritorialMap = dynamic(
+  () => import('@/components/municipal/TerritorialMap'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="glass-card-solid min-h-[420px] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 rounded-full border-2 border-indigo-500/30 border-t-indigo-500 animate-spin mx-auto" />
+          <p className="text-xs text-slate-500 font-mono">Cargando mapa territorial...</p>
+        </div>
+      </div>
+    ),
+  }
+);
 
 export default function MunicipalDashboard() {
   const { organization, loading: authLoading } = useAuth();
@@ -30,6 +48,8 @@ export default function MunicipalDashboard() {
     totalAttendance: 0,
   });
   const [jjvvList, setJJVVList] = useState<any[]>([]);
+  const [jjvvMapData, setJjvvMapData] = useState<JJVVMapData[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -47,7 +67,7 @@ export default function MunicipalDashboard() {
       // 1. Fetch all linked JJVV
       const { data: jjvvData } = await supabase
         .from('organizations')
-        .select('id, name, slug, logo_url, created_at')
+        .select('id, name, slug, logo_url, created_at, commune')
         .eq('parent_org_id', organization.id);
 
       if (!jjvvData || jjvvData.length === 0) {
@@ -55,30 +75,26 @@ export default function MunicipalDashboard() {
         return;
       }
 
-      const jjvvIds = jjvvData.map(j => j.id);
+      const jjvvIds = jjvvData.map((j: any) => j.id);
       setJJVVList(jjvvData);
 
       // 2. Fetch aggregate stats
-      // Beneficiaries
       const { count: beneficiaryCount } = await supabase
         .from('beneficiaries')
         .select('*', { count: 'exact', head: true })
         .in('org_id', jjvvIds);
 
-      // Cards
       const { count: cardCount } = await supabase
         .from('digital_cards')
         .select('*', { count: 'exact', head: true })
         .in('org_id', jjvvIds);
 
-      // Benefits
       const { count: benefitCount } = await supabase
         .from('benefit_assignments')
         .select('*', { count: 'exact', head: true })
         .in('org_id', jjvvIds)
         .eq('status', 'used');
 
-      // Attendance
       const { count: attendanceCount } = await supabase
         .from('meeting_attendance')
         .select('*', { count: 'exact', head: true })
@@ -92,12 +108,45 @@ export default function MunicipalDashboard() {
         totalAttendance: attendanceCount || 0,
       });
 
+      // 3. Fetch per-JJVV stats for map markers
+      const mapDataPromises = jjvvData.map(async (jjvv: any) => {
+        const [{ count: bCount }, { count: cCount }] = await Promise.all([
+          supabase
+            .from('beneficiaries')
+            .select('*', { count: 'exact', head: true })
+            .eq('org_id', jjvv.id),
+          supabase
+            .from('digital_cards')
+            .select('*', { count: 'exact', head: true })
+            .eq('org_id', jjvv.id),
+        ]);
+
+        return {
+          id: jjvv.id,
+          name: jjvv.name,
+          slug: jjvv.slug,
+          logo_url: jjvv.logo_url,
+          created_at: jjvv.created_at,
+          commune: jjvv.commune,
+          beneficiaryCount: bCount || 0,
+          cardCount: cCount || 0,
+        } as JJVVMapData;
+      });
+
+      const mapData = await Promise.all(mapDataPromises);
+      setJjvvMapData(mapData);
+
     } catch (err) {
       console.error('Error fetching municipal data:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  // Filtered JJVV list for table
+  const filteredJJVV = jjvvList.filter(j =>
+    !searchTerm || j.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -181,13 +230,12 @@ export default function MunicipalDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Stats Area */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Map Placeholder */}
-          <div className="glass-card-solid p-8 min-h-[400px] flex flex-col items-center justify-center text-center relative overflow-hidden">
-             <div className="absolute inset-0 bg-indigo-500/5 [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]" />
-             <MapIcon className="w-16 h-16 text-indigo-500/20 mb-4" />
-             <h3 className="text-xl font-bold text-white mb-2">Mapa de Calor Territorial</h3>
-             <p className="text-slate-500 max-w-sm text-sm">Visualización geográfica de la adopción de SkardKey en la comuna. Próximamente disponible con integración GIS.</p>
-          </div>
+          {/* GIS Map */}
+          <TerritorialMap
+            communeName={organization?.commune}
+            jjvvList={jjvvMapData}
+            municipalityName={organization?.name}
+          />
 
           {/* JJVV List */}
           <div className="glass-card-solid overflow-hidden">
@@ -198,7 +246,13 @@ export default function MunicipalDashboard() {
               </h3>
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input type="text" placeholder="Buscar JJVV..." className="bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-xs focus:ring-1 focus:ring-indigo-500 outline-none w-48 transition-all focus:w-64" />
+                <input
+                  type="text"
+                  placeholder="Buscar JJVV..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-xs focus:ring-1 focus:ring-indigo-500 outline-none w-48 transition-all focus:w-64"
+                />
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -212,7 +266,7 @@ export default function MunicipalDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 text-sm">
-                  {jjvvList.map(j => (
+                  {filteredJJVV.map(j => (
                     <tr key={j.id} className="hover:bg-white/[0.02] transition-colors group">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -244,7 +298,7 @@ export default function MunicipalDashboard() {
           </div>
         </div>
 
-        {/* Sidebar / Upsell */}
+        {/* Sidebar */}
         <div className="space-y-6">
           <div className="glass-card-solid p-8 border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-transparent relative overflow-hidden">
             <div className="absolute -top-4 -right-4 p-4 opacity-5">
@@ -276,20 +330,12 @@ export default function MunicipalDashboard() {
             </button>
           </div>
 
-          <div className="glass-card-solid p-6 space-y-4">
-             <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
-                Alertas de Gestión
-             </h4>
-             <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
-                <p className="text-xs font-bold text-white">Adopción Creciente</p>
-                <p className="text-[10px] text-slate-500 leading-tight">Las Juntas de Vecinos han aumentado su digitalización en un 15% este trimestre.</p>
-             </div>
-             <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
-                <p className="text-xs font-bold text-white">Zonas de Sombra</p>
-                <p className="text-[10px] text-slate-500 leading-tight">El Sector Norponiente presenta baja actividad. Considerar campaña de enrolamiento.</p>
-             </div>
-          </div>
+          {/* Dynamic Management Alerts */}
+          <ManagementAlerts
+            jjvvList={jjvvMapData}
+            totalBeneficiaries={stats.totalBeneficiaries}
+            totalCards={stats.totalCards}
+          />
         </div>
       </div>
     </div>
