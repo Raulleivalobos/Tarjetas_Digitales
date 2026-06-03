@@ -314,33 +314,36 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
 
     const transactionRows = data.transactions.map((t, idx) => [
       t.date,
+      t.receiptNumber || '-',
       t.description,
       t.category,
-      t.type === 'income' ? 'Ingreso' : 'Gasto',
-      t.method === 'bank' ? 'Banco' : 'Efectivo',
-      t.type === 'income' ? `+${formatCLP(t.amount)}` : `-${formatCLP(t.amount)}`,
+      t.type === 'income' ? 'Ingreso' : t.type === 'expense' ? 'Gasto' : 'Traspaso',
+      t.type === 'transfer' ? (t.method === 'bank' ? 'Banco → Caja' : 'Caja → Banco') : t.method === 'bank' ? 'Banco' : 'Efectivo',
+      t.type === 'expense' ? `-${formatCLP(t.amount)}` : t.type === 'transfer' ? formatCLP(t.amount) : `+${formatCLP(t.amount)}`,
       t.hasReceipt ? 'Sí' : 'No'
     ]);
 
     autoTable(pdf, {
       startY: y,
       margin: { left: margin, right: margin },
-      head: [['Fecha', 'Descripción / Detalle', 'Categoría', 'Tipo', 'Medio', 'Monto', 'Boleta']],
+      head: [['Fecha', 'Nro Doc', 'Descripción', 'Categoría', 'Tipo', 'Medio', 'Monto', 'Boleta']],
       body: transactionRows,
       theme: 'striped',
       headStyles: { fillColor: [15, 23, 42], fontSize: 8 },
       bodyStyles: { fontSize: 7, textColor: [30, 41, 59] },
       columnStyles: {
-        5: { halign: 'right', fontStyle: 'bold' },
-        6: { halign: 'center' }
+        6: { halign: 'right', fontStyle: 'bold' },
+        7: { halign: 'center' }
       },
       didParseCell: (cellData) => {
-        if (cellData.column.index === 5 && cellData.cell.raw) {
+        if (cellData.column.index === 6 && cellData.cell.raw) {
           const text = cellData.cell.raw as string;
           if (text.startsWith('+')) {
             cellData.cell.styles.textColor = [22, 101, 52];
           } else if (text.startsWith('-')) {
             cellData.cell.styles.textColor = [153, 27, 27];
+          } else {
+            cellData.cell.styles.textColor = [99, 102, 241]; // brand for transfer
           }
         }
       }

@@ -728,7 +728,8 @@ export default function FinancePage() {
         method: t.payment_method,
         type: t.type,
         amount: t.amount,
-        hasReceipt: !!t.photo_url
+        hasReceipt: !!t.photo_url,
+        receiptNumber: t.receipt_number || ''
       }));
 
       const reportPayload: FinanceReportData = {
@@ -1341,6 +1342,7 @@ export default function FinancePage() {
               <thead>
                 <tr className="bg-white/5 text-slate-400 border-b border-white/10 font-bold uppercase tracking-wider text-[10px]">
                   <th className="p-4">Fecha</th>
+                  <th className="p-4">Nro. Doc.</th>
                   <th className="p-4">Descripción / Detalle</th>
                   <th className="p-4">Categoría</th>
                   <th className="p-4">Tipo</th>
@@ -1361,13 +1363,11 @@ export default function FinancePage() {
                   paginatedTransactions.map((t) => (
                     <tr key={t.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="p-4 font-mono font-semibold">{t.transaction_date.split('-').reverse().join('/')}</td>
+                      <td className="p-4 font-mono text-xs text-slate-400 font-bold">
+                        {t.receipt_number || '-'}
+                      </td>
                       <td className="p-4 max-w-[240px]">
                         <div className="font-bold text-white truncate">{t.description}</div>
-                        {t.receipt_number && (
-                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                            Nro: {t.receipt_number}
-                          </div>
-                        )}
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
