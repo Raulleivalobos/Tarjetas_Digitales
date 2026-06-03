@@ -10,7 +10,7 @@ import {
   Check, Landmark, AlertTriangle, Eye, ChevronLeft, ChevronRight, 
   Activity, PlusCircle, PenTool, Home, Megaphone, Gift, Utensils,
   Truck, Trash2 as TrashIcon, Trophy, Settings as SettingsIcon,
-  Cpu, Wrench, Coffee, Heart, Award, FileSpreadsheet, Users
+  Cpu, Wrench, Coffee, Heart, Award, FileSpreadsheet, Users, RefreshCw
 } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
@@ -466,17 +466,16 @@ export default function FinancePage() {
     }
   };
 
-  // Delete transaction
   const handleEditTransaction = (tx: any) => {
     setEditingTxId(tx.id);
-    setTxType(tx.type);
-    setTxAmount(tx.amount.toString());
-    setTxCategoryId(tx.category_id);
-    setTxMethod(tx.payment_method);
-    setTxDate(tx.transaction_date);
-    setTxDescription(tx.description);
+    setTxType(tx.type || 'expense');
+    setTxAmount(tx.amount ? tx.amount.toString() : '0');
+    setTxCategoryId(tx.category_id || '');
+    setTxMethod(tx.payment_method || 'bank');
+    setTxDate(tx.transaction_date || new Date().toISOString().split('T')[0]);
+    setTxDescription(tx.description || '');
     setTxReceiptNumber(tx.receipt_number || '');
-    setEditingPhotoUrl(tx.photo_url);
+    setEditingPhotoUrl(tx.photo_url || null);
     setIsModalOpen(true);
   };
 
