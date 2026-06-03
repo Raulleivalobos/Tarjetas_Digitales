@@ -106,6 +106,7 @@ export default function FinancePage() {
   const [txFile, setTxFile] = useState<File | null>(null);
   const [txFilePreview, setTxFilePreview] = useState<string | null>(null);
   const [compressing, setCompressing] = useState(false);
+  const [txFileError, setTxFileError] = useState(false);
 
   // Custom Category creation
   const [newCatName, setNewCatName] = useState('');
@@ -264,18 +265,32 @@ export default function FinancePage() {
   // Image change handler with on-the-fly browser canvas compression
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      setTxFile(null);
+      setTxFilePreview(null);
+      setTxFileError(false);
+      return;
+    }
 
     if (!file.type.match(/image\/jpeg/) && !file.type.match(/image\/jpg/) && !file.type.match(/image\/png/)) {
       showNotification('Formato no permitido. Solo se aceptan imágenes JPG, JPEG o PNG.', 'error');
+      e.target.value = ''; // Clean input
+      setTxFile(null);
+      setTxFilePreview(null);
+      setTxFileError(true);
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      showNotification('El archivo original supera los 2MB de límite.', 'error');
+      showNotification('La imagen supera los 2MB de límite. Por favor, selecciona una más pequeña.', 'error');
+      e.target.value = ''; // Clean input
+      setTxFile(null);
+      setTxFilePreview(null);
+      setTxFileError(true);
       return;
     }
 
+    setTxFileError(false);
     setCompressing(true);
     try {
       const compressed = await compressImage(file);
@@ -306,6 +321,10 @@ export default function FinancePage() {
     }
     if (!txCategoryId) {
       showNotification('Por favor, selecciona una categoría.', 'error');
+      return;
+    }
+    if (txFileError) {
+      showNotification('Por favor, soluciona el error con la boleta adjunta antes de guardar.', 'error');
       return;
     }
 
@@ -362,6 +381,7 @@ export default function FinancePage() {
       setTxDescription('');
       setTxFile(null);
       setTxFilePreview(null);
+      setTxFileError(false);
       setTxCategoryId('');
       
       // Refresh ledger data
@@ -1736,6 +1756,7 @@ export default function FinancePage() {
                         onClick={() => {
                           setTxFile(null);
                           setTxFilePreview(null);
+                          setTxFileError(false);
                         }}
                         className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-red-400 hover:text-red-300"
                       >
