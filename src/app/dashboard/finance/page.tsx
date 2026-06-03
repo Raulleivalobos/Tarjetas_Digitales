@@ -281,8 +281,9 @@ export default function FinancePage() {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      showNotification('La imagen supera los 2MB de límite. Por favor, selecciona una más pequeña.', 'error');
+    // Allow up to 15MB for initial file size, will be compressed down to < 2MB
+    if (file.size > 15 * 1024 * 1024) {
+      showNotification('La imagen es demasiado pesada (supera los 15MB). Por favor, intenta con otra foto.', 'error');
       e.target.value = ''; // Clean input
       setTxFile(null);
       setTxFilePreview(null);
@@ -1730,7 +1731,7 @@ export default function FinancePage() {
 
               {/* Receipt File Upload */}
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Adjuntar Boleta o Factura (JPG / PNG, Máx 2MB)</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Adjuntar Boleta o Factura (Autocompresión activa)</label>
                 
                 <div className="flex flex-col md:flex-row gap-4 items-center">
                   <div className="flex-1 w-full">
