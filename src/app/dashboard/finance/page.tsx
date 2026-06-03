@@ -54,6 +54,7 @@ interface Transaction {
   type: 'income' | 'expense';
   payment_method: 'bank' | 'cash';
   transaction_date: string;
+  receipt_number?: string | null;
   photo_url: string | null;
   created_at: string;
   created_by: string;
@@ -103,6 +104,7 @@ export default function FinancePage() {
   const [txMethod, setTxMethod] = useState<'bank' | 'cash'>('bank');
   const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
   const [txDescription, setTxDescription] = useState('');
+  const [txReceiptNumber, setTxReceiptNumber] = useState('');
   const [txFile, setTxFile] = useState<File | null>(null);
   const [txFilePreview, setTxFilePreview] = useState<string | null>(null);
   const [compressing, setCompressing] = useState(false);
@@ -386,6 +388,7 @@ export default function FinancePage() {
           .update({
             category_id: txCategoryId,
             description: txDescription,
+            receipt_number: txReceiptNumber || null,
             amount: amountNum,
             type: txType,
             payment_method: txMethod,
@@ -404,6 +407,7 @@ export default function FinancePage() {
             org_id: organization.id,
             category_id: txCategoryId,
             description: txDescription,
+            receipt_number: txReceiptNumber || null,
             amount: amountNum,
             type: txType,
             payment_method: txMethod,
@@ -421,6 +425,7 @@ export default function FinancePage() {
       setTxAmount('');
       setTxDate(new Date().toISOString().split('T')[0]);
       setTxDescription('');
+      setTxReceiptNumber('');
       setTxFile(null);
       setTxFilePreview(null);
       setTxFileError(false);
@@ -448,6 +453,7 @@ export default function FinancePage() {
     setTxMethod(tx.payment_method);
     setTxDate(tx.transaction_date);
     setTxDescription(tx.description);
+    setTxReceiptNumber(tx.receipt_number || '');
     setEditingPhotoUrl(tx.photo_url);
     setIsModalOpen(true);
   };
@@ -1333,7 +1339,14 @@ export default function FinancePage() {
                   paginatedTransactions.map((t) => (
                     <tr key={t.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="p-4 font-mono font-semibold">{t.transaction_date.split('-').reverse().join('/')}</td>
-                      <td className="p-4 font-bold text-white max-w-[240px] truncate">{t.description}</td>
+                      <td className="p-4 max-w-[240px]">
+                        <div className="font-bold text-white truncate">{t.description}</div>
+                        {t.receipt_number && (
+                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            Nro: {t.receipt_number}
+                          </div>
+                        )}
+                      </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <CategoryIcon name={t.category?.icon || 'Tag'} className="w-3.5 h-3.5 text-slate-400" />
@@ -1678,6 +1691,7 @@ export default function FinancePage() {
                   setTxFile(null);
                   setTxFilePreview(null);
                   setTxFileError(false);
+                  setTxReceiptNumber('');
                   setEditingTxId(null);
                   setEditingPhotoUrl(null);
                 }}
@@ -1799,6 +1813,18 @@ export default function FinancePage() {
                 />
               </div>
 
+              {/* Receipt Number */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nro. Boleta / Factura / Recibo (Opcional)</label>
+                <input
+                  type="text"
+                  value={txReceiptNumber}
+                  onChange={(e) => setTxReceiptNumber(e.target.value)}
+                  placeholder="Ej. 450091"
+                  className="glass-input w-full px-4 py-2.5 text-sm"
+                />
+              </div>
+
               {/* Receipt File Upload */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Adjuntar Boleta o Factura (Autocompresión activa)</label>
@@ -1848,6 +1874,7 @@ export default function FinancePage() {
                     setTxFile(null);
                     setTxFilePreview(null);
                     setTxFileError(false);
+                    setTxReceiptNumber('');
                     setEditingTxId(null);
                     setEditingPhotoUrl(null);
                   }}
