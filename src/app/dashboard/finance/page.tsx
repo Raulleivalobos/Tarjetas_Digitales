@@ -107,6 +107,10 @@ export default function FinancePage() {
   const [txFilePreview, setTxFilePreview] = useState<string | null>(null);
   const [compressing, setCompressing] = useState(false);
   const [txFileError, setTxFileError] = useState(false);
+  
+  // Edit State
+  const [editingTxId, setEditingTxId] = useState<string | null>(null);
+  const [editingPhotoUrl, setEditingPhotoUrl] = useState<string | null>(null);
 
   // Custom Category creation
   const [newCatName, setNewCatName] = useState('');
@@ -312,8 +316,8 @@ export default function FinancePage() {
     }
   };
 
-  // Create new transaction
-  const handleCreateTransaction = async (e: React.FormEvent) => {
+  // Save transaction (Create or Update)
+  const handleSaveTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!organization?.id || isReadOnly) return;
     if (!txAmount || parseFloat(txAmount) <= 0) {
@@ -333,9 +337,23 @@ export default function FinancePage() {
     let photoUrl = null;
 
     try {
-      // 1. Upload receipt to storage if selected
+      // 1. Upload receipt to storage if selected (new image)
       if (txFile) {
         setCompressing(true);
+        // If editing and there's a new file, delete old file if it existed
+        if (editingTxId && editingPhotoUrl) {
+          try {
+            const urlObj = new URL(editingPhotoUrl);
+            const pathParts = urlObj.pathname.split('/finance_receipts/');
+            if (pathParts.length > 1) {
+              const oldPath = pathParts[1];
+              await supabase.storage.from('finance_receipts').remove([oldPath]);
+            }
+          } catch (e) {
+            console.error("Failed to delete old image", e);
+          }
+        }
+
         const fileExt = 'jpg'; // We always compress down to JPG
         const filePath = `${organization.id}/receipt-${Date.now()}.${fileExt}`;
 
@@ -354,41 +372,66 @@ export default function FinancePage() {
           .getPublicUrl(filePath);
 
         photoUrl = publicUrl;
+      } else if (editingTxId && editingPhotoUrl && !txFileError) {
+        // If editing and no new file was uploaded, keep the old one
+        photoUrl = editingPhotoUrl;
       }
 
-      // 2. Insert transaction log
+      // 2. Insert or Update transaction log
       const amountNum = parseFloat(txAmount);
-      const { error: insertError } = await supabase
-        .from('finance_transactions')
-        .insert({
-          org_id: organization.id,
-          category_id: txCategoryId,
-          description: txDescription,
-          amount: amountNum,
-          type: txType,
-          payment_method: txMethod,
-          transaction_date: txDate,
-          photo_url: photoUrl,
-          created_by: user?.id || membership?.user_id
-        });
+      
+      if (editingTxId) {
+        const { error: updateError } = await supabase
+          .from('finance_transactions')
+          .update({
+            category_id: txCategoryId,
+            description: txDescription,
+            amount: amountNum,
+            type: txType,
+            payment_method: txMethod,
+            transaction_date: txDate,
+            photo_url: photoUrl
+          })
+          .eq('id', editingTxId)
+          .eq('org_id', organization.id); // Security check
 
-      if (insertError) throw insertError;
+        if (updateError) throw updateError;
+        showNotification('Transacción actualizada exitosamente.', 'success');
+      } else {
+        const { error: insertError } = await supabase
+          .from('finance_transactions')
+          .insert({
+            org_id: organization.id,
+            category_id: txCategoryId,
+            description: txDescription,
+            amount: amountNum,
+            type: txType,
+            payment_method: txMethod,
+            transaction_date: txDate,
+            photo_url: photoUrl,
+            created_by: user?.id || membership?.user_id
+          });
 
-      showNotification('Transacción registrada exitosamente.', 'success');
+        if (insertError) throw insertError;
+        showNotification('Transacción registrada exitosamente.', 'success');
+      }
       
       // Close modal and reset form
       setIsModalOpen(false);
       setTxAmount('');
+      setTxDate(new Date().toISOString().split('T')[0]);
       setTxDescription('');
       setTxFile(null);
       setTxFilePreview(null);
       setTxFileError(false);
       setTxCategoryId('');
+      setEditingTxId(null);
+      setEditingPhotoUrl(null);
       
       // Refresh ledger data
       await fetchFinanceData();
     } catch (err: any) {
-      console.error('Error creating transaction:', err);
+      console.error('Error saving transaction:', err);
       showNotification(err.message || 'Error al guardar la transacción', 'error');
     } finally {
       setSaving(false);
@@ -397,6 +440,18 @@ export default function FinancePage() {
   };
 
   // Delete transaction
+  const handleEditTransaction = (tx: any) => {
+    setEditingTxId(tx.id);
+    setTxType(tx.type);
+    setTxAmount(tx.amount.toString());
+    setTxCategoryId(tx.category_id);
+    setTxMethod(tx.payment_method);
+    setTxDate(tx.transaction_date);
+    setTxDescription(tx.description);
+    setEditingPhotoUrl(tx.photo_url);
+    setIsModalOpen(true);
+  };
+
   const handleDeleteTransaction = async (id: string, photoUrl: string | null) => {
     if (isReadOnly) return;
     if (!window.confirm('¿Estás seguro de que deseas eliminar este movimiento contable? Esta acción no se puede deshacer.')) return;
@@ -1316,13 +1371,22 @@ export default function FinancePage() {
                       </td>
                       {!isReadOnly && (
                         <td className="p-4 text-center">
-                          <button
-                            onClick={() => handleDeleteTransaction(t.id, t.photo_url)}
-                            className="p-1.5 rounded-lg border border-red-500/10 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/30 text-red-400 transition-all"
-                            title="Eliminar transacción"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleEditTransaction(t)}
+                              className="p-1.5 rounded-lg border border-brand-500/10 bg-brand-500/5 hover:bg-brand-500/10 hover:border-brand-500/30 text-brand-400 transition-all"
+                              title="Editar transacción"
+                            >
+                              <PenTool className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTransaction(t.id, t.photo_url)}
+                              className="p-1.5 rounded-lg border border-red-500/10 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/30 text-red-400 transition-all"
+                              title="Eliminar transacción"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -1602,14 +1666,20 @@ export default function FinancePage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Plus className="w-5 h-5 text-brand-400" />
-                Registrar Movimiento Contable
+                {editingTxId ? (
+                  <><PenTool className="w-5 h-5 text-brand-400" /> Editar Movimiento Contable</>
+                ) : (
+                  <><Plus className="w-5 h-5 text-brand-400" /> Registrar Movimiento Contable</>
+                )}
               </h2>
               <button
                 onClick={() => {
                   setIsModalOpen(false);
                   setTxFile(null);
                   setTxFilePreview(null);
+                  setTxFileError(false);
+                  setEditingTxId(null);
+                  setEditingPhotoUrl(null);
                 }}
                 className="p-1 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-all"
               >
@@ -1618,7 +1688,7 @@ export default function FinancePage() {
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleCreateTransaction} className="space-y-6">
+            <form onSubmit={handleSaveTransaction} className="space-y-6">
               {/* Type Switcher */}
               <div className="grid grid-cols-2 gap-3 p-1 bg-surface-900 rounded-xl border border-white/5">
                 <button
@@ -1748,16 +1818,17 @@ export default function FinancePage() {
                     </label>
                   </div>
 
-                  {/* Thumbnail Preview */}
-                  {txFilePreview && (
+                  {/* Thumbnail Preview or Existing Photo */}
+                  {(txFilePreview || editingPhotoUrl) && (
                     <div className="w-24 h-24 rounded-2xl border border-white/10 bg-white/5 overflow-hidden shrink-0 relative group">
-                      <img src={txFilePreview} className="w-full h-full object-cover" alt="Preview" />
+                      <img src={txFilePreview || editingPhotoUrl || ''} className="w-full h-full object-cover" alt="Preview" />
                       <button
                         type="button"
                         onClick={() => {
                           setTxFile(null);
                           setTxFilePreview(null);
                           setTxFileError(false);
+                          setEditingPhotoUrl(null);
                         }}
                         className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-red-400 hover:text-red-300"
                       >
@@ -1776,8 +1847,11 @@ export default function FinancePage() {
                     setIsModalOpen(false);
                     setTxFile(null);
                     setTxFilePreview(null);
+                    setTxFileError(false);
+                    setEditingTxId(null);
+                    setEditingPhotoUrl(null);
                   }}
-                  className="px-5 py-2.5 border border-white/5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all"
+                  className="px-4 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-all"
                   disabled={saving || compressing}
                 >
                   Cancelar
@@ -1795,7 +1869,7 @@ export default function FinancePage() {
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      Registrar Movimiento
+                      {editingTxId ? 'Guardar Cambios' : 'Registrar Movimiento'}
                     </>
                   )}
                 </button>
