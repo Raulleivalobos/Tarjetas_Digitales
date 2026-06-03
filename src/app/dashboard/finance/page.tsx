@@ -51,7 +51,7 @@ interface Transaction {
   category_id: string;
   description: string;
   amount: number;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'transfer';
   payment_method: 'bank' | 'cash';
   transaction_date: string;
   receipt_number?: string | null;
@@ -98,7 +98,7 @@ export default function FinancePage() {
   const [initialCashInput, setInitialCashInput] = useState('0');
 
   // Form State for new Transaction
-  const [txType, setTxType] = useState<'income' | 'expense'>('expense');
+  const [txType, setTxType] = useState<'income' | 'expense' | 'transfer'>('expense');
   const [txAmount, setTxAmount] = useState('');
   const [txCategoryId, setTxCategoryId] = useState('');
   const [txMethod, setTxMethod] = useState<'bank' | 'cash'>('bank');
@@ -326,7 +326,7 @@ export default function FinancePage() {
       showNotification('Por favor, ingresa un monto válido superior a cero.', 'error');
       return;
     }
-    if (!txCategoryId) {
+    if (txType !== 'transfer' && !txCategoryId) {
       showNotification('Por favor, selecciona una categoría.', 'error');
       return;
     }
@@ -379,14 +379,36 @@ export default function FinancePage() {
         photoUrl = editingPhotoUrl;
       }
 
-      // 2. Insert or Update transaction log
+      // 2. Resolve Category for Transfer
+      let finalCategoryId = txCategoryId;
+      if (txType === 'transfer') {
+        let transferCat = categories.find(c => c.name === 'Traspaso Interno');
+        if (!transferCat) {
+          const { data: newCat, error: newCatError } = await supabase
+            .from('finance_categories')
+            .insert({
+              org_id: organization.id,
+              name: 'Traspaso Interno',
+              type: 'expense',
+              icon: 'RefreshCw',
+              is_default: false
+            })
+            .select()
+            .single();
+          if (newCatError) throw newCatError;
+          transferCat = newCat;
+        }
+        finalCategoryId = transferCat.id;
+      }
+
+      // 3. Insert or Update transaction log
       const amountNum = parseFloat(txAmount);
       
       if (editingTxId) {
         const { error: updateError } = await supabase
           .from('finance_transactions')
           .update({
-            category_id: txCategoryId,
+            category_id: finalCategoryId,
             description: txDescription,
             receipt_number: txReceiptNumber || null,
             amount: amountNum,
@@ -405,7 +427,7 @@ export default function FinancePage() {
           .from('finance_transactions')
           .insert({
             org_id: organization.id,
-            category_id: txCategoryId,
+            category_id: finalCategoryId,
             description: txDescription,
             receipt_number: txReceiptNumber || null,
             amount: amountNum,
@@ -532,19 +554,19 @@ export default function FinancePage() {
   const initialCash = settings?.initial_cash_balance || 0;
 
   const totalIncomesBank = transactions
-    .filter(t => t.type === 'income' && t.payment_method === 'bank')
+    .filter(t => (t.type === 'income' && t.payment_method === 'bank') || (t.type === 'transfer' && t.payment_method === 'cash'))
     .reduce((sum, t) => sum + t.amount, 0);
 
   const totalExpensesBank = transactions
-    .filter(t => t.type === 'expense' && t.payment_method === 'bank')
+    .filter(t => (t.type === 'expense' && t.payment_method === 'bank') || (t.type === 'transfer' && t.payment_method === 'bank'))
     .reduce((sum, t) => sum + t.amount, 0);
 
   const totalIncomesCash = transactions
-    .filter(t => t.type === 'income' && t.payment_method === 'cash')
+    .filter(t => (t.type === 'income' && t.payment_method === 'cash') || (t.type === 'transfer' && t.payment_method === 'bank'))
     .reduce((sum, t) => sum + t.amount, 0);
 
   const totalExpensesCash = transactions
-    .filter(t => t.type === 'expense' && t.payment_method === 'cash')
+    .filter(t => (t.type === 'expense' && t.payment_method === 'cash') || (t.type === 'transfer' && t.payment_method === 'cash'))
     .reduce((sum, t) => sum + t.amount, 0);
 
   const finalBankBalance = initialBank + totalIncomesBank - totalExpensesBank;
@@ -1353,24 +1375,41 @@ export default function FinancePage() {
                           <span>{t.category?.name}</span>
                         </div>
                       </td>
-                      <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          t.type === 'income' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      <td className="p-4 text-center">
+                        <span className={`px-2.5 py-1 text-[10px] uppercase tracking-widest font-bold rounded-lg border ${
+                          t.type === 'income'
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            : t.type === 'expense'
+                            ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                            : 'bg-brand-500/10 text-brand-400 border-brand-500/20'
                         }`}>
-                          {t.type === 'income' ? 'Ingreso' : 'Gasto'}
+                          {t.type === 'income' ? 'Ingreso' : t.type === 'expense' ? 'Gasto' : 'Traspaso'}
                         </span>
                       </td>
-                      <td className="p-4 font-medium">
-                        {t.payment_method === 'bank' ? (
-                          <span className="flex items-center gap-1.5"><Landmark className="w-3.5 h-3.5 text-brand-400" />Banco</span>
-                        ) : (
-                          <span className="flex items-center gap-1.5"><Coins className="w-3.5 h-3.5 text-amber-500" />Caja Efectivo</span>
-                        )}
-                      </td>
-                      <td className="p-4 text-right font-mono font-black text-sm">
-                        <span className={t.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}>
-                          {t.type === 'income' ? '+' : '-'}{formatCLP(t.amount)}
+                      <td className="p-4">
+                        <span className="flex items-center gap-1.5 font-semibold text-slate-300">
+                          {t.type === 'transfer' ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 text-brand-400" />
+                              {t.payment_method === 'bank' ? 'Banco → Caja' : 'Caja → Banco'}
+                            </>
+                          ) : t.payment_method === 'bank' ? (
+                            <>
+                              <Landmark className="w-3.5 h-3.5 text-blue-400" />
+                              Cuenta Bancaria
+                            </>
+                          ) : (
+                            <>
+                              <Coins className="w-3.5 h-3.5 text-amber-400" />
+                              Caja Efectivo
+                            </>
+                          )}
                         </span>
+                      </td>
+                      <td className={`p-4 text-right font-bold font-mono ${
+                        t.type === 'income' ? 'text-emerald-400' : t.type === 'expense' ? 'text-red-400' : 'text-brand-400'
+                      }`}>
+                        {t.type === 'expense' ? '-' : t.type === 'transfer' ? '' : '+'}{formatCLP(t.amount)}
                       </td>
                       <td className="p-4 text-center">
                         {t.photo_url ? (
@@ -1704,36 +1743,42 @@ export default function FinancePage() {
             {/* Modal Form */}
             <form onSubmit={handleSaveTransaction} className="space-y-6">
               {/* Type Switcher */}
-              <div className="grid grid-cols-2 gap-3 p-1 bg-surface-900 rounded-xl border border-white/5">
+              <div className="grid grid-cols-3 gap-2 p-1 bg-surface-900 rounded-xl border border-white/5">
                 <button
                   type="button"
-                  onClick={() => {
-                    setTxType('expense');
-                    setTxCategoryId('');
-                  }}
-                  className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                  onClick={() => setTxType('expense')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
                     txType === 'expense'
-                      ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                      : 'text-slate-400 hover:text-slate-300'
+                      ? 'bg-red-500/10 text-red-400 border border-red-500/20 shadow-lg shadow-red-500/10'
+                      : 'text-slate-400 hover:text-slate-300 hover:bg-white/5 border border-transparent'
                   }`}
                 >
-                  <ArrowDownRight className="w-3.5 h-3.5 inline mr-1" />
-                  Registrar Gasto
+                  <ArrowDownRight className="w-4 h-4" />
+                  Gasto
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setTxType('income');
-                    setTxCategoryId('');
-                  }}
-                  className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                  onClick={() => setTxType('income')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
                     txType === 'income'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'text-slate-400 hover:text-slate-300'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg shadow-emerald-500/10'
+                      : 'text-slate-400 hover:text-slate-300 hover:bg-white/5 border border-transparent'
                   }`}
                 >
-                  <ArrowUpRight className="w-3.5 h-3.5 inline mr-1" />
-                  Registrar Ingreso
+                  <ArrowUpRight className="w-4 h-4" />
+                  Ingreso
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTxType('transfer')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                    txType === 'transfer'
+                      ? 'bg-brand-500/10 text-brand-400 border border-brand-500/20 shadow-lg shadow-brand-500/10'
+                      : 'text-slate-400 hover:text-slate-300 hover:bg-white/5 border border-transparent'
+                  }`}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Traspaso
                 </button>
               </div>
 
@@ -1769,22 +1814,26 @@ export default function FinancePage() {
 
               {/* Category & Account */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Categoría contable</label>
-                  <select
-                    value={txCategoryId}
-                    onChange={(e) => setTxCategoryId(e.target.value)}
-                    className="glass-input w-full px-3 py-2.5 text-sm cursor-pointer appearance-none bg-surface-900 border-white/5"
-                    required
-                  >
-                    <option value="">Selecciona una categoría</option>
-                    {categories
-                      .filter(c => c.type === txType)
-                      .map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                  </select>
-                </div>
+                {txType !== 'transfer' && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Categoría Contable</label>
+                    <select
+                      value={txCategoryId}
+                      onChange={(e) => setTxCategoryId(e.target.value)}
+                      className="glass-input w-full px-3 py-2.5 text-sm cursor-pointer appearance-none bg-surface-900 border-white/5"
+                      required
+                    >
+                      <option value="" disabled>Selecciona una categoría</option>
+                      {categories
+                        .filter(c => c.type === txType)
+                        .map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Origen / Destino de fondos</label>
@@ -1794,8 +1843,17 @@ export default function FinancePage() {
                     className="glass-input w-full px-3 py-2.5 text-sm cursor-pointer appearance-none bg-surface-900 border-white/5"
                     required
                   >
-                    <option value="bank">Cuenta Bancaria</option>
-                    <option value="cash">Caja Efectivo (Caja Chica)</option>
+                    {txType === 'transfer' ? (
+                      <>
+                        <option value="bank">Transferir de Banco hacia Caja Chica</option>
+                        <option value="cash">Transferir de Caja Chica hacia Banco</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="bank">Cuenta Bancaria</option>
+                        <option value="cash">Caja Efectivo (Caja Chica)</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>
