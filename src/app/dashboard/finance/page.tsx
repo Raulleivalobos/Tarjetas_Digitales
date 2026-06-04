@@ -405,6 +405,10 @@ export default function FinancePage() {
       const amountNum = parseFloat(txAmount);
       
       if (editingTxId) {
+        // En edición, si era traspaso no se debería editar ambos a la vez tan fácil, 
+        // pero evitamos romper si intentan editarlo (solo se actualiza la línea actual).
+        const updateType = txType === 'transfer' ? 'expense' : txType; 
+
         const { error: updateError } = await supabase
           .from('finance_transactions')
           .update({
@@ -412,7 +416,7 @@ export default function FinancePage() {
             description: txDescription,
             receipt_number: txReceiptNumber || null,
             amount: amountNum,
-            type: txType,
+            type: updateType,
             payment_method: txMethod,
             transaction_date: txDate,
             photo_url: photoUrl
@@ -423,23 +427,62 @@ export default function FinancePage() {
         if (updateError) throw updateError;
         showNotification('Transacción actualizada exitosamente.', 'success');
       } else {
-        const { error: insertError } = await supabase
-          .from('finance_transactions')
-          .insert({
-            org_id: organization.id,
-            category_id: finalCategoryId,
-            description: txDescription,
-            receipt_number: txReceiptNumber || null,
-            amount: amountNum,
-            type: txType,
-            payment_method: txMethod,
-            transaction_date: txDate,
-            photo_url: photoUrl,
-            created_by: user?.id || membership?.user_id
-          });
+        if (txType === 'transfer') {
+          // Traspaso: genera DOS movimientos (Egreso de la cuenta origen + Ingreso a la cuenta destino)
+          const sourceMethod = txMethod === 'bank' ? 'bank' : 'cash';
+          const destMethod = txMethod === 'bank' ? 'cash' : 'bank';
 
-        if (insertError) throw insertError;
-        showNotification('Transacción registrada exitosamente.', 'success');
+          const { error: insertError } = await supabase
+            .from('finance_transactions')
+            .insert([
+              {
+                org_id: organization.id,
+                category_id: finalCategoryId,
+                description: txDescription,
+                receipt_number: txReceiptNumber || null,
+                amount: amountNum,
+                type: 'expense', // Sale de la cuenta origen
+                payment_method: sourceMethod,
+                transaction_date: txDate,
+                photo_url: photoUrl,
+                created_by: user?.id || membership?.user_id
+              },
+              {
+                org_id: organization.id,
+                category_id: finalCategoryId,
+                description: txDescription,
+                receipt_number: txReceiptNumber || null,
+                amount: amountNum,
+                type: 'income', // Entra a la cuenta destino
+                payment_method: destMethod,
+                transaction_date: txDate,
+                photo_url: photoUrl,
+                created_by: user?.id || membership?.user_id
+              }
+            ]);
+
+          if (insertError) throw insertError;
+          showNotification('Traspaso registrado exitosamente (egreso e ingreso).', 'success');
+        } else {
+          // Ingreso o Egreso normal
+          const { error: insertError } = await supabase
+            .from('finance_transactions')
+            .insert({
+              org_id: organization.id,
+              category_id: finalCategoryId,
+              description: txDescription,
+              receipt_number: txReceiptNumber || null,
+              amount: amountNum,
+              type: txType,
+              payment_method: txMethod,
+              transaction_date: txDate,
+              photo_url: photoUrl,
+              created_by: user?.id || membership?.user_id
+            });
+
+          if (insertError) throw insertError;
+          showNotification('Transacción registrada exitosamente.', 'success');
+        }
       }
       
       // Close modal and reset form
