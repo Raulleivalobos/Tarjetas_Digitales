@@ -359,13 +359,20 @@ export default function FinancePage() {
         const fileExt = 'jpg'; // We always compress down to JPG
         const filePath = `${organization.id}/receipt-${Date.now()}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
+        // Add a 15-second timeout to the upload request to prevent indefinite hanging
+        const uploadPromise = supabase.storage
           .from('finance_receipts')
           .upload(filePath, txFile, {
             contentType: 'image/jpeg',
             cacheControl: '3600',
             upsert: false
           });
+
+        const timeoutPromise = new Promise<{ error: any }>((_, reject) => {
+          setTimeout(() => reject(new Error('Tiempo de espera agotado al subir la imagen. Tu conexión a internet podría estar inestable.')), 15000);
+        });
+
+        const { error: uploadError } = await Promise.race([uploadPromise, timeoutPromise]) as any;
 
         if (uploadError) throw uploadError;
 
@@ -467,7 +474,8 @@ export default function FinancePage() {
           showNotification('Traspaso registrado exitosamente (egreso e ingreso).', 'success');
         } else {
           // Ingreso o Egreso normal
-          const { error: insertError } = await supabase
+          setCompressing(false); // Change UI state from 'Subiendo' to 'Guardando'
+          const insertPromise = supabase
             .from('finance_transactions')
             .insert({
               org_id: organization.id,
@@ -481,6 +489,12 @@ export default function FinancePage() {
               photo_url: photoUrl,
               created_by: user?.id || membership?.user_id
             });
+
+          const timeoutPromise = new Promise<{ error: any }>((_, reject) => {
+            setTimeout(() => reject(new Error('Tiempo de espera agotado al registrar el movimiento. Verifica tu conexión.')), 15000);
+          });
+
+          const { error: insertError } = await Promise.race([insertPromise, timeoutPromise]) as any;
 
           if (insertError) throw insertError;
           showNotification('Transacción registrada exitosamente.', 'success');
@@ -2007,7 +2021,7 @@ export default function FinancePage() {
                   {saving ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white animate-spin rounded-full" />
-                      Procesando...
+                      {compressing ? 'Subiendo boleta...' : 'Guardando...'}
                     </>
                   ) : (
                     <>
