@@ -622,6 +622,18 @@ export default function FinancePage() {
   const totalExpenses = totalExpensesBank + totalExpensesCash;
   const finalTotalNetBalance = finalBankBalance + finalCashBalance;
 
+  // Helper to identify internal transfers so they don't inflate visual metrics
+  const isTransfer = (t: any) => t.category?.name === 'Traspaso Interno' || (t.category?.name || '').toLowerCase().includes('traspaso');
+
+  // Metrics for UI display (excludes internal transfers)
+  const displayTotalIncomes = transactions
+    .filter(t => t.type === 'income' && !isTransfer(t))
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const displayTotalExpenses = transactions
+    .filter(t => t.type === 'expense' && !isTransfer(t))
+    .reduce((sum, t) => sum + t.amount, 0);
+
   // Chart Data compilation (Group transactions by month)
   const getMonthlyChartData = () => {
     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -634,12 +646,12 @@ export default function FinancePage() {
 
     transactions.forEach(t => {
       const date = new Date(t.transaction_date);
-      // Ensure date falls within selected year
-      if (date.getFullYear() === periodYear) {
+      // Ensure date falls within selected year and is not an internal transfer
+      if (date.getFullYear() === periodYear && !isTransfer(t)) {
         const monthIndex = date.getMonth();
         if (t.type === 'income') {
           monthlyMap[monthIndex].ingresos += t.amount;
-        } else {
+        } else if (t.type === 'expense') {
           monthlyMap[monthIndex].egresos += t.amount;
         }
       }
@@ -655,7 +667,7 @@ export default function FinancePage() {
   const getExpensesByCategoriesData = () => {
     const catMap: Record<string, number> = {};
     transactions
-      .filter(t => t.type === 'expense')
+      .filter(t => t.type === 'expense' && !isTransfer(t))
       .forEach(t => {
         const catName = t.category?.name || 'Otros';
         catMap[catName] = (catMap[catName] || 0) + t.amount;
@@ -982,7 +994,7 @@ export default function FinancePage() {
           </div>
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ingresos del Periodo</span>
           <h3 className="text-2xl font-black text-emerald-400 mt-2 leading-none">
-            {formatCLP(totalIncomes)}
+            {formatCLP(displayTotalIncomes)}
           </h3>
           <p className="text-[10px] text-slate-500 mt-4 font-semibold uppercase tracking-wider">
             Total entradas de caja
@@ -994,9 +1006,9 @@ export default function FinancePage() {
           <div className="absolute right-4 top-4 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20">
             <ArrowDownRight className="w-5 h-5 text-rose-400" />
           </div>
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gastos del Periodo</span>
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Egresos del Periodo</span>
           <h3 className="text-2xl font-black text-rose-400 mt-2 leading-none">
-            {formatCLP(totalExpenses)}
+            {formatCLP(displayTotalExpenses)}
           </h3>
           <p className="text-[10px] text-slate-500 mt-4 font-semibold uppercase tracking-wider">
             Total salidas registradas
@@ -1128,7 +1140,7 @@ export default function FinancePage() {
                   {/* Central Text */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Gastos Totales</span>
-                    <span className="text-md font-extrabold text-white leading-tight">{formatCLP(totalExpenses)}</span>
+                    <span className="text-md font-extrabold text-white leading-tight">{formatCLP(displayTotalExpenses)}</span>
                   </div>
                 </div>
 
