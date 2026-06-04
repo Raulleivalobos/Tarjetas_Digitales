@@ -368,13 +368,17 @@ export default function FinancePage() {
             upsert: false
           });
 
+        let uploadTimeoutId: NodeJS.Timeout;
         const timeoutPromise = new Promise<{ error: any }>((_, reject) => {
-          setTimeout(() => reject(new Error('Tiempo de espera agotado al subir la imagen. Tu conexión a internet podría estar inestable.')), 15000);
+          uploadTimeoutId = setTimeout(() => reject(new Error('Tiempo de espera agotado al subir la imagen. Tu conexión a internet podría estar inestable.')), 15000);
         });
 
-        const { error: uploadError } = await Promise.race([uploadPromise, timeoutPromise]) as any;
-
-        if (uploadError) throw uploadError;
+        try {
+          const { error: uploadError } = await Promise.race([uploadPromise, timeoutPromise]) as any;
+          if (uploadError) throw uploadError;
+        } finally {
+          clearTimeout(uploadTimeoutId!);
+        }
 
         const { data: { publicUrl } } = supabase.storage
           .from('finance_receipts')
@@ -490,13 +494,18 @@ export default function FinancePage() {
               created_by: user?.id || membership?.user_id
             });
 
+          let insertTimeoutId: NodeJS.Timeout;
           const timeoutPromise = new Promise<{ error: any }>((_, reject) => {
-            setTimeout(() => reject(new Error('Tiempo de espera agotado al registrar el movimiento. Verifica tu conexión.')), 15000);
+            insertTimeoutId = setTimeout(() => reject(new Error('Tiempo de espera agotado al registrar el movimiento. Verifica tu conexión.')), 15000);
           });
 
-          const { error: insertError } = await Promise.race([insertPromise, timeoutPromise]) as any;
-
-          if (insertError) throw insertError;
+          try {
+            const { error: insertError } = await Promise.race([insertPromise, timeoutPromise]) as any;
+            if (insertError) throw insertError;
+          } finally {
+            clearTimeout(insertTimeoutId!);
+          }
+          
           showNotification('Transacción registrada exitosamente.', 'success');
         }
       }
@@ -959,7 +968,19 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-6 animate-fade-in">
+    <div className="max-w-[1400px] mx-auto space-y-6 animate-fade-in relative">
+      {/* Toast Notification for errors/success messages */}
+      {message.text && (
+        <div className={`fixed top-4 right-4 z-[200] p-4 rounded-xl shadow-2xl flex items-center gap-3 border animate-in slide-in-from-top-2 duration-300 ${
+          message.type === 'success' 
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+            : 'bg-red-500/10 border-red-500/20 text-red-400'
+        }`}>
+          {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+          <span className="text-sm font-bold">{message.text}</span>
+        </div>
+      )}
+      
       {/* Title & Period Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
