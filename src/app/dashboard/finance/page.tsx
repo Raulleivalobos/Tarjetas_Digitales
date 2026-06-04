@@ -396,7 +396,11 @@ export default function FinancePage() {
             .select()
             .single();
           if (newCatError) throw newCatError;
+          if (!newCat) throw new Error("No se pudo crear la categoría de traspaso Interno. Verifica tus permisos.");
           transferCat = newCat;
+        }
+        if (!transferCat || !transferCat.id) {
+          throw new Error("Categoría de traspaso inválida.");
         }
         finalCategoryId = transferCat.id;
       }
@@ -405,8 +409,6 @@ export default function FinancePage() {
       const amountNum = parseFloat(txAmount);
       
       if (editingTxId) {
-        // En edición, si era traspaso no se debería editar ambos a la vez tan fácil, 
-        // pero evitamos romper si intentan editarlo (solo se actualiza la línea actual).
         const updateType = txType === 'transfer' ? 'expense' : txType; 
 
         const { error: updateError } = await supabase
@@ -502,7 +504,9 @@ export default function FinancePage() {
       await fetchFinanceData();
     } catch (err: any) {
       console.error('Error saving transaction:', err);
-      showNotification(err.message || 'Error al guardar la transacción', 'error');
+      // Safe fallback if err is null or doesn't have a message
+      const msg = (err && err.message) ? err.message : 'Error al guardar la transacción';
+      showNotification(msg, 'error');
     } finally {
       setSaving(false);
       setCompressing(false);
