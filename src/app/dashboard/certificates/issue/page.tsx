@@ -230,7 +230,10 @@ export default function IssueCertificatePage() {
         resident_data: formData.resident_data,
         metadata: {
           issued_by: (await supabase.auth.getUser()).data.user?.id,
-          org_info: { name: organization.name, rut: organization.rut }
+          org_info: { name: organization.name, rut: organization.rut },
+          signatures: typeof organization.settings === 'string' 
+            ? JSON.parse(organization.settings)?.signatures 
+            : (organization.settings as any)?.signatures
         }
       };
 

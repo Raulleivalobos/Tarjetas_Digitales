@@ -100,7 +100,8 @@ export default function ViewCertificatePage() {
   const populateCertificate = (baseDesign: CardDesign, cert: any, org: any) => {
     const activeOrg = (organization && organization.id === cert.org_id) ? organization : org;
     const settings = typeof activeOrg.settings === 'string' ? JSON.parse(activeOrg.settings) : (activeOrg.settings || {});
-    const sigs = settings.signatures || activeOrg.signatures || {};
+    const certMetadata = typeof cert.metadata === 'string' ? JSON.parse(cert.metadata) : (cert.metadata || {});
+    const sigs = certMetadata.signatures || settings.signatures || activeOrg.signatures || {};
 
     const data: Record<string, string> = {
       'Folio': cert.folio.toString().padStart(6, '0'),

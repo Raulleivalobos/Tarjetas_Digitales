@@ -118,7 +118,8 @@ export default function CertificateValidationPage() {
 
   const populateCertificate = (baseDesign: any, cert: any, org: any) => {
     const settings = typeof org.settings === 'string' ? JSON.parse(org.settings) : (org.settings || {});
-    const sigs = settings.signatures || org.signatures || {};
+    const certMetadata = typeof cert.metadata === 'string' ? JSON.parse(cert.metadata) : (cert.metadata || {});
+    const sigs = certMetadata.signatures || settings.signatures || org.signatures || {};
 
     const data: Record<string, string> = {
       'Folio': cert.folio.toString().padStart(6, '0'),
