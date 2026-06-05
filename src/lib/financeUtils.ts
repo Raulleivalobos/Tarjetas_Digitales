@@ -87,18 +87,21 @@ export interface FinanceReportData {
   commune?: string;
   periodYear: number;
   dateRangeText: string;
-  // Metrics
+  // Metrics (excluding transfers)
   initialBank: number;
   initialCash: number;
   totalIncomeBank: number;
   totalIncomeCash: number;
   totalExpenseBank: number;
   totalExpenseCash: number;
+  // Transfer amounts (net effect per account)
+  transferBank: number;
+  transferCash: number;
   finalBank: number;
   finalCash: number;
-  // Categories summaries
+  // Categories summaries (already filtered, no transfers)
   categorySummaries: { name: string; type: 'income' | 'expense'; amount: number }[];
-  // Transactions
+  // Transactions (all, including transfers for audit trail)
   transactions: {
     date: string;
     description: string;
@@ -107,11 +110,14 @@ export interface FinanceReportData {
     type: string;
     amount: number;
     hasReceipt: boolean;
+    receiptNumber?: string;
   }[];
   // Signatures
   signatures?: {
     president: { name: string; title: string; enabled: boolean };
     secretary: { name: string; title: string; enabled: boolean };
+    treasurer: { name: string; title: string; enabled: boolean };
+    reviewCommittee: { name: string; title: string; enabled: boolean };
   };
 }
 
@@ -196,17 +202,21 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
     pdf.line(margin, y, pageWidth - margin, y);
     y += 6;
 
-    // ─── Section A: Balance Summary Cards ───
+    // ─── Section 1: Balance Summary Cards ───
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(15, 23, 42);
     pdf.text('1. RESUMEN DE SALDOS Y CONCILIACIÓN', margin, y);
     y += 5;
 
+    // Cards use pure income/expense (no transfers)
+    const totalIncome = data.totalIncomeBank + data.totalIncomeCash;
+    const totalExpense = data.totalExpenseBank + data.totalExpenseCash;
+
     const cards = [
       { label: 'SALDO INICIAL TOTAL', val: data.initialBank + data.initialCash },
-      { label: 'INGRESOS REGISTRADOS', val: data.totalIncomeBank + data.totalIncomeCash },
-      { label: 'EGRESOS REGISTRADOS', val: data.totalExpenseBank + data.totalExpenseCash },
+      { label: 'INGRESOS REGISTRADOS', val: totalIncome },
+      { label: 'EGRESOS REGISTRADOS', val: totalExpense },
       { label: 'SALDO NETO ACTUAL', val: data.finalBank + data.finalCash }
     ];
 
@@ -225,51 +235,89 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
 
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(i === 2 ? 220 : i === 1 ? 22 : 15, i === 2 ? 38 : i === 1 ? 163 : 23, i === 2 ? 38 : i === 1 ? 74 : 42); // Green for Income, Red for Expense
+      pdf.setTextColor(i === 2 ? 220 : i === 1 ? 22 : 15, i === 2 ? 38 : i === 1 ? 163 : 23, i === 2 ? 38 : i === 1 ? 74 : 42);
       pdf.text(formatCLP(card.val), x + 3, y + 11);
     });
     y += 21;
 
-    // Bank vs Cash Sub-ledger Table
+    // ─── Bank vs Cash Sub-ledger Table WITH Traspaso column ───
     autoTable(pdf, {
       startY: y,
       margin: { left: margin, right: margin },
-      head: [['Cuenta', 'Saldo Inicial', 'Total Ingresos', 'Total Egresos', 'Saldo Final Actual']],
+      head: [['Cuenta', 'Saldo Inicial', 'Total Ingresos', 'Traspaso', 'Total Egresos', 'Saldo Final Actual']],
       body: [
-        ['Cuenta Bancaria', formatCLP(data.initialBank), formatCLP(data.totalIncomeBank), formatCLP(data.totalExpenseBank), formatCLP(data.finalBank)],
-        ['Caja Efectivo (Caja Chica)', formatCLP(data.initialCash), formatCLP(data.totalIncomeCash), formatCLP(data.totalExpenseCash), formatCLP(data.finalCash)],
-        ['TOTAL CONSOLIDADO', formatCLP(data.initialBank + data.initialCash), formatCLP(data.totalIncomeBank + data.totalIncomeCash), formatCLP(data.totalExpenseBank + data.totalExpenseCash), formatCLP(data.finalBank + data.finalCash)]
+        [
+          'Cuenta Bancaria',
+          formatCLP(data.initialBank),
+          formatCLP(data.totalIncomeBank),
+          formatCLP(data.transferBank),
+          formatCLP(data.totalExpenseBank),
+          formatCLP(data.finalBank)
+        ],
+        [
+          'Caja Efectivo (Caja Chica)',
+          formatCLP(data.initialCash),
+          formatCLP(data.totalIncomeCash),
+          formatCLP(data.transferCash),
+          formatCLP(data.totalExpenseCash),
+          formatCLP(data.finalCash)
+        ],
+        [
+          'TOTAL CONSOLIDADO',
+          formatCLP(data.initialBank + data.initialCash),
+          formatCLP(data.totalIncomeBank + data.totalIncomeCash),
+          formatCLP(data.transferBank + data.transferCash),
+          formatCLP(data.totalExpenseBank + data.totalExpenseCash),
+          formatCLP(data.finalBank + data.finalCash)
+        ]
       ],
       theme: 'grid',
-      headStyles: { fillColor: [51, 65, 85], fontSize: 8, fontStyle: 'bold' },
-      bodyStyles: { fontSize: 8, textColor: [30, 41, 59] },
+      headStyles: { fillColor: [51, 65, 85], fontSize: 7.5, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 7.5, textColor: [30, 41, 59] },
       columnStyles: {
         1: { halign: 'right' },
         2: { halign: 'right' },
         3: { halign: 'right' },
-        4: { halign: 'right', fontStyle: 'bold' }
+        4: { halign: 'right' },
+        5: { halign: 'right', fontStyle: 'bold' }
       },
       didParseCell: (cellData) => {
+        // Bold the TOTAL row
         if (cellData.row.index === 2) {
           cellData.cell.styles.fontStyle = 'bold';
           cellData.cell.styles.fillColor = [241, 245, 249];
+        }
+        // Color the Traspaso column (index 3)
+        if (cellData.column.index === 3 && cellData.section === 'body') {
+          const rawText = cellData.cell.raw as string;
+          if (rawText && rawText.includes('-')) {
+            cellData.cell.styles.textColor = [153, 27, 27]; // Red for negative
+          } else if (rawText && rawText !== '$0') {
+            cellData.cell.styles.textColor = [22, 101, 52]; // Green for positive
+          } else {
+            cellData.cell.styles.textColor = [100, 116, 139]; // Grey for zero
+          }
         }
       }
     });
 
     y = (pdf as any).lastAutoTable.finalY + 8;
 
-    // ─── Section B: Category Summaries ───
+    // ─── Section 2: Category Summaries (NO Traspaso Interno) ───
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(15, 23, 42);
     pdf.text('2. RESUMEN POR CATEGORÍAS', margin, y);
     y += 4;
 
-    const expensesSum = data.categorySummaries.filter(c => c.type === 'expense');
-    const incomesSum = data.categorySummaries.filter(c => c.type === 'income');
+    // Filter out Traspaso Interno from categories
+    const expensesSum = data.categorySummaries.filter(c => c.type === 'expense' && !c.name.toLowerCase().includes('traspaso'));
+    const incomesSum = data.categorySummaries.filter(c => c.type === 'income' && !c.name.toLowerCase().includes('traspaso'));
 
-    const sumTableBody = [];
+    const totalIncomeCategories = incomesSum.reduce((s, c) => s + c.amount, 0);
+    const totalExpenseCategories = expensesSum.reduce((s, c) => s + c.amount, 0);
+
+    const sumTableBody: string[][] = [];
     const maxLen = Math.max(expensesSum.length, incomesSum.length);
     for (let i = 0; i < maxLen; i++) {
       const inc = incomesSum[i];
@@ -282,6 +330,14 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
       ]);
     }
 
+    // Add totals row
+    sumTableBody.push([
+      'TOTAL INGRESOS',
+      formatCLP(totalIncomeCategories),
+      'TOTAL EGRESOS',
+      formatCLP(totalExpenseCategories)
+    ]);
+
     autoTable(pdf, {
       startY: y,
       margin: { left: margin, right: margin },
@@ -293,13 +349,19 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
       columnStyles: {
         1: { halign: 'right', textColor: [22, 101, 52] },
         3: { halign: 'right', textColor: [153, 27, 27] }
+      },
+      didParseCell: (cellData) => {
+        // Bold the totals row (last row)
+        if (cellData.row.index === sumTableBody.length - 1) {
+          cellData.cell.styles.fontStyle = 'bold';
+          cellData.cell.styles.fillColor = [241, 245, 249];
+        }
       }
     });
 
     y = (pdf as any).lastAutoTable.finalY + 8;
 
-    // ─── Section C: Full Ledger Ledger ───
-    // Check if we need to start a new page
+    // ─── Section 3: Full Transaction Ledger ───
     if (y > pageHeight - 60) {
       addReportFooter(pdf, pageWidth, pageHeight, margin, data.orgName);
       pdf.addPage();
@@ -312,15 +374,45 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
     pdf.text('3. DETALLE DE MOVIMIENTOS CONTABLES', margin, y);
     y += 4;
 
-    const transactionRows = data.transactions.map((t, idx) => [
-      t.date,
-      t.receiptNumber || '-',
-      t.description,
-      t.category,
-      t.type === 'income' ? 'Ingreso' : t.type === 'expense' ? 'Gasto' : 'Traspaso',
-      t.type === 'transfer' ? (t.method === 'bank' ? 'Banco → Caja' : 'Caja → Banco') : t.method === 'bank' ? 'Banco' : 'Efectivo',
-      t.type === 'expense' ? `-${formatCLP(t.amount)}` : t.type === 'transfer' ? formatCLP(t.amount) : `+${formatCLP(t.amount)}`,
-      t.hasReceipt ? 'Sí' : 'No'
+    // Calculate totals for the footer row
+    let totalIngresosLedger = 0;
+    let totalEgresosLedger = 0;
+    let totalTraspasosLedger = 0;
+
+    const transactionRows = data.transactions.map((t) => {
+      const isTransfer = t.category.toLowerCase().includes('traspaso');
+
+      if (isTransfer) {
+        totalTraspasosLedger += t.amount;
+      } else if (t.type === 'income') {
+        totalIngresosLedger += t.amount;
+      } else if (t.type === 'expense') {
+        totalEgresosLedger += t.amount;
+      }
+
+      return [
+        t.date,
+        t.receiptNumber || '-',
+        t.description,
+        t.category,
+        isTransfer ? 'Traspaso' : t.type === 'income' ? 'Ingreso' : 'Gasto',
+        isTransfer ? (t.method === 'bank' ? 'Banco → Caja' : 'Caja → Banco') : t.method === 'bank' ? 'Banco' : 'Efectivo',
+        isTransfer
+          ? formatCLP(t.amount)
+          : t.type === 'expense'
+            ? `-${formatCLP(t.amount)}`
+            : `+${formatCLP(t.amount)}`,
+        t.hasReceipt ? 'Sí' : 'No'
+      ];
+    });
+
+    // Add totals row
+    transactionRows.push([
+      '', '', '', '',
+      'TOTALES',
+      '',
+      `Ing: +${formatCLP(totalIngresosLedger)} | Egr: -${formatCLP(totalEgresosLedger)} | Trsp: ${formatCLP(totalTraspasosLedger)}`,
+      ''
     ]);
 
     autoTable(pdf, {
@@ -329,13 +421,22 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
       head: [['Fecha', 'Nro Doc', 'Descripción', 'Categoría', 'Tipo', 'Medio', 'Monto', 'Boleta']],
       body: transactionRows,
       theme: 'striped',
-      headStyles: { fillColor: [15, 23, 42], fontSize: 8 },
-      bodyStyles: { fontSize: 7, textColor: [30, 41, 59] },
+      headStyles: { fillColor: [15, 23, 42], fontSize: 7.5 },
+      bodyStyles: { fontSize: 6.5, textColor: [30, 41, 59] },
       columnStyles: {
         6: { halign: 'right', fontStyle: 'bold' },
         7: { halign: 'center' }
       },
       didParseCell: (cellData) => {
+        // Totals row (last row)
+        if (cellData.row.index === transactionRows.length - 1) {
+          cellData.cell.styles.fontStyle = 'bold';
+          cellData.cell.styles.fillColor = [241, 245, 249];
+          cellData.cell.styles.textColor = [15, 23, 42];
+          return;
+        }
+
+        // Color the amount column
         if (cellData.column.index === 6 && cellData.cell.raw) {
           const text = cellData.cell.raw as string;
           if (text.startsWith('+')) {
@@ -351,51 +452,66 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
 
     y = (pdf as any).lastAutoTable.finalY + 12;
 
-    // ─── Signatures Block ───
-    if (data.signatures && (data.signatures.president.enabled || data.signatures.secretary.enabled)) {
-      const sigHeight = 25;
-      if (y + sigHeight > pageHeight - margin) {
-        addReportFooter(pdf, pageWidth, pageHeight, margin, data.orgName);
-        pdf.addPage();
-        y = margin + 15;
-      }
+    // ─── Signatures Block (4 signatures in 2 rows + Fecha de Revisión) ───
+    const sigBlockW = (contentWidth - 20) / 2;
+    const sigHeight = 30;
 
-      const sigBlockW = contentWidth / 2.5;
+    // Check if we need a new page for signatures
+    if (y + sigHeight * 2 + 20 > pageHeight - margin) {
+      addReportFooter(pdf, pageWidth, pageHeight, margin, data.orgName);
+      pdf.addPage();
+      y = margin + 15;
+    }
 
-      // President Signature on Left
+    // Divider before signatures
+    pdf.setDrawColor(226, 232, 240);
+    pdf.line(margin, y, pageWidth - margin, y);
+    y += 8;
+
+    // Row 1: President + Secretary
+    const renderSignatureBlock = (x: number, currentY: number, name: string, title: string) => {
+      pdf.setDrawColor(148, 163, 184);
+      pdf.line(x, currentY + 12, x + sigBlockW, currentY + 12);
+
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(name || '_________________________', x + sigBlockW / 2, currentY + 16, { align: 'center' });
+
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(title, x + sigBlockW / 2, currentY + 20, { align: 'center' });
+    };
+
+    // Row 1: Presidente + Secretario
+    if (data.signatures) {
       if (data.signatures.president.enabled) {
-        const x = margin + 5;
-        pdf.setDrawColor(148, 163, 184);
-        pdf.line(x, y + 12, x + sigBlockW, y + 12);
-        
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(30, 41, 59);
-        pdf.text(data.signatures.president.name || '_________________________', x + sigBlockW / 2, y + 16, { align: 'center' });
-        
-        pdf.setFontSize(7);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(100, 116, 139);
-        pdf.text(data.signatures.president.title, x + sigBlockW / 2, y + 20, { align: 'center' });
+        renderSignatureBlock(margin + 5, y, data.signatures.president.name, data.signatures.president.title);
       }
-
-      // Secretary Signature on Right
       if (data.signatures.secretary.enabled) {
-        const x = pageWidth - margin - sigBlockW - 5;
-        pdf.setDrawColor(148, 163, 184);
-        pdf.line(x, y + 12, x + sigBlockW, y + 12);
-
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(30, 41, 59);
-        pdf.text(data.signatures.secretary.name || '_________________________', x + sigBlockW / 2, y + 16, { align: 'center' });
-
-        pdf.setFontSize(7);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(100, 116, 139);
-        pdf.text(data.signatures.secretary.title, x + sigBlockW / 2, y + 20, { align: 'center' });
+        renderSignatureBlock(pageWidth - margin - sigBlockW - 5, y, data.signatures.secretary.name, data.signatures.secretary.title);
       }
     }
+    y += sigHeight;
+
+    // Row 2: Tesorero + Comisión Revisora
+    if (data.signatures) {
+      if (data.signatures.treasurer?.enabled) {
+        renderSignatureBlock(margin + 5, y, data.signatures.treasurer.name, data.signatures.treasurer.title);
+      }
+      if (data.signatures.reviewCommittee?.enabled) {
+        renderSignatureBlock(pageWidth - margin - sigBlockW - 5, y, data.signatures.reviewCommittee.name, data.signatures.reviewCommittee.title);
+      }
+    }
+    y += sigHeight;
+
+    // Fecha de Revisión (blank line for manual entry)
+    y += 4;
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(30, 41, 59);
+    pdf.text('Fecha de Revisión: _____________________________', margin + 5, y);
 
     addReportFooter(pdf, pageWidth, pageHeight, margin, data.orgName);
     pdf.save(`Balance_Finanzas_${data.periodYear}_${Date.now()}.pdf`);

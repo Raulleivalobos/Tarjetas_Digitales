@@ -72,6 +72,8 @@ export default function SettingsPage() {
     signatures: (organization?.settings as any)?.signatures || {
       president: { name: '', title: 'Presidente(a) Junta de Vecinos', enabled: true },
       secretary: { name: '', title: 'Secretario(a) Junta de Vecinos', enabled: true },
+      treasurer: { name: '', title: 'Tesorero(a) Junta de Vecinos', enabled: true },
+      reviewCommittee: { name: '', title: 'Comisión Revisora de Cuentas', enabled: true },
     },
     reasons: (organization?.settings as any)?.reasons || [
       'Certificación de Domicilio',
@@ -919,6 +921,50 @@ export default function SettingsPage() {
                             </label>
                           )}
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Tesorero */}
+                    <div className="space-y-4 p-5 rounded-2xl bg-slate-900/40 border border-white/5">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">Tesorero(a)</label>
+                        <input 
+                          type="checkbox" 
+                          checked={formData.signatures.treasurer?.enabled ?? true}
+                          onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, treasurer: { ...(prev.signatures.treasurer || { name: '', title: 'Tesorero(a) Junta de Vecinos', enabled: true }), enabled: e.target.checked } }}))}
+                          className="rounded border-white/10 bg-white/5"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <input
+                          type="text"
+                          value={formData.signatures.treasurer?.name || ''}
+                          onChange={(e) => setFormData({ ...formData, signatures: { ...formData.signatures, treasurer: { ...(formData.signatures.treasurer || { name: '', title: 'Tesorero(a) Junta de Vecinos', enabled: true }), name: e.target.value } }})}
+                          className="glass-input w-full px-3 py-2 text-sm"
+                          placeholder="Nombre completo del Tesorero(a)"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Comisión Revisora de Cuentas */}
+                    <div className="space-y-4 p-5 rounded-2xl bg-slate-900/40 border border-white/5">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">Comisión Revisora</label>
+                        <input 
+                          type="checkbox" 
+                          checked={formData.signatures.reviewCommittee?.enabled ?? true}
+                          onChange={(e) => setFormData(prev => ({ ...prev, signatures: { ...prev.signatures, reviewCommittee: { ...(prev.signatures.reviewCommittee || { name: '', title: 'Comisión Revisora de Cuentas', enabled: true }), enabled: e.target.checked } }}))}
+                          className="rounded border-white/10 bg-white/5"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <input
+                          type="text"
+                          value={formData.signatures.reviewCommittee?.name || ''}
+                          onChange={(e) => setFormData({ ...formData, signatures: { ...formData.signatures, reviewCommittee: { ...(formData.signatures.reviewCommittee || { name: '', title: 'Comisión Revisora de Cuentas', enabled: true }), name: e.target.value } }})}
+                          className="glass-input w-full px-3 py-2 text-sm"
+                          placeholder="Nombres de los miembros de la Comisión"
+                        />
                       </div>
                     </div>
                   </div>

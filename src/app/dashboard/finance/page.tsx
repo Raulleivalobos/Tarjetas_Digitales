@@ -757,7 +757,7 @@ export default function FinancePage() {
           'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
           'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
         ];
-        rangeText = `Período Mensual: ${monthNames[month]} ${year}`;
+        rangeText = `Per\u00edodo Mensual: ${monthNames[month]} ${year}`;
       } else if (rangeType === 'range') {
         if (!filterDateStart || !filterDateEnd) {
           showNotification('Por favor, selecciona fecha de inicio y fin para el informe.', 'error');
@@ -773,6 +773,46 @@ export default function FinancePage() {
         rangeText = `Resumen Consolidado Anual: ${periodYear}`;
       }
 
+      // Helper to identify internal transfers
+      const isTraspasoTx = (t: Transaction) => t.category?.name?.toLowerCase().includes('traspaso') || false;
+
+      // For monthly reports, calculate cumulative saldo inicial from prior months
+      let reportInitialBank = initialBank;
+      let reportInitialCash = initialCash;
+
+      if (rangeType === 'month' && monthSelect !== undefined && monthSelect > 0) {
+        // Accumulate balances from January to the month BEFORE the selected one
+        for (let m = 0; m < monthSelect; m++) {
+          const mStart = `${periodYear}-${String(m + 1).padStart(2, '0')}-01`;
+          const mLastDay = new Date(periodYear, m + 1, 0).getDate();
+          const mEnd = `${periodYear}-${String(m + 1).padStart(2, '0')}-${String(mLastDay).padStart(2, '0')}`;
+
+          const mTxs = transactions.filter(t => t.transaction_date >= mStart && t.transaction_date <= mEnd);
+
+          // Pure income (no transfers)
+          const mIncBank = mTxs.filter(t => t.type === 'income' && t.payment_method === 'bank' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+          const mIncCash = mTxs.filter(t => t.type === 'income' && t.payment_method === 'cash' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+          // Pure expense (no transfers)
+          const mExpBank = mTxs.filter(t => t.type === 'expense' && t.payment_method === 'bank' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+          const mExpCash = mTxs.filter(t => t.type === 'expense' && t.payment_method === 'cash' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+          // Transfers: bank->cash creates expense in bank, income in cash
+          const mTransOutBank = mTxs.filter(t => isTraspasoTx(t) && t.type === 'expense' && t.payment_method === 'bank').reduce((s, t) => s + t.amount, 0);
+          const mTransOutCash = mTxs.filter(t => isTraspasoTx(t) && t.type === 'expense' && t.payment_method === 'cash').reduce((s, t) => s + t.amount, 0);
+          const mTransInBank = mTxs.filter(t => isTraspasoTx(t) && t.type === 'income' && t.payment_method === 'bank').reduce((s, t) => s + t.amount, 0);
+          const mTransInCash = mTxs.filter(t => isTraspasoTx(t) && t.type === 'income' && t.payment_method === 'cash').reduce((s, t) => s + t.amount, 0);
+
+          const mTransferBank = mTransInBank - mTransOutBank;
+          const mTransferCash = mTransInCash - mTransOutCash;
+
+          reportInitialBank += mIncBank - mExpBank + mTransferBank;
+          reportInitialCash += mIncCash - mExpCash + mTransferCash;
+        }
+      } else if (rangeType === 'range') {
+        // For custom range, use 0 as initial (relative report)
+        reportInitialBank = 0;
+        reportInitialCash = 0;
+      }
+
       // Filter transactions for the PDF scope
       const scopeTxs = transactions.filter(t => {
         if (startLimit && t.transaction_date < startLimit) return false;
@@ -780,18 +820,28 @@ export default function FinancePage() {
         return true;
       });
 
-      // Calculate scope aggregates
-      const scopeIncomeBank = scopeTxs.filter(t => t.type === 'income' && t.payment_method === 'bank').reduce((s, t) => s + t.amount, 0);
-      const scopeIncomeCash = scopeTxs.filter(t => t.type === 'income' && t.payment_method === 'cash').reduce((s, t) => s + t.amount, 0);
-      const scopeExpenseBank = scopeTxs.filter(t => t.type === 'expense' && t.payment_method === 'bank').reduce((s, t) => s + t.amount, 0);
-      const scopeExpenseCash = scopeTxs.filter(t => t.type === 'expense' && t.payment_method === 'cash').reduce((s, t) => s + t.amount, 0);
+      // Calculate scope aggregates EXCLUDING transfers
+      const scopeIncomeBank = scopeTxs.filter(t => t.type === 'income' && t.payment_method === 'bank' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+      const scopeIncomeCash = scopeTxs.filter(t => t.type === 'income' && t.payment_method === 'cash' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+      const scopeExpenseBank = scopeTxs.filter(t => t.type === 'expense' && t.payment_method === 'bank' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+      const scopeExpenseCash = scopeTxs.filter(t => t.type === 'expense' && t.payment_method === 'cash' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
 
-      // Group scope categories
+      // Calculate transfers separately (net effect per account)
+      const transferOutBank = scopeTxs.filter(t => isTraspasoTx(t) && t.type === 'expense' && t.payment_method === 'bank').reduce((s, t) => s + t.amount, 0);
+      const transferOutCash = scopeTxs.filter(t => isTraspasoTx(t) && t.type === 'expense' && t.payment_method === 'cash').reduce((s, t) => s + t.amount, 0);
+      const transferInBank = scopeTxs.filter(t => isTraspasoTx(t) && t.type === 'income' && t.payment_method === 'bank').reduce((s, t) => s + t.amount, 0);
+      const transferInCash = scopeTxs.filter(t => isTraspasoTx(t) && t.type === 'income' && t.payment_method === 'cash').reduce((s, t) => s + t.amount, 0);
+
+      // Net transfer effect: positive means money came IN, negative means went OUT
+      const scopeTransferBank = transferInBank - transferOutBank;
+      const scopeTransferCash = transferInCash - transferOutCash;
+
+      // Group scope categories (EXCLUDING transfers)
       const catMap: Record<string, { type: 'income' | 'expense'; amount: number }> = {};
-      scopeTxs.forEach(t => {
-        const catName = t.category?.name || 'Sin Categoría';
+      scopeTxs.filter(t => !isTraspasoTx(t)).forEach(t => {
+        const catName = t.category?.name || 'Sin Categor\u00eda';
         if (!catMap[catName]) {
-          catMap[catName] = { type: t.type, amount: 0 };
+          catMap[catName] = { type: t.type as 'income' | 'expense', amount: 0 };
         }
         catMap[catName].amount += t.amount;
       });
@@ -801,7 +851,7 @@ export default function FinancePage() {
         amount: val.amount
       }));
 
-      // Map rows
+      // Map rows (ALL transactions including transfers, for audit trail)
       const scopeTxRows = scopeTxs.map(t => ({
         date: t.transaction_date.split('-').reverse().join('/'),
         description: t.description,
@@ -813,6 +863,15 @@ export default function FinancePage() {
         receiptNumber: t.receipt_number || ''
       }));
 
+      // Build signatures with treasurer and reviewCommittee
+      const orgSignatures = (organization.settings as any)?.signatures || {};
+      const pdfSignatures = {
+        president: orgSignatures.president || { name: '', title: 'Presidente(a)', enabled: true },
+        secretary: orgSignatures.secretary || { name: '', title: 'Secretario(a)', enabled: true },
+        treasurer: orgSignatures.treasurer || { name: '', title: 'Tesorero(a)', enabled: true },
+        reviewCommittee: orgSignatures.reviewCommittee || { name: '', title: 'Comisi\u00f3n Revisora de Cuentas', enabled: true },
+      };
+
       const reportPayload: FinanceReportData = {
         orgName: organization.name,
         orgRut: (organization.settings as any)?.rut || '',
@@ -823,24 +882,26 @@ export default function FinancePage() {
         commune: (organization.settings as any)?.commune || '',
         periodYear,
         dateRangeText: rangeText,
-        initialBank: rangeType === 'full' ? initialBank : 0, // Simplified relative balances
-        initialCash: rangeType === 'full' ? initialCash : 0,
+        initialBank: reportInitialBank,
+        initialCash: reportInitialCash,
         totalIncomeBank: scopeIncomeBank,
         totalIncomeCash: scopeIncomeCash,
         totalExpenseBank: scopeExpenseBank,
         totalExpenseCash: scopeExpenseCash,
-        finalBank: (rangeType === 'full' ? initialBank : 0) + scopeIncomeBank - scopeExpenseBank,
-        finalCash: (rangeType === 'full' ? initialCash : 0) + scopeIncomeCash - scopeExpenseCash,
+        transferBank: scopeTransferBank,
+        transferCash: scopeTransferCash,
+        finalBank: reportInitialBank + scopeIncomeBank - scopeExpenseBank + scopeTransferBank,
+        finalCash: reportInitialCash + scopeIncomeCash - scopeExpenseCash + scopeTransferCash,
         categorySummaries: scopeCategories,
         transactions: scopeTxRows,
-        signatures: (organization.settings as any)?.signatures
+        signatures: pdfSignatures
       };
 
       const success = await exportFinanceReportToPDF(reportPayload);
       if (success) {
-        showNotification('Reporte PDF descargado con éxito.', 'success');
+        showNotification('Reporte PDF descargado con \u00e9xito.', 'success');
       } else {
-        showNotification('Ocurrió un error al generar el PDF.', 'error');
+        showNotification('Ocurri\u00f3 un error al generar el PDF.', 'error');
       }
     } catch (err: any) {
       console.error(err);
@@ -998,9 +1059,18 @@ export default function FinancePage() {
             onChange={(e) => setPeriodYear(parseInt(e.target.value))}
             className="glass-input px-4 py-2 text-sm font-semibold focus:border-brand-500 cursor-pointer appearance-none bg-surface-900 border-brand-500/30"
           >
-            <option value={2026}>Año 2026</option>
-            <option value={2027}>Año 2027</option>
-            <option value={2028}>Año 2028</option>
+            {(() => {
+              const currentYear = new Date().getFullYear();
+              const startYear = 2026;
+              const endYear = currentYear + 2;
+              const years = [];
+              for (let yr = startYear; yr <= endYear; yr++) {
+                years.push(yr);
+              }
+              return years.map(yr => (
+                <option key={yr} value={yr}>A\u00f1o {yr}</option>
+              ));
+            })()}
           </select>
         </div>
       </div>
