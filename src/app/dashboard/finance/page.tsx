@@ -1068,7 +1068,7 @@ export default function FinancePage() {
                 years.push(yr);
               }
               return years.map(yr => (
-                <option key={yr} value={yr}>A\u00f1o {yr}</option>
+                <option key={yr} value={yr}>Año {yr}</option>
               ));
             })()}
           </select>
