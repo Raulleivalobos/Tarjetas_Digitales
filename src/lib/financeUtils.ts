@@ -406,12 +406,13 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
       ];
     });
 
-    // Add totals row
+    // Add totals row with a single net total
+    const netTotal = totalIngresosLedger - totalEgresosLedger;
     transactionRows.push([
       '', '', '', '',
       'TOTALES',
       '',
-      `Ing: +${formatCLP(totalIngresosLedger)} | Egr: -${formatCLP(totalEgresosLedger)} | Trsp: ${formatCLP(totalTraspasosLedger)}`,
+      `${netTotal >= 0 ? '+' : '-'}${formatCLP(Math.abs(netTotal))}`,
       ''
     ]);
 
