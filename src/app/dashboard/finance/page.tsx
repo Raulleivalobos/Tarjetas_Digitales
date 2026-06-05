@@ -808,9 +808,24 @@ export default function FinancePage() {
           reportInitialCash += mIncCash - mExpCash + mTransferCash;
         }
       } else if (rangeType === 'range') {
-        // For custom range, use 0 as initial (relative report)
-        reportInitialBank = 0;
-        reportInitialCash = 0;
+        // For custom range, calculate accumulated balances UP TO the start limit
+        const priorTxs = transactions.filter(t => t.transaction_date < startLimit);
+        
+        const pIncBank = priorTxs.filter(t => t.type === 'income' && t.payment_method === 'bank' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+        const pIncCash = priorTxs.filter(t => t.type === 'income' && t.payment_method === 'cash' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+        const pExpBank = priorTxs.filter(t => t.type === 'expense' && t.payment_method === 'bank' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+        const pExpCash = priorTxs.filter(t => t.type === 'expense' && t.payment_method === 'cash' && !isTraspasoTx(t)).reduce((s, t) => s + t.amount, 0);
+        
+        const pTransOutBank = priorTxs.filter(t => isTraspasoTx(t) && t.type === 'expense' && t.payment_method === 'bank').reduce((s, t) => s + t.amount, 0);
+        const pTransOutCash = priorTxs.filter(t => isTraspasoTx(t) && t.type === 'expense' && t.payment_method === 'cash').reduce((s, t) => s + t.amount, 0);
+        const pTransInBank = priorTxs.filter(t => isTraspasoTx(t) && t.type === 'income' && t.payment_method === 'bank').reduce((s, t) => s + t.amount, 0);
+        const pTransInCash = priorTxs.filter(t => isTraspasoTx(t) && t.type === 'income' && t.payment_method === 'cash').reduce((s, t) => s + t.amount, 0);
+
+        const pTransferBank = pTransInBank - pTransOutBank;
+        const pTransferCash = pTransInCash - pTransOutCash;
+
+        reportInitialBank += pIncBank - pExpBank + pTransferBank;
+        reportInitialCash += pIncCash - pExpCash + pTransferCash;
       }
 
       // Filter transactions for the PDF scope
