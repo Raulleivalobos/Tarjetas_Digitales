@@ -958,13 +958,13 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div className="flex-1 space-y-3">
-                        <input
-                          type="text"
+                        <textarea
                           value={formData.signatures.reviewCommittee?.name || ''}
                           onChange={(e) => setFormData({ ...formData, signatures: { ...formData.signatures, reviewCommittee: { ...(formData.signatures.reviewCommittee || { name: '', title: 'Comisión Revisora de Cuentas', enabled: true }), name: e.target.value } }})}
-                          className="glass-input w-full px-3 py-2 text-sm"
-                          placeholder="Nombres de los miembros de la Comisión"
+                          className="glass-input w-full px-3 py-2 text-sm min-h-[80px]"
+                          placeholder="Nombre Miembro 1&#10;Nombre Miembro 2&#10;Nombre Miembro 3"
                         />
+                        <p className="text-[10px] text-slate-500 mt-1">Escriba un nombre por línea o separados por comas.</p>
                       </div>
                     </div>
                   </div>

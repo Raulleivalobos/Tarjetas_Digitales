@@ -231,12 +231,12 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
       pdf.setFontSize(6.5);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(100, 116, 139);
-      pdf.text(card.label, x + 3, y + 5);
+      pdf.text(card.label, x + cardW / 2, y + 5, { align: 'center' });
 
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(i === 2 ? 220 : i === 1 ? 22 : 15, i === 2 ? 38 : i === 1 ? 163 : 23, i === 2 ? 38 : i === 1 ? 74 : 42);
-      pdf.text(formatCLP(card.val), x + 3, y + 11);
+      pdf.text(formatCLP(card.val), x + cardW / 2, y + 11, { align: 'center' });
     });
     y += 21;
 
@@ -396,7 +396,7 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
         t.description,
         t.category,
         isTransfer ? 'Traspaso' : t.type === 'income' ? 'Ingreso' : 'Gasto',
-        isTransfer ? (t.method === 'bank' ? 'Banco → Caja' : 'Caja → Banco') : t.method === 'bank' ? 'Banco' : 'Efectivo',
+        isTransfer ? (t.method === 'bank' ? 'Banco a Caja' : 'Caja a Banco') : t.method === 'bank' ? 'Banco' : 'Efectivo',
         isTransfer
           ? formatCLP(t.amount)
           : t.type === 'expense'
@@ -477,12 +477,17 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(30, 41, 59);
-      pdf.text(name || '_________________________', x + sigBlockW / 2, currentY + 16, { align: 'center' });
+      
+      const names = name ? name.split(/,|\n/).map(n => n.trim()).filter(Boolean) : ['_________________________'];
+      
+      names.forEach((n, idx) => {
+        pdf.text(n, x + sigBlockW / 2, currentY + 16 + (idx * 4), { align: 'center' });
+      });
 
       pdf.setFontSize(7);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(100, 116, 139);
-      pdf.text(title, x + sigBlockW / 2, currentY + 20, { align: 'center' });
+      pdf.text(title, x + sigBlockW / 2, currentY + 16 + (names.length * 4), { align: 'center' });
     };
 
     // Row 1: Presidente + Secretario
