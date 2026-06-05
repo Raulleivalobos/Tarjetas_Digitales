@@ -282,8 +282,12 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
         5: { halign: 'right', fontStyle: 'bold' }
       },
       didParseCell: (cellData) => {
+        // Align headers to the right for numeric columns
+        if (cellData.section === 'head' && cellData.column.index > 0) {
+          cellData.cell.styles.halign = 'right';
+        }
         // Bold the TOTAL row
-        if (cellData.row.index === 2) {
+        if (cellData.section === 'body' && cellData.row.index === 2) {
           cellData.cell.styles.fontStyle = 'bold';
           cellData.cell.styles.fillColor = [241, 245, 249];
         }
@@ -351,8 +355,12 @@ export const exportFinanceReportToPDF = async (data: FinanceReportData): Promise
         3: { halign: 'right', textColor: [153, 27, 27] }
       },
       didParseCell: (cellData) => {
+        // Align Monto headers to the right
+        if (cellData.section === 'head' && (cellData.column.index === 1 || cellData.column.index === 3)) {
+          cellData.cell.styles.halign = 'right';
+        }
         // Bold the totals row (last row)
-        if (cellData.row.index === sumTableBody.length - 1) {
+        if (cellData.section === 'body' && cellData.row.index === sumTableBody.length - 1) {
           cellData.cell.styles.fontStyle = 'bold';
           cellData.cell.styles.fillColor = [241, 245, 249];
         }
