@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Lock, ArrowRight, CheckCircle2, EyeOff, Eye } from 'lucide-react';
 import Link from 'next/link';
+import { validatePasswordPolicy } from '@/lib/security';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -12,11 +13,15 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  
+  const [isExpired, setIsExpired] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('reason=expired')) {
+      setIsExpired(true);
+    }
+
     // Escuchar el evento de autenticación cuando el código de la URL se intercambia por una sesión
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
@@ -34,6 +39,13 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    const passCheck = validatePasswordPolicy(password);
+    if (!passCheck.isValid) {
+      setError(passCheck.message);
+      setLoading(false);
+      return;
+    }
 
     // Actualizamos la contraseña del usuario autenticado
     const { error } = await supabase.auth.updateUser({ password });
@@ -59,15 +71,19 @@ export default function ResetPasswordPage() {
               <p className="text-slate-400 mb-8">
                 Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión con tu nueva clave.
               </p>
-              <Link href="/login" className="btn-primary w-full py-3.5 flex items-center justify-center gap-2">
-                Ir a Iniciar Sesión
+              <Link href="/dashboard" className="btn-primary w-full py-3.5 flex items-center justify-center gap-2">
+                Ir al Panel (Dashboard)
               </Link>
             </div>
           ) : (
             <div className="animate-fade-in">
-              <h1 className="text-3xl font-bold text-white mb-2">Crear nueva clave</h1>
+              <h1 className="text-3xl font-bold text-white mb-2">
+                {isExpired ? 'Actualizar Contraseña' : 'Crear nueva clave'}
+              </h1>
               <p className="text-slate-400 mb-8">
-                Ingresa tu nueva contraseña para acceder a tu cuenta en SkardKey.
+                {isExpired 
+                  ? 'Por políticas de seguridad, tu contraseña actual ha caducado (más de 365 días). Debes asignar una nueva para continuar usando la plataforma.' 
+                  : 'Ingresa tu nueva contraseña para acceder a tu cuenta en SkardKey.'}
               </p>
 
               {error && (
@@ -90,7 +106,7 @@ export default function ResetPasswordPage() {
                       placeholder="••••••••"
                       className="glass-input w-full pl-12 pr-12 py-3.5 text-sm"
                       required
-                      minLength={6}
+                      minLength={8}
                     />
                     <button
                       type="button"
@@ -104,7 +120,7 @@ export default function ResetPasswordPage() {
 
                 <button
                   type="submit"
-                  disabled={loading || password.length < 6}
+                  disabled={loading || password.length < 8}
                   className="btn-primary w-full py-3.5 font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <span>{loading ? 'Guardando...' : 'Actualizar contraseña'}</span>

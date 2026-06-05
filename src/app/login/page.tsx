@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { validatePasswordPolicy } from '@/lib/security';
 import { CreditCard, Mail, Lock, Building2, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
@@ -41,6 +42,13 @@ export default function LoginPage() {
         }
         if (!acceptTerms) {
           setError('Debes aceptar los Términos y Condiciones y la Política de Privacidad para registrarte.');
+          setLoading(false);
+          return;
+        }
+
+        const passCheck = validatePasswordPolicy(password);
+        if (!passCheck.isValid) {
+          setError(passCheck.message);
           setLoading(false);
           return;
         }
@@ -215,7 +223,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   className="glass-input w-full pl-12 pr-12 py-3.5 text-sm"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
                 <button
                   type="button"

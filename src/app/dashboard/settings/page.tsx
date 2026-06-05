@@ -1120,6 +1120,41 @@ export default function SettingsPage() {
                   </table>
                 </div>
               </div>
+
+              {/* Descriptor de Roles (Visible para auditores o admins) */}
+              {(membership?.role === 'auditor' || membership?.role === 'admin' || membership?.role === 'owner') && (
+                <div className="glass-card overflow-hidden mt-6 animate-fade-in border border-amber-500/10">
+                  <div className="p-6 border-b border-white/5 bg-slate-900/50">
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-brand-400" />
+                      Descriptor de Perfiles y Roles
+                    </h2>
+                    <p className="text-sm text-slate-400 mt-1">
+                      (Política de Seguridad OWASP) Matriz de accesos y responsabilidades.
+                    </p>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                        <h3 className="text-sm font-bold text-slate-300 mb-1">Usuario (Visualizador / Validador)</h3>
+                        <p className="text-xs text-slate-400 leading-relaxed">Permite visualizar registros y validar identidades. Puede solicitar y revisar peticiones dentro de la plataforma según su área.</p>
+                      </div>
+                      <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
+                        <h3 className="text-sm font-bold text-blue-400 mb-1">Administrador (Admin / Owner)</h3>
+                        <p className="text-xs text-blue-200/70 leading-relaxed">Permite configurar usuarios y perfiles, modificar parámetros de la organización, gestionar facturación y diseño de credenciales.</p>
+                      </div>
+                      <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                        <h3 className="text-sm font-bold text-emerald-400 mb-1">Supervisor (Tesorero)</h3>
+                        <p className="text-xs text-emerald-200/70 leading-relaxed">Puede visualizar finanzas, aprobar solicitudes financieras, administrar saldos, registrar gastos e ingresos y generar reportes oficiales.</p>
+                      </div>
+                      <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                        <h3 className="text-sm font-bold text-amber-400 mb-1">Auditor</h3>
+                        <p className="text-xs text-amber-200/70 leading-relaxed">Solo vista. Diseñado para revisión de procesos y logs de auditoría sin capacidad de alterar configuraciones ni de eliminar usuarios vigentes.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

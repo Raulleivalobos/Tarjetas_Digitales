@@ -139,6 +139,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(newSession?.user ?? null);
 
           if (newSession?.user) {
+            // OWASP Password Rotation Policy Check (365 days)
+            const updatedAt = new Date(newSession.user.updated_at || newSession.user.created_at);
+            const now = new Date();
+            const daysSinceUpdate = (now.getTime() - updatedAt.getTime()) / (1000 * 3600 * 24);
+            
+            if (daysSinceUpdate > 365) {
+              console.warn('VULNERABILITY_POLICY: Password expired (>365 days). Forcing reset.');
+              window.location.href = '/reset-password?reason=expired';
+              return;
+            }
+
             await fetchOrganization(newSession.user.id);
           }
           setLoading(false);
