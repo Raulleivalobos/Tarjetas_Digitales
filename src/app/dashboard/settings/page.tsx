@@ -49,6 +49,13 @@ export default function SettingsPage() {
   
   const isReadOnly = !['owner', 'admin'].includes(membership?.role || '');
   
+  const parsedSettings = useMemo(() => {
+    if (!organization?.settings) return {};
+    return typeof organization.settings === 'string' 
+      ? JSON.parse(organization.settings) 
+      : organization.settings;
+  }, [organization?.settings]);
+
   const [formData, setFormData] = useState({
     name: organization?.name || '',
     description: organization?.description || '',
@@ -56,26 +63,26 @@ export default function SettingsPage() {
     secondary_color: organization?.secondary_color || '#8b5cf6',
     logo_url: organization?.logo_url || '',
     access_code: organization?.access_code || '',
-    rut: (organization?.settings as any)?.rut || '',
-    address: (organization?.settings as any)?.address || '',
-    villa: (organization?.settings as any)?.villa || '',
-    commune: (organization?.settings as any)?.commune || '',
-    province: (organization?.settings as any)?.province || '',
-    region: (organization?.settings as any)?.region || '',
+    rut: parsedSettings.rut || '',
+    address: parsedSettings.address || '',
+    villa: parsedSettings.villa || '',
+    commune: parsedSettings.commune || '',
+    province: parsedSettings.province || '',
+    region: parsedSettings.region || '',
     org_type: organization?.org_type || 'jjvv',
     parent_org_id: organization?.parent_org_id || '',
-    certificate_prices: (organization?.settings as any)?.certificate_prices || {
+    certificate_prices: parsedSettings.certificate_prices || {
       active: 500,
       inactive: 1000,
       resident: 2000,
     },
-    signatures: (organization?.settings as any)?.signatures || {
+    signatures: parsedSettings.signatures || {
       president: { name: '', title: 'Presidente(a) Junta de Vecinos', enabled: true },
       secretary: { name: '', title: 'Secretario(a) Junta de Vecinos', enabled: true },
       treasurer: { name: '', title: 'Tesorero(a) Junta de Vecinos', enabled: true },
       reviewCommittee: { name: '', title: 'Comisión Revisora de Cuentas', enabled: true },
     },
-    reasons: (organization?.settings as any)?.reasons || [
+    reasons: parsedSettings.reasons || [
       'Certificación de Domicilio',
       'Trámite General',
       'Motivos Laborales',
@@ -83,6 +90,45 @@ export default function SettingsPage() {
       'Subsidios'
     ],
   });
+
+  useEffect(() => {
+    if (organization) {
+      setFormData({
+        name: organization.name || '',
+        description: organization.description || '',
+        primary_color: organization.primary_color || '#6366f1',
+        secondary_color: organization.secondary_color || '#8b5cf6',
+        logo_url: organization.logo_url || '',
+        access_code: organization.access_code || '',
+        rut: parsedSettings.rut || '',
+        address: parsedSettings.address || '',
+        villa: parsedSettings.villa || '',
+        commune: parsedSettings.commune || '',
+        province: parsedSettings.province || '',
+        region: parsedSettings.region || '',
+        org_type: organization.org_type || 'jjvv',
+        parent_org_id: organization.parent_org_id || '',
+        certificate_prices: parsedSettings.certificate_prices || {
+          active: 500,
+          inactive: 1000,
+          resident: 2000,
+        },
+        signatures: parsedSettings.signatures || {
+          president: { name: '', title: 'Presidente(a)', enabled: true },
+          secretary: { name: '', title: 'Secretario(a)', enabled: true },
+          treasurer: { name: '', title: 'Tesorero(a)', enabled: true },
+          reviewCommittee: { name: '', title: 'Comisión Revisora de Cuentas', enabled: true },
+        },
+        reasons: parsedSettings.reasons || [
+          'Certificación de Domicilio',
+          'Trámite General',
+          'Motivos Laborales',
+          'Educación',
+          'Subsidios'
+        ],
+      });
+    }
+  }, [organization, parsedSettings]);
 
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
