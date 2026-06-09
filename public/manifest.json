@@ -1,7 +1,7 @@
 {
-  "name": "CardSocial - Tarjetas Digitales",
-  "short_name": "CardSocial",
-  "description": "Plataforma de gestión de tarjetas de identificación digitales inteligentes",
+  "name": "SkardKey - Identidad Digital & Beneficios",
+  "short_name": "SkardKey",
+  "description": "Plataforma de gestión de credenciales digitales inteligentes para organizaciones sociales",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",
@@ -12,13 +12,25 @@
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["business", "productivity"],
