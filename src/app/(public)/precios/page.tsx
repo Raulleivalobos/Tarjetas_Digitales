@@ -17,7 +17,9 @@ const SOCIAL_FEATURES = [
   'Reportes en PDF de asistencia y quórum',
   'Integración WhatsApp (Tarjetas y Certificados)',
   'Control y entrega de beneficios sociales',
-  'Módulo de control de Finanzas',
+  'Módulo de Finanzas: Ingresos y egresos de efectivo y banco',
+  'Dashboard financiero con saldos en línea y gráficas',
+  'Reportes financieros PDF para Comités de Revisión',
   'Diseñador visual de credenciales',
   'Hasta 1.000 miembros por organización',
   'Soporte por correo electrónico',
@@ -27,8 +29,9 @@ const COMMERCIAL_FEATURES = [
   'Todo lo del plan Social, sin límites',
   'Credenciales verificables en Blockchain',
   'Auditoría de uso de beneficios en tiempo real',
+  'Módulo avanzado de Finanzas con multicuenta bancaria',
   'Módulo automático de convenios comerciales',
-  'Reportes de cumplimiento para auditorías',
+  'Reportes de cumplimiento para auditorías externas',
   'Panel analítico avanzado con exportación',
   'Soporte prioritario y onboarding dedicado',
 ];
@@ -88,6 +91,12 @@ const FAQ_ITEMS = [
     question: '¿Qué significa que las credenciales sean Blockchain?',
     answer:
       'En el plan Comercial, cada credencial genera un registro inmutable en blockchain. Esto garantiza que la identidad no pueda ser falsificada, que el historial de uso sea auditable y que cumplan con estándares internacionales de verificación.',
+  },
+  {
+    icon: Wallet,
+    question: '¿Qué incluye el Módulo de Finanzas?',
+    answer:
+      'El módulo permite registrar todos los ingresos y egresos tanto de caja (efectivo) como de cuenta corriente bancaria. Incluye un dashboard con saldos consolidados en tiempo real, gráficos mensuales de flujo de caja, distribución de gastos por categoría y generación de reportes PDF listos para Comités de Revisión de Cuentas o Auditoría.',
   },
 ];
 
@@ -410,7 +419,7 @@ export default function PreciosPage() {
               {
                 icon: Wallet,
                 title: 'Control de Finanzas',
-                desc: 'Gestión transparente de tesorería.',
+                desc: 'Ingresos, egresos, saldos en línea y reportes de auditoría.',
                 color: 'text-purple-400',
                 bg: 'bg-purple-500/10',
               },
@@ -540,11 +549,12 @@ export default function PreciosPage() {
                     ['Panel de administración', true, true],
                     ['Límite de miembros', '1.000', 'Ilimitado'],
                     ['Verificación Blockchain', false, true],
-                    ['Módulo de Finanzas', true, true],
+                    ['Módulo de Finanzas (Caja + Banco)', true, true],
+                    ['Dashboard financiero en línea', true, true],
+                    ['Reportes PDF para Auditoría', true, true],
                     ['Entrega por WhatsApp', true, true],
                     ['Control de beneficios', true, true],
                     ['Módulo de convenios', false, true],
-                    ['Reportes de cumplimiento', false, true],
                     ['Soporte prioritario', false, true],
                   ].map(([feature, social, commercial]) => (
                     <tr

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {
   CreditCard, QrCode, Shield, BarChart3, ChevronRight, Sparkles,
   Users, Briefcase, Building2, Landmark, ArrowRight, Zap, Lock, Globe,
-  CheckCircle2, Star,
+  CheckCircle2, Star, Wallet, FileText,
 } from 'lucide-react';
 
 const AUDIENCES = [
@@ -20,7 +20,7 @@ const FEATURES = [
   { icon: BarChart3, title: 'Panel de control completo', desc: 'Dashboard con analíticas, gestión de beneficiarios, carga masiva y reportes en tiempo real.' },
   { icon: Zap, title: 'Diseñador de credenciales', desc: 'Editor visual drag & drop para personalizar el diseño de tus tarjetas sin código.' },
   { icon: Lock, title: 'Seguridad empresarial', desc: 'Autenticación segura, datos encriptados y preparado para verificación blockchain.' },
-  { icon: Globe, title: 'Funciona en cualquier dispositivo', desc: 'App web progresiva. Sin instalar nada. Funciona en celular, tablet y computador.' },
+  { icon: Wallet, title: 'Control financiero integrado', desc: 'Registra ingresos y gastos de caja y banco. Genera reportes PDF para comités de revisión y auditoría.' },
 ];
 
 const STEPS = [
@@ -368,6 +368,115 @@ export default function LandingPage() {
                 <ArrowRight className="w-4 h-4 relative z-10" />
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ FINANCE MODULE SHOWCASE ═══════════════ */}
+      <section className="relative py-24 lg:py-32">
+        {/* Background effects */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px]" />
+          <div className="absolute bottom-1/4 left-1/3 w-[400px] h-[400px] bg-brand-500/5 rounded-full blur-[100px]" />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold text-brand-400 uppercase tracking-widest mb-3">Módulo de Finanzas</p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
+              Control financiero{' '}
+              <span className="bg-gradient-to-r from-emerald-400 via-brand-400 to-emerald-300 bg-clip-text text-transparent">
+                total
+              </span>{' '}
+              para tu organización
+            </h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Registra ingresos y egresos de caja y banco, controla el flujo financiero y genera informes listos para comités de auditoría y fiscalización.
+            </p>
+          </div>
+
+          {/* Charts grid */}
+          <div className="grid md:grid-cols-2 gap-6 mb-14">
+            {/* Bar Chart — Flujo de Caja Mensual */}
+            <div className="glass-card p-6 group hover:border-brand-500/25">
+              <h3 className="text-sm font-bold text-white mb-1">Flujo de Caja Mensual</h3>
+              <p className="text-[11px] text-slate-500 mb-4">Ingresos vs Gastos del ejercicio contable 2026</p>
+              <svg viewBox="0 0 400 200" className="w-full h-auto">
+                {/* Grid lines */}
+                <line x1="50" y1="20" x2="50" y2="170" stroke="#1e293b" strokeWidth="1" />
+                <line x1="50" y1="170" x2="380" y2="170" stroke="#1e293b" strokeWidth="1" />
+                {/* Horizontal grid */}
+                {[45, 70, 95, 120, 145].map((y, i) => (
+                  <g key={i}>
+                    <line x1="50" y1={y} x2="380" y2={y} stroke="#1e293b" strokeWidth="0.5" strokeDasharray="4,4" />
+                    <text x="45" y={y + 4} textAnchor="end" className="fill-slate-500" fontSize="9">{(200000 - i * 50000).toLocaleString('es-CL')}</text>
+                  </g>
+                ))}
+                {/* Bars - Income (emerald) + Expenses (rose) */}
+                {[
+                  { month: 'Ene', income: 80, expense: 40, x: 75 },
+                  { month: 'Feb', income: 60, expense: 35, x: 130 },
+                  { month: 'Mar', income: 120, expense: 55, x: 185 },
+                  { month: 'Abr', income: 90, expense: 45, x: 240 },
+                  { month: 'May', income: 100, expense: 60, x: 295 },
+                  { month: 'Jun', income: 70, expense: 30, x: 350 },
+                ].map(({ month, income, expense, x }) => (
+                  <g key={month}>
+                    <rect x={x - 12} y={170 - income} width="11" height={income} rx="2" className="fill-emerald-400/80" />
+                    <rect x={x + 2} y={170 - expense} width="11" height={expense} rx="2" className="fill-rose-400/80" />
+                    <text x={x} y="184" textAnchor="middle" className="fill-slate-500" fontSize="9">{month}</text>
+                  </g>
+                ))}
+                {/* Legend */}
+                <rect x="130" y="194" width="8" height="8" rx="2" className="fill-emerald-400" />
+                <text x="142" y="202" className="fill-slate-400" fontSize="9">Ingresos</text>
+                <rect x="195" y="194" width="8" height="8" rx="2" className="fill-rose-400" />
+                <text x="207" y="202" className="fill-slate-400" fontSize="9">Gastos</text>
+              </svg>
+            </div>
+
+            {/* Donut Chart — Distribución de Gastos */}
+            <div className="glass-card p-6 group hover:border-brand-500/25">
+              <h3 className="text-sm font-bold text-white mb-1">Distribución de Gastos</h3>
+              <p className="text-[11px] text-slate-500 mb-4">Estructura por categorías acumuladas</p>
+              <div className="flex flex-col items-center">
+                <svg viewBox="0 0 200 200" className="w-48 h-48 mb-4">
+                  {/* Donut segments using stroke-dasharray */}
+                  <circle cx="100" cy="100" r="70" fill="none" stroke="#6366f1" strokeWidth="30" strokeDasharray="175 265" strokeDashoffset="0" className="opacity-80" />
+                  <circle cx="100" cy="100" r="70" fill="none" stroke="#f59e0b" strokeWidth="30" strokeDasharray="88 352" strokeDashoffset="-175" className="opacity-80" />
+                  <circle cx="100" cy="100" r="70" fill="none" stroke="#34d399" strokeWidth="30" strokeDasharray="66 374" strokeDashoffset="-263" className="opacity-80" />
+                  <circle cx="100" cy="100" r="70" fill="none" stroke="#a78bfa" strokeWidth="30" strokeDasharray="55 385" strokeDashoffset="-329" className="opacity-80" />
+                  {/* Center text */}
+                  <text x="100" y="93" textAnchor="middle" className="fill-slate-500" fontSize="9" fontWeight="500">GASTOS TOTAL</text>
+                  <text x="100" y="112" textAnchor="middle" className="fill-white" fontSize="16" fontWeight="800">$214.645</text>
+                </svg>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                  <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-brand-500" />  <span className="text-slate-400">Servicios Básicos</span></div>
+                  <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-amber-400" />  <span className="text-slate-400">Gastos Operacionales</span></div>
+                  <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />  <span className="text-slate-400">Materiales</span></div>
+                  <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-purple-400" />  <span className="text-slate-400">Alimentación</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature highlights */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: BarChart3, title: 'Dashboard en Tiempo Real', desc: 'Saldos actualizados de caja y banco consolidados en un solo panel.' },
+              { icon: FileText, title: 'Reportes de Auditoría', desc: 'Informes en PDF listos para Comités de Revisión y Fiscalización.' },
+              { icon: Wallet, title: 'Registro Dual', desc: 'Controla ingresos y egresos tanto de efectivo como de cuenta corriente bancaria.' },
+              { icon: Zap, title: 'Gráficos Inteligentes', desc: 'Visualiza flujos mensuales y distribución de gastos con gráficas interactivas.' },
+            ].map(({ icon: Icon, title, desc }, i) => (
+              <div key={i} className="glass-card p-5 hover:border-emerald-500/25 group">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:bg-emerald-500/20 transition-colors">
+                  <Icon className="w-5 h-5 text-emerald-400" />
+                </div>
+                <h4 className="text-sm font-bold text-white mb-1">{title}</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
