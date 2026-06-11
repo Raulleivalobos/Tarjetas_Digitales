@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef} from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { Save, Building2, Palette, Shield, Users, Mail, UserPlus, UserX, AlertCircle, CheckCircle2, Upload, Trash2, FileText, DollarSign, Plus, Key, RefreshCw, FileDown } from 'lucide-react';
@@ -504,7 +504,7 @@ export default function SettingsPage() {
   const handleRoleChange = async (memberId: string, newRole: Role) => {
     const member = members.find(m => m.id === memberId);
     try {
-      const result = await updateMemberRole(memberId, newRole, currentUser!.id, currentUser!.email!, organization.id, member?.email, member?.role);
+      const result = await updateMemberRole(memberId, newRole, currentUser!.id, currentUser!.email!, organization!.id, member?.email, member?.role);
       if (result.success) {
         setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
         setMessage({ text: 'Rol actualizado correctamente', type: 'success' });
@@ -522,7 +522,7 @@ export default function SettingsPage() {
     if (!window.confirm(`¿Estás seguro de que deseas eliminar el acceso a ${email}?`)) return;
     
     try {
-      const result = await removeOrgMember(memberId, currentUser!.id, currentUser!.email!, organization.id, email);
+      const result = await removeOrgMember(memberId, currentUser!.id, currentUser!.email!, organization!.id, email);
       if (result.success) {
         setMembers(prev => prev.filter(m => m.id !== memberId));
         setMessage({ text: 'Acceso revocado correctamente', type: 'success' });

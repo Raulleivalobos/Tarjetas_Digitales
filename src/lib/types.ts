@@ -17,6 +17,7 @@ export interface Organization {
   region: string | null;
   org_type: 'municipality' | 'jjvv' | 'corporation';
   parent_org_id: string | null; // For JJVV linked to a Municipality
+  access_code?: string;
   settings: {
     certificate_prices?: {
       active: number;
