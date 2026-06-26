@@ -198,7 +198,7 @@ export default function ScannerPage() {
           </div>
           <h2 className="text-xl font-semibold text-white mb-2">Listo para escanear</h2>
           <p className="text-slate-400 mb-8 max-w-sm mx-auto">
-            Apunta la cámara al código QR de la tarjeta digital del beneficiario
+            Apunta la cámara al código QR de la tarjeta digital del socio
           </p>
           <button
             onClick={() => setScanning(true)}

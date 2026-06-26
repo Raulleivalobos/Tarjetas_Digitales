@@ -109,7 +109,7 @@ export default function DashboardLayout({
     if (['owner', 'admin'].includes(role)) {
       navigation.push(
         { name: 'Diseños', href: '/dashboard/designs', icon: Palette },
-        { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
+        { name: 'Socios', href: '/dashboard/beneficiaries', icon: Users },
         { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
         { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
         { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
@@ -119,14 +119,14 @@ export default function DashboardLayout({
       );
     } else if (role === 'validator') {
       navigation.push(
-        { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
+        { name: 'Socios', href: '/dashboard/beneficiaries', icon: Users },
         { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },
         { name: 'Asistencia', href: '/dashboard/attendance', icon: ClipboardList },
         { name: 'Validar QR', href: '/dashboard/scanner', icon: QrCode }
       );
     } else if (['viewer', 'auditor'].includes(role)) {
       navigation.push(
-        { name: 'Beneficiarios', href: '/dashboard/beneficiaries', icon: Users },
+        { name: 'Socios', href: '/dashboard/beneficiaries', icon: Users },
         { name: 'Tarjetas', href: '/dashboard/cards', icon: CreditCard },
         { name: 'Certificados', href: '/dashboard/certificates', icon: FileText },
         { name: 'Beneficios', href: '/dashboard/benefits', icon: Gift },

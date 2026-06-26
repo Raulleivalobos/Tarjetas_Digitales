@@ -37,7 +37,7 @@ const SECTIONS = [
         text: 'Deben ser mayores de 18 años y contar con las facultades legales necesarias para contratar servicios en nombre de sus respectivas organizaciones.',
       },
       {
-        subtitle: 'Beneficiarios',
+        subtitle: 'Socios',
         text: 'La plataforma está dirigida a usuarios de al menos 16 años de edad. En caso de incorporarse menores de esa edad, la organización Emisora será la única responsable de obtener de forma previa el consentimiento verificado de los padres o tutores legales.',
       },
     ],

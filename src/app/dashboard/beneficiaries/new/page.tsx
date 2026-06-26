@@ -146,7 +146,7 @@ export default function NewBeneficiaryPage() {
 
       if (createError) {
         if (createError.code === '23505') {
-          setError('Ya existe un beneficiario con este RUT en tu organización');
+          setError('Ya existe un socio con este RUT en tu organización');
         } else {
           setError(createError.message);
         }
@@ -190,7 +190,7 @@ export default function NewBeneficiaryPage() {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Nuevo Beneficiario</h1>
+          <h1 className="text-2xl font-bold text-white">Nuevo Socio</h1>
           <p className="text-slate-400 text-sm mt-1">
             Completa la información del nuevo miembro
           </p>

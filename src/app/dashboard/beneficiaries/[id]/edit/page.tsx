@@ -113,7 +113,7 @@ export default function EditBeneficiaryPage() {
         }
       } catch (err) {
         console.error('Error loading beneficiary', err);
-        setError('No se pudo cargar la información del beneficiario');
+        setError('No se pudo cargar la información del socio');
       } finally {
         setLoadingData(false);
       }

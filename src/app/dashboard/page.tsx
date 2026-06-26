@@ -70,7 +70,7 @@ const LazyAreaChart = dynamic(() => import('recharts').then(mod => {
             }}
             itemStyle={{ padding: '2px 0' }}
           />
-          <Area type="monotone" dataKey="beneficiarios" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorBeneficiarios)" />
+          <Area type="monotone" dataKey="socios" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorBeneficiarios)" />
           <Area type="monotone" dataKey="beneficios" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorBeneficios)" />
         </AreaChart>
       </ResponsiveContainer>
@@ -389,7 +389,7 @@ export default function DashboardPage() {
         {/* Pie Chart */}
         <div className="glass-card p-6">
           <h3 className="text-lg font-bold text-white tracking-tight mb-1">Estado</h3>
-          <p className="text-sm text-slate-300 mb-6">Distribución de beneficiarios</p>
+          <p className="text-sm text-slate-300 mb-6">Distribución de socios</p>
           <div className="h-48 flex items-center justify-center">
             <LazyPieChart data={statusData} />
           </div>
@@ -449,7 +449,7 @@ export default function DashboardPage() {
             ) : (
               <div className="text-center py-8 text-slate-500">
                 <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No hay beneficiarios aún</p>
+                <p className="text-sm">No hay socios aún</p>
               </div>
             )}
           </div>

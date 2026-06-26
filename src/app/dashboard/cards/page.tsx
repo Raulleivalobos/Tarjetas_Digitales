@@ -333,7 +333,7 @@ export default function CardsPage() {
     const validCards = cardsToEmail.filter(c => c.beneficiary?.email);
     
     if (validCards.length === 0) {
-      alert('Ninguno de los beneficiarios seleccionados tiene un correo electrónico registrado.');
+      alert('Ninguno de los socios seleccionados tiene un correo electrónico registrado.');
       return;
     }
 
@@ -591,7 +591,7 @@ export default function CardsPage() {
           <EmptyState
             icon={<CreditCard className="w-8 h-8" />}
             title="No hay tarjetas"
-            description="Las tarjetas se generan automáticamente al crear beneficiarios."
+            description="Las tarjetas se generan automáticamente al crear socios."
           />
         </div>
       ) : filteredCards.length === 0 ? (
@@ -655,7 +655,7 @@ export default function CardsPage() {
                     </button>
                   </th>
                 )}
-                <th>Beneficiario</th>
+                <th>Socio</th>
                 <th>Dirección</th>
                 <th>Nro.</th>
                 <th>N° Tarjeta</th>

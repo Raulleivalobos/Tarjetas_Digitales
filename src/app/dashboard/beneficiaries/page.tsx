@@ -152,7 +152,7 @@ export default function BeneficiariesPage() {
       await exportReportToPDF({
         filename: `Directorio_Socios_${organization?.slug || 'export'}`,
         title: 'Directorio Oficial de Socios',
-        subtitle: 'Listado completo de beneficiarios registrados',
+        subtitle: 'Listado completo de socios registrados',
         orgName: organization?.name,
         logoUrl: organization?.logo_url || undefined,
         summary: [
@@ -188,7 +188,7 @@ export default function BeneficiariesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 pb-6 border-b border-white/5">
         <div>
-          <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase">Beneficiarios</h1>
+          <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase">Socios</h1>
           <div className="flex items-center gap-3 mt-1">
              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-brand-500/10 border border-brand-500/20">
               <span className="text-[9px] font-bold text-brand-400 font-mono tracking-widest uppercase">Directorio Activo</span>
@@ -318,8 +318,8 @@ export default function BeneficiariesPage() {
         <div className="glass-card">
           <EmptyState
             icon={<Users className="w-8 h-8" />}
-            title="No hay beneficiarios"
-            description="Emite credenciales desde Emitir Credenciales (manual o masivo) para crear beneficiarios automáticamente."
+            title="No hay socios"
+            description="Emite credenciales desde Emitir Credenciales (manual o masivo) para crear socios automáticamente."
             action={
               <div className="flex gap-3">
                 <Link href="/dashboard/issue" className="btn-primary px-5 py-2.5 text-sm flex items-center gap-2">

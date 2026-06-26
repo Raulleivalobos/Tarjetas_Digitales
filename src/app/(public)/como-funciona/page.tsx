@@ -44,7 +44,7 @@ const SECTORS = [
     borderColorClass: 'border-blue-500/25',
     gradientClass: 'from-blue-500/20 to-blue-600/5',
     cardTitle: 'Bienestar Corporativo Apex',
-    cardSubtitle: 'Credencial de Beneficiario',
+    cardSubtitle: 'Credencial de Socio',
     cardFields: [
       { label: 'Código Emp.', value: 'EMP-903' },
       { label: 'Plan de Salud', value: 'Plan Preferente Gold' },

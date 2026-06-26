@@ -341,7 +341,7 @@ export default function CertificatesPage() {
             <thead>
               <tr className="bg-white/[0.02] border-b border-white/5 text-slate-400">
                 <th className="px-6 py-4 font-medium">Folio</th>
-                <th className="px-6 py-4 font-medium">Beneficiario / Residente</th>
+                <th className="px-6 py-4 font-medium">Socio / Residente</th>
                 <th className="px-6 py-4 font-medium">Tipo</th>
                 <th className="px-6 py-4 font-medium">Fecha Emisión</th>
                 <th className="px-6 py-4 font-medium">Costo</th>

@@ -62,7 +62,7 @@ export default function BeneficiaryDetailPage() {
   }, [organization, id]);
 
   if (loading) return <PageSkeleton />;
-  if (!beneficiary) return <div className="text-center py-20 text-slate-400">Beneficiario no encontrado</div>;
+  if (!beneficiary) return <div className="text-center py-20 text-slate-400">socio no encontrado</div>;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">

@@ -15,9 +15,9 @@ const AUDIENCES = [
 ];
 
 const FEATURES = [
-  { icon: CreditCard, title: 'Credenciales digitales con QR', desc: 'Cada beneficiario recibe una tarjeta digital única con código QR verificable en tiempo real.' },
-  { icon: Shield, title: 'Verificación instantánea', desc: 'Escanea el QR con cualquier celular para validar identidad y estado del beneficiario.' },
-  { icon: BarChart3, title: 'Panel de control completo', desc: 'Dashboard con analíticas, gestión de beneficiarios, carga masiva y reportes en tiempo real.' },
+  { icon: CreditCard, title: 'Credenciales digitales con QR', desc: 'Cada socio recibe una tarjeta digital única con código QR verificable en tiempo real.' },
+  { icon: Shield, title: 'Verificación instantánea', desc: 'Escanea el QR con cualquier celular para validar identidad y estado del socio.' },
+  { icon: BarChart3, title: 'Panel de control completo', desc: 'Dashboard con analíticas, gestión de socios, carga masiva y reportes en tiempo real.' },
   { icon: Zap, title: 'Diseñador de credenciales', desc: 'Editor visual drag & drop para personalizar el diseño de tus tarjetas sin código.' },
   { icon: Lock, title: 'Seguridad empresarial', desc: 'Autenticación segura, datos encriptados y preparado para verificación blockchain.' },
   { icon: Wallet, title: 'Control financiero integrado', desc: 'Registra ingresos y gastos de caja y banco. Genera reportes PDF para comités de revisión y auditoría.' },
@@ -26,8 +26,8 @@ const FEATURES = [
 const STEPS = [
   { num: '01', title: 'Crea tu cuenta', desc: 'Registra tu organización en minutos. Sin tarjeta de crédito.' },
   { num: '02', title: 'Diseña tu credencial', desc: 'Usa el editor visual para personalizar colores, logo, atributos y formato.' },
-  { num: '03', title: 'Carga beneficiarios', desc: 'Importa tu padrón con Excel/CSV o agrega uno por uno.' },
-  { num: '04', title: 'Emite y valida', desc: 'Cada beneficiario recibe su tarjeta digital con QR verificable.' },
+  { num: '03', title: 'Carga socios', desc: 'Importa tu padrón con Excel/CSV o agrega uno por uno.' },
+  { num: '04', title: 'Emite y valida', desc: 'Cada socio recibe su tarjeta digital con QR verificable.' },
 ];
 
 const TESTIMONIALS = [

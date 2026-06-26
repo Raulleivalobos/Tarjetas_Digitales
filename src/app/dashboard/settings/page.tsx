@@ -23,7 +23,7 @@ interface Member {
 
 const roleDescriptions: Record<Role, { title: string; desc: string }> = {
   owner: { title: 'Propietario', desc: 'Control total de la organización y facturación.' },
-  admin: { title: 'Administrador', desc: 'Puede gestionar beneficiarios, beneficios y tarjetas.' },
+  admin: { title: 'Administrador', desc: 'Puede gestionar socios, beneficios y tarjetas.' },
   validator: { title: 'Validador', desc: 'Solo puede escanear y validar tarjetas/beneficios.' },
   viewer: { title: 'Visualizador', desc: 'Acceso de solo lectura a métricas e información.' },
   auditor: { title: 'Auditor', desc: 'Acceso de revisión a todos los registros y métricas.' },

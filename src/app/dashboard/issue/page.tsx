@@ -865,7 +865,7 @@ function IssuePageContent() {
           <h1 className="text-2xl lg:text-3xl font-black text-white tracking-tighter uppercase">Emitir Credenciales</h1>
           <p className="text-slate-400 mt-1 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
-            Crea y emite nuevas tarjetas para tus beneficiarios
+            Crea y emite nuevas tarjetas para tus socios
           </p>
         </div>
 
