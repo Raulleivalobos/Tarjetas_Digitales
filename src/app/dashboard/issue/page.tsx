@@ -1360,7 +1360,17 @@ function IssuePageContent() {
                   {/* Dynamic fields from design */}
                   {selectedDesign && selectedDesign.attributes
                     .filter(attr => attr.active)
-                    .filter(attr => !['NOMBRE', 'NOMBRE RECEPTOR', 'FULL_NAME', 'RUT', 'EMAIL', 'CORREO'].includes(attr.label?.trim().toUpperCase() || ''))
+                    .filter(attr => !['NOMBRE', 'NOMBRE RECEPTOR', 'FULL_NAME', 'RUT', 'EMAIL', 'CORREO',
+                      'NOMBRE INSTITUCIÓN', 'ORGANIZACION', 'ORGANIZACIÓN',
+                      'TÍTULO EMITIDO', 'TITULO EMITIDO',
+                      'FECHA', 'FECHA EMISIÓN', 'FECHA EMISION',
+                      'LOGO', 'LOGO INSTITUCIÓN', 'LOGO INSTITUCION',
+                      'FOLIO', 'STATUS SOCIO', 'ESTADO', 'STATUS',
+                      'NRO DE TARJETA', 'NRO TARJETA', 'N° TARJETA', 'HASH',
+                      'VÁLIDA DESDE', 'VALIDA DESDE', 'VENCIMIENTO',
+                      'DIRECCIÓN RECEPTOR', 'DIRECCION RECEPTOR', 'DIRECCIÓN', 'DIRECCION',
+                      'COMUNA', 'REGIÓN', 'REGION', 'VILLA', 'POBLACIÓN', 'POBLACION'
+                    ].includes(attr.label?.trim().toUpperCase() || ''))
                     .map(attr => (
                       <li key={attr.id} className="flex items-start gap-3">
                         <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-400 shrink-0" />
