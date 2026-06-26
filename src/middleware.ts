@@ -2,6 +2,17 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Only run auth logic on routes that need it.
+  // Public pages (landing, precios, blog, etc.) pass through instantly.
+  const isDashboard = pathname.startsWith('/dashboard');
+  const isAuthPage = pathname === '/login' || pathname === '/forgot-password';
+
+  if (!isDashboard && !isAuthPage) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -32,15 +43,12 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Refresh the session token silently on every request.
-  // This prevents the session from expiring while the user is active,
-  // which is the #1 cause of "page gets stuck" after idle time.
+  // Refresh the session token only for protected/auth routes.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   // Protect dashboard routes: redirect unauthenticated users to login.
-  const isDashboard = request.nextUrl.pathname.startsWith('/dashboard');
   if (isDashboard && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
@@ -48,9 +56,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users away from login/signup.
-  const isAuthPage =
-    request.nextUrl.pathname === '/login' ||
-    request.nextUrl.pathname === '/forgot-password';
   if (isAuthPage && user) {
     const dashUrl = request.nextUrl.clone();
     dashUrl.pathname = '/dashboard';
