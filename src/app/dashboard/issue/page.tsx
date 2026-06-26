@@ -791,7 +791,18 @@ function IssuePageContent() {
     const examples = ['Juan Andrés', 'Pérez González', '12.345.678-9', 'juan@ejemplo.com', '951495297', 'Av. Las Flores', '123', 'Puente Alto'];
 
     if (selectedDesign && selectedDesign.attributes) {
-      const SKIP_KEYS = ['NOMBRE', 'NOMBRE RECEPTOR', 'FULL_NAME', 'RUT', 'EMAIL', 'CORREO'];
+      const SKIP_KEYS = [
+        'NOMBRE', 'NOMBRE RECEPTOR', 'FULL_NAME', 'RUT', 'EMAIL', 'CORREO',
+        'NOMBRE INSTITUCIÓN', 'ORGANIZACION', 'ORGANIZACIÓN',
+        'TÍTULO EMITIDO', 'TITULO EMITIDO',
+        'FECHA', 'FECHA EMISIÓN', 'FECHA EMISION',
+        'LOGO', 'LOGO INSTITUCIÓN', 'LOGO INSTITUCION',
+        'FOLIO', 'STATUS SOCIO', 'ESTADO', 'STATUS',
+        'NRO DE TARJETA', 'NRO TARJETA', 'N° TARJETA', 'HASH',
+        'VÁLIDA DESDE', 'VALIDA DESDE', 'VENCIMIENTO',
+        'DIRECCIÓN RECEPTOR', 'DIRECCION RECEPTOR', 'DIRECCIÓN', 'DIRECCION',
+        'COMUNA', 'REGIÓN', 'REGION', 'VILLA', 'POBLACIÓN', 'POBLACION'
+      ];
       selectedDesign.attributes
         .filter(attr => attr.active)
         .forEach(attr => {
