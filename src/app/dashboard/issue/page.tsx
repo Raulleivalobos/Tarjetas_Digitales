@@ -1257,19 +1257,6 @@ function IssuePageContent() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Estado Inicial</label>
-                  <div className="flex items-center gap-2">
-                    <select 
-                      value={manualForm.status}
-                      onChange={(e) => setManualForm({...manualForm, status: e.target.value})}
-                      className="glass-input px-3 py-1.5 text-sm w-full"
-                    >
-                      <option value="active">Activa (Por defecto)</option>
-                      <option value="inactive">Inactiva</option>
-                    </select>
-                  </div>
-                </div>
               </div>
             </div>
 
