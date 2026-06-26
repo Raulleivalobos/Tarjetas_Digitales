@@ -24,42 +24,53 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value)
-        );
-        supabaseResponse = NextResponse.next({
-          request,
-        });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options)
-        );
-      },
-    },
-  });
+    });
 
-  // Refresh the session token only for protected/auth routes.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Race getUser() against a 4-second timeout to prevent Vercel
+    // from killing the middleware with MIDDLEWARE_INVOCATION_TIMEOUT.
+    const userResult = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<{ data: { user: null } }>((resolve) =>
+        setTimeout(() => resolve({ data: { user: null } }), 4000)
+      ),
+    ]);
 
-  // Protect dashboard routes: redirect unauthenticated users to login.
-  if (isDashboard && !user) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    return NextResponse.redirect(loginUrl);
-  }
+    const user = userResult.data.user;
 
-  // Redirect authenticated users away from login/signup.
-  if (isAuthPage && user) {
-    const dashUrl = request.nextUrl.clone();
-    dashUrl.pathname = '/dashboard';
-    return NextResponse.redirect(dashUrl);
+    // Protect dashboard routes: redirect unauthenticated users to login.
+    if (isDashboard && !user) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = '/login';
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Redirect authenticated users away from login/signup.
+    if (isAuthPage && user) {
+      const dashUrl = request.nextUrl.clone();
+      dashUrl.pathname = '/dashboard';
+      return NextResponse.redirect(dashUrl);
+    }
+  } catch {
+    // If anything fails, let the request through.
+    // The client-side AuthContext will handle auth state.
   }
 
   return supabaseResponse;
