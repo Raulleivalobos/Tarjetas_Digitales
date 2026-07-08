@@ -32,13 +32,15 @@ export default function AnnulValidationPage() {
           .eq('annulment_token', token)
           .single();
 
-        if (fetchErr || !data) {
-          setError('Enlace inválido, caducado, o el certificado ya fue anulado.');
+        if (fetchErr) {
+          setError(`Error DB: ${fetchErr.message || fetchErr.details || JSON.stringify(fetchErr)}`);
+        } else if (!data) {
+          setError('No se encontró el certificado con ese token. Puede que ya haya sido anulado.');
         } else {
           setCertificate(data);
         }
-      } catch (err) {
-        setError('Error de conexión.');
+      } catch (err: any) {
+        setError(`Error Catch: ${err.message || 'Error de conexión'}`);
       } finally {
         setLoading(false);
       }
