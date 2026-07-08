@@ -28,7 +28,7 @@ export default function AnnulValidationPage() {
       try {
         const { data, error: fetchErr } = await supabase
           .from('certificates')
-          .select('*, organizations(*), beneficiaries(*)')
+          .select('*')
           .eq('annulment_token', token)
           .single();
 
