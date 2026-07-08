@@ -21,15 +21,25 @@ export default function AnnulValidationPage() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Extraer solo el formato UUID por si se copió con texto extra
+  const uuidMatch = token ? token.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i) : null;
+  const cleanToken = uuidMatch ? uuidMatch[0] : null;
+
   useEffect(() => {
     if (!token) return;
     
     async function fetchCertificate() {
+      if (!cleanToken) {
+        setError('El enlace de anulación no tiene un formato válido.');
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data, error: fetchErr } = await supabase
           .from('certificates')
           .select('*')
-          .eq('annulment_token', token)
+          .eq('annulment_token', cleanToken)
           .limit(1)
           .maybeSingle();
 
@@ -48,10 +58,10 @@ export default function AnnulValidationPage() {
     }
     
     fetchCertificate();
-  }, [token, supabase]);
+  }, [token, cleanToken, supabase]);
 
   const handleConfirmAnnulment = async () => {
-    if (!certificate) return;
+    if (!certificate || !cleanToken) return;
     
     setIsConfirming(true);
     try {
@@ -62,7 +72,7 @@ export default function AnnulValidationPage() {
           annulment_token: null // Invalidar el token después de usarlo
         })
         .eq('id', certificate.id)
-        .eq('annulment_token', token);
+        .eq('annulment_token', cleanToken);
 
       if (updateError) {
         throw updateError;
