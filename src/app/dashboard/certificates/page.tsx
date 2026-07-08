@@ -178,9 +178,17 @@ export default function CertificatesPage() {
     
     setIsAnnuling(true);
     const cert = showAnnulModal;
-    const token = crypto.randomUUID();
     
     try {
+      let token: string;
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        token = crypto.randomUUID();
+      } else {
+        token = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
       const { error: updateError } = await supabase
         .from('certificates')
         .update({ 
