@@ -30,7 +30,8 @@ export default function AnnulValidationPage() {
           .from('certificates')
           .select('*')
           .eq('annulment_token', token)
-          .single();
+          .limit(1)
+          .maybeSingle();
 
         if (fetchErr) {
           setError(`Error DB: ${fetchErr.message || fetchErr.details || JSON.stringify(fetchErr)}`);
