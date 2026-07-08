@@ -101,6 +101,8 @@ export function getStatusColor(status: string): string {
     used: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     cancelled: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
     exhausted: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+    pending_annulment: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    annulled: 'bg-red-500/10 text-red-400 border-red-500/20',
   };
   return colors[status] || colors.inactive;
 }
@@ -118,6 +120,8 @@ export function getStatusLabel(status: string): string {
     used: 'Usado',
     cancelled: 'Cancelado',
     exhausted: 'Agotado',
+    pending_annulment: 'Anulación Pendiente',
+    annulled: 'Anulado',
   };
   return labels[status] || status;
 }

@@ -245,7 +245,7 @@ export interface MeetingAttendance {
 // =====================================================
 
 export type CertificateType = 'socio_activo' | 'socio_inactivo' | 'residente';
-export type CertificateStatus = 'active' | 'expired' | 'revoked';
+export type CertificateStatus = 'active' | 'expired' | 'revoked' | 'pending_annulment' | 'annulled';
 
 export interface Certificate {
   id: string;
@@ -256,6 +256,8 @@ export interface Certificate {
   status: CertificateStatus;
   reason: string;
   cost: number;
+  annulment_reason?: string;
+  annulment_token?: string;
   resident_data?: {
     full_name: string;
     rut: string;

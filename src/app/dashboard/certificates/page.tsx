@@ -19,11 +19,13 @@ import {
   UserPlus,
   Calendar,
   FileDown,
-  MessageCircle
+  MessageCircle,
+  Ban
 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { formatDateTime } from '@/lib/utils';
 import { PageSkeleton } from '@/components/ui/LoadingSkeleton';
+import { Modal } from '@/components/ui/Modal';
 import Link from 'next/link';
 import { Certificate, CertificateType } from '@/lib/types';
 import { exportReportToPDF } from '@/lib/pdfGenerator';
@@ -39,6 +41,9 @@ export default function CertificatesPage() {
   const [showReport, setShowReport] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [showAnnulModal, setShowAnnulModal] = useState<Certificate | null>(null);
+  const [annulReason, setAnnulReason] = useState('');
+  const [isAnnuling, setIsAnnuling] = useState(false);
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -166,6 +171,43 @@ export default function CertificatesPage() {
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
     
     window.open(whatsappUrl, '_blank');
+  };
+
+  const handleRequestAnnulment = async () => {
+    if (!showAnnulModal || !annulReason.trim() || !organization) return;
+    
+    setIsAnnuling(true);
+    const cert = showAnnulModal;
+    const token = crypto.randomUUID();
+    
+    try {
+      const { error: updateError } = await supabase
+        .from('certificates')
+        .update({ 
+          status: 'pending_annulment', 
+          annulment_reason: annulReason,
+          annulment_token: token
+        })
+        .eq('id', cert.id);
+        
+      if (updateError) throw updateError;
+      
+      setCertificates(prev => prev.map(c => c.id === cert.id ? { ...c, status: 'pending_annulment' as any, annulment_reason: annulReason, annulment_token: token } : c));
+      
+      const baseUrl = window.location.origin;
+      const url = `${baseUrl}/validate/anular/${token}`;
+      const message = `Hola Presidente. Se solicita anular el certificado #${cert.folio || ''}. Motivo: ${annulReason}. Para autorizar la anulación inmediatamente, haz clic aquí: ${url}`;
+      
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
+      
+      setShowAnnulModal(null);
+      setAnnulReason('');
+    } catch (err) {
+      console.error('Error requesting annulment', err);
+      alert('Error al solicitar anulación');
+    } finally {
+      setIsAnnuling(false);
+    }
   };
 
   useEffect(() => {
@@ -386,6 +428,15 @@ export default function CertificatesPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {cert.status === 'active' && (
+                          <button
+                            onClick={() => setShowAnnulModal(cert)}
+                            title="Solicitar Anulación"
+                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleSendWhatsApp(cert)}
                           title="Enviar por WhatsApp"
@@ -502,6 +553,58 @@ export default function CertificatesPage() {
           </div>
         </div>
       )}
+
+      {/* Annulment Modal */}
+      <Modal
+        isOpen={!!showAnnulModal}
+        onClose={() => {
+          if (!isAnnuling) {
+            setShowAnnulModal(null);
+            setAnnulReason('');
+          }
+        }}
+        title="Solicitar Anulación de Certificado"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-300">
+            Estás a punto de solicitar la anulación del certificado <strong>#{showAnnulModal?.folio}</strong>. 
+            Ingresa el motivo. Se abrirá WhatsApp para enviar un enlace de autorización al Presidente.
+          </p>
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Motivo de la anulación</label>
+            <textarea
+              value={annulReason}
+              onChange={(e) => setAnnulReason(e.target.value)}
+              placeholder="Ej: Error en el nombre, cobro indebido, etc."
+              className="glass-input w-full px-4 py-3 text-sm min-h-[100px] resize-none"
+              disabled={isAnnuling}
+            />
+          </div>
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={() => {
+                setShowAnnulModal(null);
+                setAnnulReason('');
+              }}
+              disabled={isAnnuling}
+              className="flex-1 btn-ghost py-2.5 text-sm font-bold border border-white/5 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleRequestAnnulment}
+              disabled={!annulReason.trim() || isAnnuling}
+              className="flex-1 btn-danger py-2.5 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isAnnuling ? (
+                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Procesando...</>
+              ) : (
+                <><Ban className="w-4 h-4" /> Solicitar Anulación</>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
