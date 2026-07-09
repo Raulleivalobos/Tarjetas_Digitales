@@ -574,9 +574,9 @@ export default function CertificatesPage() {
         title="Solicitar Anulación de Certificado"
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-300">
-            Estás a punto de solicitar la anulación del certificado <strong>#{showAnnulModal?.folio}</strong>. 
-            Ingresa el motivo. Se abrirá WhatsApp para enviar un enlace de autorización al Presidente.
+          <p className="text-slate-300 text-sm mb-6">
+            Estás a punto de solicitar la anulación del certificado <strong className="text-white">#{showAnnulModal?.folio || ''}</strong>. 
+            Ingresa el motivo. Se abrirá WhatsApp para enviar un enlace de autorización al Presidente(a).
           </p>
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Motivo de la anulación</label>
