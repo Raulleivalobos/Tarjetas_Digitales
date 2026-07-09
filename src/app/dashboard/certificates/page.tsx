@@ -91,21 +91,23 @@ export default function CertificatesPage() {
         fecha: new Date(c.issued_at).toLocaleDateString('es-CL')
       }));
 
+      const validCertificates = certificates.filter(c => c.status !== 'annulled');
+
       const footerSummary = [
         { 
           type: 'Socio Activo', 
-          count: certificates.filter(c => c.type === 'socio_activo').length,
-          total: certificates.filter(c => c.type === 'socio_activo').reduce((acc, c) => acc + (c.cost || 0), 0)
+          count: validCertificates.filter(c => c.type === 'socio_activo').length,
+          total: validCertificates.filter(c => c.type === 'socio_activo').reduce((acc, c) => acc + (c.cost || 0), 0)
         },
         { 
           type: 'Socio Inactivo', 
-          count: certificates.filter(c => c.type === 'socio_inactivo').length,
-          total: certificates.filter(c => c.type === 'socio_inactivo').reduce((acc, c) => acc + (c.cost || 0), 0)
+          count: validCertificates.filter(c => c.type === 'socio_inactivo').length,
+          total: validCertificates.filter(c => c.type === 'socio_inactivo').reduce((acc, c) => acc + (c.cost || 0), 0)
         },
         { 
           type: 'Residente', 
-          count: certificates.filter(c => c.type === 'residente').length,
-          total: certificates.filter(c => c.type === 'residente').reduce((acc, c) => acc + (c.cost || 0), 0)
+          count: validCertificates.filter(c => c.type === 'residente').length,
+          total: validCertificates.filter(c => c.type === 'residente').reduce((acc, c) => acc + (c.cost || 0), 0)
         }
       ].filter(item => item.count > 0);
 
@@ -121,7 +123,7 @@ export default function CertificatesPage() {
           { label: 'Socios Activos', value: certificates.filter(c => c.type === 'socio_activo').length.toString() },
           { label: 'Socios Inactivos', value: certificates.filter(c => c.type === 'socio_inactivo').length.toString() },
           { label: 'Residentes', value: certificates.filter(c => c.type === 'residente').length.toString() },
-          { label: 'Recaudación', value: `$${certificates.reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('es-CL')}` }
+          { label: 'Recaudación Válida', value: `$${validCertificates.reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('es-CL')}` }
         ],
         footerSummary,
         columns: [
@@ -357,7 +359,7 @@ export default function CertificatesPage() {
             <div>
               <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Recaudación</p>
               <p className="text-xl font-bold text-white">
-                ${certificates.reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('es-CL')}
+                ${certificates.filter(c => c.status !== 'annulled').reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('es-CL')}
               </p>
             </div>
           </div>
