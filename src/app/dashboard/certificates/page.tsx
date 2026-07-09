@@ -288,7 +288,7 @@ export default function CertificatesPage() {
       </div>
 
       {/* Stats Quick View */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
         <div className="glass-card p-4 border-l-4 border-blue-500">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
@@ -297,6 +297,19 @@ export default function CertificatesPage() {
             <div>
               <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Total Emitidos</p>
               <p className="text-xl font-bold text-white">{certificates.length}</p>
+            </div>
+          </div>
+        </div>
+        <div className="glass-card p-4 border-l-4 border-red-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400">
+              <Ban className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Total Nulos</p>
+              <p className="text-xl font-bold text-white">
+                {certificates.filter(c => c.status === 'annulled').length}
+              </p>
             </div>
           </div>
         </div>
