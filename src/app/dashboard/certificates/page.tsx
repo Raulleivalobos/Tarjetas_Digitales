@@ -204,7 +204,7 @@ export default function CertificatesPage() {
       
       const baseUrl = window.location.origin;
       const url = `${baseUrl}/validate/anular/${token}`;
-      const message = `Hola Presidente. Se solicita anular el certificado #${cert.folio || ''}. Motivo: ${annulReason}. Para autorizar la anulación inmediatamente, haz clic aquí: ${url}`;
+      const message = `Hola Presidente(a). Se solicita anular el certificado #${cert.folio || ''}. Motivo: ${annulReason}. Para autorizar la anulación inmediatamente, haz clic aquí: ${url}`;
       
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
       
