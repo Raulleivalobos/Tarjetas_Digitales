@@ -189,16 +189,21 @@ export default function CertificatesPage() {
           return v.toString(16);
         });
       }
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('certificates')
         .update({ 
           status: 'pending_annulment', 
           annulment_reason: annulReason,
           annulment_token: token
         })
-        .eq('id', cert.id);
+        .eq('id', cert.id)
+        .select();
         
       if (updateError) throw updateError;
+      
+      if (!data || data.length === 0) {
+        throw new Error("No se pudo actualizar el certificado. Posible bloqueo de permisos (RLS) en la base de datos, o la columna 'status' no permite 'pending_annulment'.");
+      }
       
       setCertificates(prev => prev.map(c => c.id === cert.id ? { ...c, status: 'pending_annulment' as any, annulment_reason: annulReason, annulment_token: token } : c));
       
@@ -210,9 +215,9 @@ export default function CertificatesPage() {
       
       setShowAnnulModal(null);
       setAnnulReason('');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error requesting annulment', err);
-      alert('Error al solicitar anulación');
+      alert(`Error al solicitar anulación: ${err.message || JSON.stringify(err)}`);
     } finally {
       setIsAnnuling(false);
     }
