@@ -85,9 +85,9 @@ export default function CertificatesPage() {
     try {
       const reportData = certificates.map(c => ({
         folio: c.folio?.toString().padStart(6, '0') || '-',
-        receptor: c.resident_data?.full_name || c.beneficiaries?.full_name || 'Desconocido',
-        tipo: c.type === 'socio_activo' ? 'Socio Activo' : c.type === 'socio_inactivo' ? 'Socio Inactivo' : 'Residente',
-        costo: `$${(c.cost || 0).toLocaleString('es-CL')}`,
+        receptor: c.resident_data?.full_name || (c as any).beneficiaries?.full_name || 'Desconocido',
+        tipo: c.status === 'annulled' ? '(ANULADO)' : (c.type === 'socio_activo' ? 'Socio Activo' : c.type === 'socio_inactivo' ? 'Socio Inactivo' : 'Residente'),
+        costo: c.status === 'annulled' ? '$0' : `$${(c.cost || 0).toLocaleString('es-CL')}`,
         fecha: new Date(c.issued_at).toLocaleDateString('es-CL')
       }));
 
@@ -120,9 +120,10 @@ export default function CertificatesPage() {
         dateRange: dateRange.start || dateRange.end ? dateRange : undefined,
         summary: [
           { label: 'Total Emitidos', value: certificates.length.toString() },
-          { label: 'Socios Activos', value: certificates.filter(c => c.type === 'socio_activo').length.toString() },
-          { label: 'Socios Inactivos', value: certificates.filter(c => c.type === 'socio_inactivo').length.toString() },
-          { label: 'Residentes', value: certificates.filter(c => c.type === 'residente').length.toString() },
+          { label: 'Total Anulados', value: certificates.filter(c => c.status === 'annulled').length.toString() },
+          { label: 'Socios Activos', value: certificates.filter(c => c.type === 'socio_activo' && c.status !== 'annulled').length.toString() },
+          { label: 'Socios Inactivos', value: certificates.filter(c => c.type === 'socio_inactivo' && c.status !== 'annulled').length.toString() },
+          { label: 'Residentes', value: certificates.filter(c => c.type === 'residente' && c.status !== 'annulled').length.toString() },
           { label: 'Recaudación Válida', value: `$${validCertificates.reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('es-CL')}` }
         ],
         footerSummary,
@@ -534,7 +535,7 @@ export default function CertificatesPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-400">Total Recaudado:</span>
-                  <span className="text-emerald-400 font-black">${certificates.reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('es-CL')}</span>
+                  <span className="text-emerald-400 font-black">${certificates.filter(c => c.status !== 'annulled').reduce((acc, curr) => acc + (curr.cost || 0), 0).toLocaleString('es-CL')}</span>
                 </div>
               </div>
 
