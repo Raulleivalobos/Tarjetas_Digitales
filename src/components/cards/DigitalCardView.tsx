@@ -129,17 +129,18 @@ export function DigitalCardView({
         if (el.type === 'text' && el.data.isAttribute) {
           let val = el.data.content;
           const attrKey = el.data.attributeKey?.trim();
-          const keyUpper = attrKey?.toUpperCase();
+          const keyUpperRaw = attrKey?.toUpperCase();
+          const keyUpper = keyUpperRaw?.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           const customVal = beneficiary.custom_fields ? (beneficiary.custom_fields as any)[attrKey] : undefined;
 
           if (keyUpper === 'NOMBRE RECEPTOR' || keyUpper === 'NOMBRE') val = customVal || beneficiary.full_name || val;
-          else if (keyUpper === 'NOMBRE INSTITUCIÓN' || keyUpper === 'ORGANIZACION') val = customVal || organization.name || val;
+          else if (keyUpper === 'NOMBRE INSTITUCION' || keyUpper === 'ORGANIZACION') val = customVal || organization.name || val;
           else if (keyUpper === 'RUT') val = customVal || formatRut(beneficiary.rut) || val;
           else if (keyUpper === 'ID SOCIO' || keyUpper === 'NRO DE SOCIO' || keyUpper === 'NRO SOCIO') val = customVal || (beneficiary.custom_fields as any)?.['ID Socio'] || val;
-          else if (keyUpper === 'FECHA' || keyUpper === 'FECHA EMISIÓN') val = customVal || formatDate(card.issued_at) || val;
+          else if (keyUpper === 'FECHA' || keyUpper === 'FECHA EMISION' || keyUpper === 'VALIDA DESDE' || keyUpper === 'FECHA DE EMISION') val = customVal || formatDate(card.issued_at) || val;
           else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO') val = customVal || (card.status === 'active' ? 'Activo' : card.status) || val;
           else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') val = customVal || beneficiary.email || val;
-          else if (keyUpper === 'DIRECCIÓN RECEPTOR' || keyUpper === 'DIRECCION RECEPTOR' || keyUpper === 'DIRECCIÓN' || keyUpper === 'DIRECCION' || keyUpper === 'DOMICILIO') {
+          else if (keyUpper === 'DIRECCION RECEPTOR' || keyUpper === 'DIRECCION' || keyUpper === 'DOMICILIO') {
             const combined = [beneficiary.address, beneficiary.address_number].filter(Boolean).join(' ');
             val = combined || customVal || val;
           }

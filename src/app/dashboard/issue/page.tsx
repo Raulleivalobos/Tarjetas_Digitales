@@ -425,28 +425,28 @@ function IssuePageContent() {
             const attrKey = el.data.attributeKey?.trim();
             if (!attrKey) return el;
             
-            const keyUpper = attrKey.toUpperCase();
+            const keyUpper = attrKey.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             let val = el.data.content || '';
             
             // Safe access to custom fields
             const customVal = manualForm.customFields ? manualForm.customFields[attrKey] : undefined;
             
             if (keyUpper === 'NOMBRE RECEPTOR' || keyUpper === 'NOMBRE') val = customVal || manualForm.full_name || val;
-            else if (keyUpper === 'NOMBRE INSTITUCIÓN' || keyUpper === 'ORGANIZACION') val = customVal || organization?.name || val;
+            else if (keyUpper === 'NOMBRE INSTITUCION' || keyUpper === 'ORGANIZACION') val = customVal || organization?.name || val;
             else if (keyUpper === 'RUT') val = customVal || formatRut(manualForm.rut) || val;
             else if (keyUpper === 'ID SOCIO' || keyUpper === 'NRO DE SOCIO' || keyUpper === 'NRO SOCIO') val = customVal || manualForm.id_socio || val;
-            else if (keyUpper === 'FECHA' || keyUpper === 'FECHA EMISIÓN' || keyUpper === 'VÁLIDA DESDE') val = customVal || manualForm.expiryDate || previewDate;
+            else if (keyUpper === 'FECHA' || keyUpper === 'FECHA EMISION' || keyUpper === 'VALIDA DESDE' || keyUpper === 'FECHA DE EMISION') val = customVal || manualForm.expiryDate || previewDate;
             else if (keyUpper === 'STATUS SOCIO' || keyUpper === 'ESTADO' || keyUpper === 'STATUS') {
               const defaultStatus = manualForm.status === 'inactive' ? 'Inactivo' : 'Activo';
               val = customVal || defaultStatus;
             }
             else if (keyUpper === 'EMAIL' || keyUpper === 'CORREO') val = customVal || manualForm.email || val;
-            else if (keyUpper === 'N° TARJETA' || keyUpper === 'NRO TARJETA' || keyUpper === 'NRO DE TARJETA' || keyUpper === 'HASH') {
+            else if (keyUpper === 'N° TARJETA' || keyUpper === 'NRO TARJETA' || keyUpper === 'NRO DE TARJETA' || keyUpper === 'HASH' || keyUpper === 'Nº TARJETA') {
               val = customVal || 'CS-PREVIEW-001';
             }
-            else if (keyUpper === 'RUT INSTITUCIÓN' || keyUpper === 'RUT INSTITUCION') val = (organization?.settings as any)?.rut || val;
-            else if (keyUpper === 'DIRECCIÓN INSTITUCIÓN' || keyUpper === 'DIRECCION INSTITUCION') val = (organization?.settings as any)?.address || val;
-            else if (keyUpper === 'DIRECCIÓN RECEPTOR' || keyUpper === 'DIRECCION RECEPTOR' || keyUpper === 'DIRECCIÓN' || keyUpper === 'DIRECCION') {
+            else if (keyUpper === 'RUT INSTITUCION') val = (organization?.settings as any)?.rut || val;
+            else if (keyUpper === 'DIRECCION INSTITUCION') val = (organization?.settings as any)?.address || val;
+            else if (keyUpper === 'DIRECCION RECEPTOR' || keyUpper === 'DIRECCION' || keyUpper === 'DOMICILIO') {
               const addr = [manualForm.address, manualForm.address_number].filter(Boolean).join(' ');
               val = customVal || addr || val;
             }
