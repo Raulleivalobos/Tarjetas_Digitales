@@ -1,3 +1,5 @@
+'use server';
+
 import { createClient } from '@supabase/supabase-js';
 import { logActivity } from './audit';
 
@@ -70,6 +72,17 @@ export async function deleteBeneficiary(
   );
 
   try {
+    // Primero eliminar tarjetas digitales asociadas (FK constraint)
+    const { error: cardsError } = await supabase
+      .from('digital_cards')
+      .delete()
+      .eq('beneficiary_id', id);
+
+    if (cardsError) {
+      console.error('Error deleting related cards:', cardsError);
+    }
+
+    // Luego eliminar el beneficiario
     const { error } = await supabase
       .from('beneficiaries')
       .delete()

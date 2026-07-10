@@ -30,7 +30,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { deleteBeneficiary } from '@/app/actions/beneficiaries';
 
 export default function BeneficiariesPage() {
   const { organization, loading: authLoading, membership, user } = useAuth();
@@ -83,13 +82,28 @@ export default function BeneficiariesPage() {
   const handleDelete = async (id: string) => {
     if (isReadOnly || !organization) return;
     
-    const result = await deleteBeneficiary(id, membership!.user_id, user?.email || 'unknown', organization.id);
-    if (result.success) {
+    try {
+      // Primero eliminar tarjetas digitales asociadas (FK constraint)
+      await supabase
+        .from('digital_cards')
+        .delete()
+        .eq('beneficiary_id', id);
+
+      // Luego eliminar el beneficiario
+      const { error } = await supabase
+        .from('beneficiaries')
+        .delete()
+        .eq('id', id)
+        .eq('org_id', organization.id);
+
+      if (error) throw error;
+
       setBeneficiaries((prev) => prev.filter((b) => b.id !== id));
       selectedIds.delete(id);
       setSelectedIds(new Set(selectedIds));
-    } else {
-      alert(`Error al eliminar: ${result.error}`);
+    } catch (err: any) {
+      console.error('Error deleting beneficiary:', err);
+      alert(`Error al eliminar: ${err.message || 'Error desconocido. Revisa los permisos en Supabase.'}`);
     }
     setDeleteModal(null);
   };
