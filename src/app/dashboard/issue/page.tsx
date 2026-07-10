@@ -583,7 +583,15 @@ function IssuePageContent() {
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      dataToProcess = fixExcelDates(XLSX.utils.sheet_to_json<BulkUploadRow>(firstSheet));
+      const rawData = XLSX.utils.sheet_to_json<BulkUploadRow>(firstSheet);
+      // Normalize Excel headers to lowercase (CSV already does this via transformHeader)
+      dataToProcess = fixExcelDates(rawData.map(row => {
+        const normalized: any = {};
+        for (const [key, val] of Object.entries(row as any)) {
+          normalized[key.trim().toLowerCase()] = val;
+        }
+        return normalized as BulkUploadRow;
+      }));
     }
 
     const currentResult: BulkUploadResult = { total: dataToProcess.length, success: 0, errors: [] };
@@ -600,8 +608,9 @@ function IssuePageContent() {
         const fullName = rowData.full_name || (firstName ? `${firstName} ${lastName}`.trim() : null) || rowData['Nombre Completo'] || rowData['nombre completo'] || rowData['Nombre Receptor'] || rowData.recipient_name;
         const rut = rowData.rut || rowData.documento || rowData.recipient_rut || rowData.RUT;
         const email = rowData.email || rowData.correo || rowData['Email'] || rowData['Correo'];
-        const phone = rowData.phone || rowData.telefono || rowData.celular || rowData['Teléfono'] || rowData['Celular'];
+        const phone = rowData.phone || rowData.telefono || rowData.celular || rowData['nro celular (+56)'] || rowData['nro celular'] || rowData['Teléfono'] || rowData['Celular'];
         const comuna = rowData.comuna || rowData.city || rowData.ciudad || rowData['Comuna'];
+        const idSocio = rowData['nro de socio'] || rowData['nro socio'] || rowData['id socio'] || rowData.id_socio || '';
         
         // Normalize phone number to +56 9... format
         let normalizedPhone = phone ? String(phone).trim() : null;
@@ -629,7 +638,7 @@ function IssuePageContent() {
         const photoUrlToSave = rawPhotoUrl ? convertGoogleDriveUrl(rawPhotoUrl) : null;
         
         // Collect custom fields from extra columns
-        const STANDARD_KEYS = ['first_name', 'last_name', 'full_name', 'nombre', 'nombres', 'apellidos', 'rut', 'documento', 'email', 'correo', 'phone', 'telefono', 'celular', 'address', 'dirección', 'direccion', 'address_number', 'nro dirección', 'nro direccion', 'número', 'numero', 'comuna', 'photo_url', 'foto', 'photo', 'imagen', 'image'];
+        const STANDARD_KEYS = ['first_name', 'last_name', 'full_name', 'nombre', 'nombres', 'apellidos', 'rut', 'documento', 'email', 'correo', 'phone', 'telefono', 'celular', 'nro celular (+56)', 'nro celular', 'address', 'dirección', 'direccion', 'address_number', 'nro dirección', 'nro direccion', 'número', 'numero', 'comuna', 'photo_url', 'foto', 'photo', 'imagen', 'image', 'nro de socio', 'nro socio', 'id socio', 'id_socio'];
         const customFieldsToSave: Record<string, string> = {};
 
         // Extract address and address_number from row data
@@ -684,7 +693,7 @@ function IssuePageContent() {
               address_number: rowAddressNumber || null,
               comuna: comuna || null,
               photo_url: photoUrlToSave,
-              custom_fields: customFieldsToSave
+              custom_fields: { ...customFieldsToSave, ...(idSocio ? { 'ID Socio': String(idSocio) } : {}) }
             })
             .select()
             .single();
