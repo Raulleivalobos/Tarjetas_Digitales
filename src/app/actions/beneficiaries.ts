@@ -60,8 +60,9 @@ export async function createOrUpdateBeneficiary(
   }
 }
 
-export async function deleteBeneficiary(
-  id: string,
+export async function deleteBeneficiaries(
+  ids: string[],
+  isSandbox: boolean,
   adminId: string,
   adminEmail: string,
   orgId: string
@@ -72,38 +73,44 @@ export async function deleteBeneficiary(
   );
 
   try {
-    // Primero eliminar tarjetas digitales asociadas (FK constraint)
-    const { error: cardsError } = await supabase
-      .from('digital_cards')
-      .delete()
-      .eq('beneficiary_id', id);
-
-    if (cardsError) {
-      console.error('Error deleting related cards:', cardsError);
+    if (isSandbox) {
+      await supabase.from('meeting_attendance').delete().in('beneficiary_id', ids);
+      await supabase.from('benefit_assignments').delete().in('beneficiary_id', ids);
+      await supabase.from('certificates').delete().in('beneficiary_id', ids);
+      await supabase.from('digital_cards').delete().in('beneficiary_id', ids);
+      
+      const { error } = await supabase.from('beneficiaries').delete().in('id', ids).eq('org_id', orgId);
+      if (error) throw error;
+    } else {
+      await supabase.from('digital_cards').delete().in('beneficiary_id', ids);
+      
+      const { data: beneficiariesData } = await supabase.from('beneficiaries').select('id, custom_fields').in('id', ids);
+      
+      if (beneficiariesData) {
+        for (const b of beneficiariesData) {
+          await supabase.from('beneficiaries').update({
+            status: 'inactive',
+            custom_fields: { ...(b.custom_fields || {}), is_deleted: true }
+          }).eq('id', b.id).eq('org_id', orgId);
+        }
+      }
     }
 
-    // Luego eliminar el beneficiario
-    const { error } = await supabase
-      .from('beneficiaries')
-      .delete()
-      .eq('id', id)
-      .eq('org_id', orgId);
-
-    if (error) throw error;
-
     // Log activity
-    await logActivity({
-      orgId,
-      userId: adminId,
-      userEmail: adminEmail,
-      action: 'DELETE_BENEFICIARY',
-      entityType: 'beneficiary',
-      entityId: id
-    });
+    for (const id of ids) {
+      await logActivity({
+        orgId,
+        userId: adminId,
+        userEmail: adminEmail,
+        action: 'DELETE_BENEFICIARY',
+        entityType: 'beneficiary',
+        entityId: id
+      });
+    }
 
     return { success: true };
   } catch (error: any) {
-    console.error('Error in deleteBeneficiary:', error);
+    console.error('Error in deleteBeneficiaries:', error);
     return { success: false, error: error.message };
   }
 }

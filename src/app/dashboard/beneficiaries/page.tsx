@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { deleteBeneficiaries } from '@/app/actions/beneficiaries';
 
 export default function BeneficiariesPage() {
   const { organization, loading: authLoading, membership, user } = useAuth();
@@ -90,32 +91,16 @@ export default function BeneficiariesPage() {
     const isSandbox = organization.name.toLowerCase().includes('sandbox') || organization.slug.toLowerCase().includes('sandbox');
     
     try {
-      if (isSandbox) {
-        // --- HARD DELETE (Solo para Sandbox/Pruebas) ---
-        await supabase.from('meeting_attendance').delete().in('beneficiary_id', ids);
-        await supabase.from('benefit_assignments').delete().in('beneficiary_id', ids);
-        await supabase.from('certificates').delete().in('beneficiary_id', ids);
-        await supabase.from('digital_cards').delete().in('beneficiary_id', ids);
-        
-        const { error } = await supabase.from('beneficiaries').delete().in('id', ids).eq('org_id', organization.id);
-        if (error) throw error;
-        
-      } else {
-        // --- SOFT DELETE (Producción - Mantiene historial) ---
-        await supabase.from('digital_cards').delete().in('beneficiary_id', ids);
-        
-        // Obtener datos actuales para no perder otros custom_fields
-        const { data: beneficiariesData } = await supabase.from('beneficiaries').select('id, custom_fields').in('id', ids);
-        
-        // Actualizar uno por uno porque cada uno tiene sus propios custom_fields
-        if (beneficiariesData) {
-          for (const b of beneficiariesData) {
-            await supabase.from('beneficiaries').update({
-              status: 'inactive',
-              custom_fields: { ...(b.custom_fields || {}), is_deleted: true }
-            }).eq('id', b.id).eq('org_id', organization.id);
-          }
-        }
+      const result = await deleteBeneficiaries(
+        ids, 
+        isSandbox, 
+        membership!.user_id, 
+        user?.email || 'unknown', 
+        organization.id
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
       setBeneficiaries((prev) => prev.filter((b) => !ids.includes(b.id)));
