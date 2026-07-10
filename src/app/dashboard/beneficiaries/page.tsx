@@ -37,7 +37,7 @@ export default function BeneficiariesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [deleteModal, setDeleteModal] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<string | string[] | null>(null);
   const [actionMenu, setActionMenu] = useState<string | null>(null);
   const [exportingPDF, setExportingPDF] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -81,54 +81,49 @@ export default function BeneficiariesPage() {
     }
   }, [organization?.id, authLoading, fetchBeneficiaries]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (target: string | string[]) => {
     if (isReadOnly || !organization) return;
     
+    const ids = Array.isArray(target) ? target : [target];
+    if (ids.length === 0) return;
+
     const isSandbox = organization.name.toLowerCase().includes('sandbox') || organization.slug.toLowerCase().includes('sandbox');
     
     try {
       if (isSandbox) {
         // --- HARD DELETE (Solo para Sandbox/Pruebas) ---
+        await supabase.from('meeting_attendance').delete().in('beneficiary_id', ids);
+        await supabase.from('benefit_assignments').delete().in('beneficiary_id', ids);
+        await supabase.from('certificates').delete().in('beneficiary_id', ids);
+        await supabase.from('digital_cards').delete().in('beneficiary_id', ids);
         
-        // 1. Asistencia a reuniones (FK)
-        await supabase.from('meeting_attendance').delete().eq('beneficiary_id', id);
-        
-        // 2. Beneficios entregados (FK)
-        await supabase.from('benefit_assignments').delete().eq('beneficiary_id', id);
-        
-        // 3. Certificados (FK)
-        await supabase.from('certificates').delete().eq('beneficiary_id', id);
-
-        // 4. Tarjetas digitales (FK)
-        await supabase.from('digital_cards').delete().eq('beneficiary_id', id);
-
-        // 5. El beneficiario
-        const { error } = await supabase.from('beneficiaries').delete().eq('id', id).eq('org_id', organization.id);
+        const { error } = await supabase.from('beneficiaries').delete().in('id', ids).eq('org_id', organization.id);
         if (error) throw error;
         
       } else {
         // --- SOFT DELETE (Producción - Mantiene historial) ---
+        await supabase.from('digital_cards').delete().in('beneficiary_id', ids);
         
-        // 1. Eliminar solo tarjetas (no tienen valor histórico/financiero)
-        await supabase.from('digital_cards').delete().eq('beneficiary_id', id);
+        // Obtener datos actuales para no perder otros custom_fields
+        const { data: beneficiariesData } = await supabase.from('beneficiaries').select('id, custom_fields').in('id', ids);
         
-        // 2. Obtener datos actuales para no sobreescribir custom_fields
-        const { data: beneficiary } = await supabase.from('beneficiaries').select('custom_fields').eq('id', id).single();
-        
-        // 3. Actualizar a inactivo y marcar como eliminado lógico
-        const { error } = await supabase.from('beneficiaries').update({
-          status: 'inactive',
-          custom_fields: { ...(beneficiary?.custom_fields || {}), is_deleted: true }
-        }).eq('id', id).eq('org_id', organization.id);
-        
-        if (error) throw error;
+        // Actualizar uno por uno porque cada uno tiene sus propios custom_fields
+        if (beneficiariesData) {
+          for (const b of beneficiariesData) {
+            await supabase.from('beneficiaries').update({
+              status: 'inactive',
+              custom_fields: { ...(b.custom_fields || {}), is_deleted: true }
+            }).eq('id', b.id).eq('org_id', organization.id);
+          }
+        }
       }
 
-      setBeneficiaries((prev) => prev.filter((b) => b.id !== id));
-      selectedIds.delete(id);
-      setSelectedIds(new Set(selectedIds));
+      setBeneficiaries((prev) => prev.filter((b) => !ids.includes(b.id)));
+      const newSelected = new Set(selectedIds);
+      ids.forEach(id => newSelected.delete(id));
+      setSelectedIds(newSelected);
     } catch (err: any) {
-      console.error('Error deleting beneficiary:', err);
+      console.error('Error deleting beneficiaries:', err);
       alert(`Error al eliminar: ${err.message || 'Error desconocido. Revisa los permisos en Supabase.'}`);
     }
     setDeleteModal(null);
@@ -296,10 +291,9 @@ export default function BeneficiariesPage() {
             )}
             {!isReadOnly && (
               <button
-                onClick={() => setDeleteModal(Array.from(selectedIds)[0])}
-                disabled={selectedIds.size > 1}
-                title={selectedIds.size > 1 ? "Solo puedes eliminar de a 1 por ahora" : "Eliminar"}
-                className="btn-ghost bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 px-4 py-2 text-xs font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setDeleteModal(Array.from(selectedIds))}
+                title="Eliminar seleccionados"
+                className="btn-ghost bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 px-4 py-2 text-xs font-bold flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" /> Eliminar
               </button>
@@ -640,7 +634,7 @@ export default function BeneficiariesPage() {
             <Trash2 className="w-8 h-8 text-red-400" />
           </div>
           <p className="text-slate-300 mb-6">
-            ¿Estás seguro de que deseas eliminar este beneficiario? Esta acción no se puede deshacer.
+            ¿Estás seguro de que deseas eliminar {Array.isArray(deleteModal) && deleteModal.length > 1 ? `estos ${deleteModal.length} beneficiarios` : 'este beneficiario'}? Esta acción no se puede deshacer.
           </p>
           <div className="flex gap-3 justify-center">
             <button
