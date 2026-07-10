@@ -83,7 +83,13 @@ export default function BeneficiariesPage() {
     if (isReadOnly || !organization) return;
     
     try {
-      // Primero eliminar tarjetas digitales asociadas (FK constraint)
+      // Eliminar certificados asociados (FK constraint: certificates_beneficiary_id_fkey)
+      await supabase
+        .from('certificates')
+        .delete()
+        .eq('beneficiary_id', id);
+
+      // Eliminar tarjetas digitales asociadas (FK constraint)
       await supabase
         .from('digital_cards')
         .delete()
