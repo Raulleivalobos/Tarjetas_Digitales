@@ -65,7 +65,9 @@ export default function BeneficiariesPage() {
 
     const { data, error } = await query;
     if (!error && data) {
-      setBeneficiaries(data);
+      // Filtrar los eliminados lógicamente (soft delete)
+      const activeData = data.filter((b: any) => !b.custom_fields?.is_deleted);
+      setBeneficiaries(activeData);
     }
     setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,27 +84,45 @@ export default function BeneficiariesPage() {
   const handleDelete = async (id: string) => {
     if (isReadOnly || !organization) return;
     
+    const isSandbox = organization.name.toLowerCase().includes('sandbox') || organization.slug.toLowerCase().includes('sandbox');
+    
     try {
-      // Eliminar certificados asociados (FK constraint: certificates_beneficiary_id_fkey)
-      await supabase
-        .from('certificates')
-        .delete()
-        .eq('beneficiary_id', id);
+      if (isSandbox) {
+        // --- HARD DELETE (Solo para Sandbox/Pruebas) ---
+        
+        // 1. Asistencia a reuniones (FK)
+        await supabase.from('meeting_attendance').delete().eq('beneficiary_id', id);
+        
+        // 2. Beneficios entregados (FK)
+        await supabase.from('benefit_assignments').delete().eq('beneficiary_id', id);
+        
+        // 3. Certificados (FK)
+        await supabase.from('certificates').delete().eq('beneficiary_id', id);
 
-      // Eliminar tarjetas digitales asociadas (FK constraint)
-      await supabase
-        .from('digital_cards')
-        .delete()
-        .eq('beneficiary_id', id);
+        // 4. Tarjetas digitales (FK)
+        await supabase.from('digital_cards').delete().eq('beneficiary_id', id);
 
-      // Luego eliminar el beneficiario
-      const { error } = await supabase
-        .from('beneficiaries')
-        .delete()
-        .eq('id', id)
-        .eq('org_id', organization.id);
-
-      if (error) throw error;
+        // 5. El beneficiario
+        const { error } = await supabase.from('beneficiaries').delete().eq('id', id).eq('org_id', organization.id);
+        if (error) throw error;
+        
+      } else {
+        // --- SOFT DELETE (Producción - Mantiene historial) ---
+        
+        // 1. Eliminar solo tarjetas (no tienen valor histórico/financiero)
+        await supabase.from('digital_cards').delete().eq('beneficiary_id', id);
+        
+        // 2. Obtener datos actuales para no sobreescribir custom_fields
+        const { data: beneficiary } = await supabase.from('beneficiaries').select('custom_fields').eq('id', id).single();
+        
+        // 3. Actualizar a inactivo y marcar como eliminado lógico
+        const { error } = await supabase.from('beneficiaries').update({
+          status: 'inactive',
+          custom_fields: { ...(beneficiary?.custom_fields || {}), is_deleted: true }
+        }).eq('id', id).eq('org_id', organization.id);
+        
+        if (error) throw error;
+      }
 
       setBeneficiaries((prev) => prev.filter((b) => b.id !== id));
       selectedIds.delete(id);
